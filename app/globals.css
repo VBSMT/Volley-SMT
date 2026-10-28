@@ -1,0 +1,78 @@
+:root {
+  --noir: #111111;
+  --jaune: #ffe81a;
+  --gris: #bdbdbd;
+  --fond: #f4f4f2;
+  --texte-doux: #555555; /* AA sur fond clair */
+  --erreur: #b00020;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; }
+
+body {
+  background: var(--fond);
+  color: var(--noir);
+  font-family: var(--font-barlow), system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1, h2, h3, .brand {
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  margin: 0;
+}
+
+.brand { font-size: 2rem; text-transform: uppercase; }
+
+.app-header {
+  background: var(--noir);
+  color: var(--jaune);
+  padding: 0.5rem 1rem;
+}
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.app-header .brand { font-size: 1.5rem; }
+.logo-login { align-self: center; }
+
+.page { max-width: 30rem; margin: 0 auto; padding: 1.5rem 1rem; }
+.page-center { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; gap: 1rem; }
+.stack { display: flex; flex-direction: column; gap: 0.75rem; }
+
+label { font-weight: 600; }
+
+input {
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  border: 2px solid var(--gris);
+  border-radius: 8px;
+  background: #fff;
+}
+
+button { font: inherit; cursor: pointer; }
+button:disabled { opacity: 0.6; cursor: wait; }
+
+.btn-primary, .btn-secondary {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.btn-primary { background: var(--jaune); color: var(--noir); border: 2px solid var(--noir); }
+.btn-secondary { background: transparent; color: var(--noir); border: 2px solid var(--noir); }
+
+:focus-visible { outline: 3px solid var(--noir); outline-offset: 2px; }
+
+.muted { color: var(--texte-doux); margin: 0; }
+.small { font-size: 0.875rem; }
+.error { color: var(--erreur); margin: 0; }
+.notice { background: #fff; border-left: 4px solid var(--jaune); padding: 0.75rem; margin: 0; }
+
+.zelsync { margin-top: 2rem; text-align: center; font-size: 0.875rem; color: var(--texte-doux); }
+.zelsync a { color: var(--noir); }
