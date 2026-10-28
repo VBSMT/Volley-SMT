@@ -25,7 +25,7 @@ export default async function ConnexionPage({
       <p className="muted">Volley-Ball Loisirs Saint-Mathieu-de-Tréviers</p>
       <LoginForm linkError={erreur === "lien"} />
       <p className="muted small">
-        Pas de mot de passe : un lien vous est envoyé par email. Seuls les adhérents inscrits par
+        Pas de mot de passe : un code vous est envoyé par email. Seuls les adhérents inscrits par
         le Bureau peuvent se connecter.
       </p>
       <ZelsyncFooter />
