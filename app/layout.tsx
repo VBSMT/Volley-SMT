@@ -12,7 +12,6 @@ const barlowCondensed = Barlow_Condensed({
 export const metadata: Metadata = {
   title: { default: "Volley SMT", template: "%s · Volley SMT" },
   description: "Application du club Volley-Ball Loisirs Saint-Mathieu-de-Tréviers",
-  icons: { icon: "/icon.svg" },
 };
 
 export const viewport: Viewport = { themeColor: "#111111" };
