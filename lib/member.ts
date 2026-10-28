@@ -8,10 +8,9 @@ export * from "./member-types";
 /** Fiche de l'adhérent connecté (RLS : il ne lit que la sienne). Mise en cache par requête. */
 export const getCurrentMember = cache(async (): Promise<CurrentMember | null> => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { data: auth } = await supabase.auth.getClaims();
+  const userId = auth?.claims?.sub;
+  if (!userId) return null;
 
   const { data } = await supabase
     .from("members")
@@ -21,7 +20,7 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
        team:teams(name), license_season:seasons(label),
        roles:member_roles(role, team:teams(name))`,
     )
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
   return data as CurrentMember | null;
 });

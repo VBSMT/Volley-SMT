@@ -195,3 +195,10 @@ details summary { cursor: pointer; min-height: 44px; display: flex; align-items:
 .gym-row p { margin: 0; }
 .gym-row.closed { background: #e9e9e6; }
 .gym-date { font-weight: 600; text-transform: capitalize; }
+
+/* --- Chargement --- */
+.skeleton { background: #e4e4e1; border-radius: 12px; animation: pulse 1.2s ease-in-out infinite; }
+.skeleton-title { height: 2rem; width: 60%; border-radius: 8px; }
+.skeleton-card { height: 7rem; }
+@keyframes pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
