@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member";
+import { POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member-types";
 import { updateProfile, type ProfileState } from "./actions";
 
 const initialState: ProfileState = { status: "idle" };

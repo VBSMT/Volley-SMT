@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentMember, type Position } from "@/lib/member";
+import { getCurrentMember } from "@/lib/member";
+import type { Position } from "@/lib/member-types";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProfileState = { status: "idle" | "saved" | "error"; message?: string };
