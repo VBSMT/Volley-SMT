@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Bureau" };
 const SECTIONS: [string, string, string?][] = [
   ["Calendrier des matchs", "Import du fichier Excel du club", "/bureau/matchs"],
   ["Adhérents", "Import CSV, invitations, niveaux, rôles, équipes, demandes bénévoles"],
-  ["Gymnase", "Ouverture des créneaux pendant les vacances et jours fériés"],
+  ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
   ["Compo du soir", "Équipes générées après la clôture du sondage"],
   ["Reports", "Demandes en attente et historique"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles"],

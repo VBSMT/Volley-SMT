@@ -169,3 +169,29 @@ a.notice { color: var(--noir); }
 .card-link { display: block; color: inherit; text-decoration: none; }
 .back { color: var(--noir); min-height: 44px; display: inline-flex; align-items: center; }
 input[type="file"] { padding: 0.5rem; }
+
+/* --- Entraînements --- */
+.session.closed { opacity: 0.75; }
+.session h2 { text-transform: capitalize; }
+.session p { margin: 0; }
+.session-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.courts { background: var(--noir); color: var(--jaune); border-radius: 999px; padding: 0.1rem 0.6rem; font-weight: 700; font-size: 0.875rem; white-space: nowrap; }
+.poll { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.poll-btn {
+  min-height: 44px;
+  border-radius: 8px;
+  border: 2px solid var(--noir);
+  background: #fff;
+  color: var(--noir);
+  font-weight: 600;
+}
+.poll-btn.yes.selected { background: var(--jaune); }
+.poll-btn.no.selected { background: var(--noir); color: #fff; }
+details summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.names { margin: 0; padding-left: 1.25rem; columns: 2; }
+.center { text-align: center; display: block; text-decoration: none; line-height: 40px; }
+
+.gym-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.gym-row p { margin: 0; }
+.gym-row.closed { background: #e9e9e6; }
+.gym-date { font-weight: 600; text-transform: capitalize; }
