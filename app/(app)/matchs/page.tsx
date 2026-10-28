@@ -1,12 +1,108 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import Link from "next/link";
+import { formatDay, formatMonth, formatTime } from "@/lib/format";
+import { getCurrentMember } from "@/lib/member";
+import { createClient } from "@/lib/supabase/server";
+import { TeamSelect } from "./TeamSelect";
 
 export const metadata: Metadata = { title: "Matchs" };
 
-export default function Page() {
+type Match = {
+  id: string;
+  starts_at: string;
+  is_home: boolean;
+  opponent: string;
+  competition: string;
+  division: string | null;
+  venue: string | null;
+  city: string | null;
+  team: { id: string; name: string } | null;
+};
+
+export default async function MatchsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ equipe?: string; passes?: string }>;
+}) {
+  const params = await searchParams;
+  const member = (await getCurrentMember())!;
+  const supabase = await createClient();
+
+  const { data: teams } = await supabase.from("teams").select("id, name").order("name");
+  // Par défaut : l'équipe de l'adhérent ; sans équipe, tout le club.
+  const myTeamId = teams?.find((t) => t.name === member.team?.name)?.id;
+  const selected = params.equipe ?? myTeamId ?? "tout";
+  const showPast = params.passes === "1";
+
+  let query = supabase
+    .from("matches")
+    .select("id, starts_at, is_home, opponent, competition, division, venue, city, team:teams(id, name)")
+    .order("starts_at", { ascending: !showPast });
+  query = showPast
+    ? query.lt("starts_at", new Date().toISOString())
+    : query.gte("starts_at", new Date(Date.now() - 3 * 3600_000).toISOString());
+  if (selected !== "tout") query = query.eq("team_id", selected);
+  const { data } = await query;
+  const matches = (data ?? []) as unknown as Match[];
+
+  // Regroupement par mois.
+  const months = new Map<string, Match[]>();
+  for (const m of matches) {
+    const key = formatMonth(m.starts_at);
+    months.set(key, [...(months.get(key) ?? []), m]);
+  }
+
+  const toggleHref = `/matchs?equipe=${selected}${showPast ? "" : "&passes=1"}`;
+
   return (
-    <ComingSoon title="Matchs">
-      Bientôt : le calendrier des matchs de votre équipe et du club.
-    </ComingSoon>
+    <main className="page stack">
+      <h1>Matchs</h1>
+      <TeamSelect teams={teams ?? []} value={selected} />
+      <Link href={toggleHref} className="small">
+        {showPast ? "← Matchs à venir" : "Voir les matchs passés"}
+      </Link>
+
+      {matches.length === 0 && (
+        <p className="notice">{showPast ? "Aucun match passé." : "Aucun match à venir."}</p>
+      )}
+
+      {[...months].map(([month, list]) => (
+        <section key={month} className="stack">
+          <h2 className="month">{month}</h2>
+          <ul className="list">
+            {list.map((m) => (
+              <li key={m.id} className="card match">
+                <div className="match-date">
+                  <span>{formatDay(m.starts_at)}</span>
+                  <strong>{formatTime(m.starts_at)}</strong>
+                </div>
+                <div className="match-body">
+                  {selected === "tout" && <p className="match-team">{m.team?.name}</p>}
+                  <p className="match-opponent">
+                    <span className={m.is_home ? "badge home" : "badge away"}>
+                      {m.is_home ? "Dom." : "Ext."}
+                    </span>{" "}
+                    {m.opponent}
+                  </p>
+                  <p className="muted small">
+                    {m.competition}
+                    {m.division && ` · ${m.division}`}
+                  </p>
+                  {!m.is_home && (m.venue || m.city) && (
+                    <p className="muted small">
+                      {[m.venue, m.city].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+
+      <a href="https://www.volley34.fr" target="_blank" rel="noopener noreferrer" className="small">
+        Classements et résultats sur volley34.fr ↗
+      </a>
+    </main>
   );
 }
