@@ -1,0 +1,78 @@
+import type { Metadata } from "next";
+import { ZelsyncFooter } from "@/components/ZelsyncFooter";
+import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
+import { createClient } from "@/lib/supabase/server";
+import { ProfileForm } from "./ProfileForm";
+import { VolunteerRequest } from "./VolunteerRequest";
+
+export const metadata: Metadata = { title: "Mon profil" };
+
+export default async function ProfilPage() {
+  const member = (await getCurrentMember())!;
+
+  const supabase = await createClient();
+  const { data: pendingRequest } = await supabase
+    .from("volunteer_requests")
+    .select("id")
+    .eq("member_id", member.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  const roles = member.roles.length
+    ? member.roles
+        .map((r) => (r.role === "captain" && r.team ? `Capitaine (${r.team.name})` : ROLE_LABELS[r.role]))
+        .join(", ")
+    : ROLE_LABELS.member;
+
+  return (
+    <main className="page stack">
+      <h1>
+        {member.first_name} {member.last_name}
+      </h1>
+
+      <section className="card">
+        <h2>Ma fiche</h2>
+        <p className="muted small">Pour corriger ces informations, contactez le Bureau.</p>
+        <dl className="facts">
+          <dt>Email</dt>
+          <dd>{member.email}</dd>
+          <dt>Sexe</dt>
+          <dd>{member.sex === "F" ? "Femme" : "Homme"}</dd>
+          <dt>Équipe</dt>
+          <dd>{member.team?.name ?? "Aucune"}</dd>
+          <dt>Rôles</dt>
+          <dd>{roles}</dd>
+          <dt>Licence FSGT</dt>
+          <dd>
+            {member.fsgt_license
+              ? `${member.fsgt_license}${member.license_season ? ` (${member.license_season.label})` : ""}`
+              : "Non renseignée"}
+          </dd>
+          <dt>Cotisation</dt>
+          <dd>{member.dues_paid ? "Réglée" : "Non réglée"}</dd>
+        </dl>
+      </section>
+
+      <ProfileForm member={member} />
+
+      {!hasRole(member, "volunteer") && (
+        <section className="card stack">
+          <h2>Bénévolat</h2>
+          {pendingRequest ? (
+            <p className="notice">Votre demande est en attente de validation par le Bureau.</p>
+          ) : (
+            <VolunteerRequest />
+          )}
+        </section>
+      )}
+
+      <form action="/auth/deconnexion" method="post">
+        <button type="submit" className="btn-secondary full">
+          Se déconnecter
+        </button>
+      </form>
+
+      <ZelsyncFooter />
+    </main>
+  );
+}

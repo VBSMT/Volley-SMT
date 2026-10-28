@@ -1,27 +1,28 @@
-import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getCurrentMember } from "@/lib/member";
+
+export const metadata: Metadata = { title: "Accueil" };
 
 export default async function AccueilPage() {
-  const supabase = await createClient();
-  // RLS : un adhérent ne lit que sa propre fiche.
-  const { data: member } = await supabase
-    .from("members")
-    .select("first_name")
-    .maybeSingle();
+  const member = (await getCurrentMember())!;
 
   return (
     <main className="page stack">
-      {member ? (
-        <h1>Bonjour {member.first_name}</h1>
-      ) : (
-        <p className="error" role="alert">
-          Votre compte n&apos;est rattaché à aucune fiche adhérent. Contactez le Bureau.
-        </p>
+      <h1>Bonjour {member.first_name}</h1>
+      <section className="card stack">
+        <h2>Prochain entraînement</h2>
+        <p className="muted">Le sondage de présence arrive bientôt.</p>
+      </section>
+      <section className="card stack">
+        <h2>Prochain événement</h2>
+        <p className="muted">Aucun événement prévu pour l&apos;instant.</p>
+      </section>
+      {!member.phone && (
+        <Link href="/profil" className="notice">
+          Complétez votre profil : téléphone, contact d&apos;urgence, postes.
+        </Link>
       )}
-      <form action="/auth/deconnexion" method="post">
-        <button type="submit" className="btn-secondary">
-          Se déconnecter
-        </button>
-      </form>
     </main>
   );
 }

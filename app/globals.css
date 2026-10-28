@@ -76,3 +76,74 @@ button:disabled { opacity: 0.6; cursor: wait; }
 
 .zelsync { margin-top: 2rem; text-align: center; font-size: 0.875rem; color: var(--texte-doux); }
 .zelsync a { color: var(--noir); }
+
+/* --- Structure de l'appli : en-tête, contenu, barre d'onglets --- */
+.app-header { position: sticky; top: 0; z-index: 10; }
+.header-profile {
+  margin-left: auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--jaune);
+  color: var(--noir);
+  font-weight: 700;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+.app-content { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+
+.tab-bar {
+  position: fixed;
+  inset: auto 0 0 0;
+  display: flex;
+  background: var(--noir);
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 10;
+}
+.tab {
+  flex: 1;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--gris);
+  text-decoration: none;
+  font-size: 0.75rem;
+}
+.tab.active { color: var(--jaune); font-weight: 600; }
+
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.25rem; }
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+}
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0.75rem 0 0; }
+.facts dt { color: var(--texte-doux); }
+.facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+fieldset { border: 0; padding: 0; margin: 0; }
+legend { font-weight: 600; padding: 0; margin-bottom: 0.25rem; }
+
+select {
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  border: 2px solid var(--gris);
+  border-radius: 8px;
+  background: #fff;
+}
+.checkbox { display: flex; gap: 0.75rem; align-items: center; font-weight: 400; min-height: 44px; }
+.checkbox input { width: 24px; height: 24px; min-height: 0; flex: none; }
+
+.success { color: #1b5e20; margin: 0; }
+.full { width: 100%; }
+a.notice { color: var(--noir); }

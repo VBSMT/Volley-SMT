@@ -1,0 +1,60 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { getCurrentMember, type Position } from "@/lib/member";
+import { createClient } from "@/lib/supabase/server";
+
+export type ProfileState = { status: "idle" | "saved" | "error"; message?: string };
+
+const POSITIONS: Position[] = ["setter", "front", "back"];
+
+function text(formData: FormData, key: string, max = 100) {
+  const value = String(formData.get(key) ?? "").trim().slice(0, max);
+  return value === "" ? null : value;
+}
+
+function position(formData: FormData, key: string) {
+  const value = String(formData.get(key) ?? "");
+  return POSITIONS.includes(value as Position) ? (value as Position) : null;
+}
+
+/** Seuls les champs modifiables par l'adhérent sont envoyés ; la base refuse les autres. */
+export async function updateProfile(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
+  const member = await getCurrentMember();
+  if (!member) return { status: "error", message: "Session expirée. Reconnectez-vous." };
+
+  const position_1 = position(formData, "position_1");
+  let position_2 = position(formData, "position_2");
+  if (position_2 === position_1) position_2 = null;
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("members")
+    .update({
+      phone: text(formData, "phone", 20),
+      emergency_contact_name: text(formData, "emergency_contact_name"),
+      emergency_contact_phone: text(formData, "emergency_contact_phone", 20),
+      image_consent: formData.get("image_consent") === "on",
+      position_1,
+      position_2,
+    })
+    .eq("id", member.id);
+
+  if (error) return { status: "error", message: "Enregistrement impossible. Réessayez." };
+  revalidatePath("/", "layout");
+  return { status: "saved" };
+}
+
+export async function requestVolunteer(): Promise<ProfileState> {
+  const member = await getCurrentMember();
+  if (!member) return { status: "error", message: "Session expirée. Reconnectez-vous." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("volunteer_requests").insert({ member_id: member.id });
+  // 23505 : une demande est déjà en attente.
+  if (error && error.code !== "23505") {
+    return { status: "error", message: "Envoi impossible. Réessayez." };
+  }
+  revalidatePath("/profil");
+  return { status: "saved" };
+}
