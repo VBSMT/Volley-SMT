@@ -95,11 +95,12 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - Un membre du Bureau peut **modifier** une validation/un refus tant que le report n'est pas `confirmed` ; le **capitaine est alors notifié**.
 
 ## Événements
-- Visibles par **tous les adhérents**. Créés par le Bureau : type (tournoi, événement de la ville, repas des adhérents, autre), titre, date, lieu, description.
+- Créés par le Bureau : type (tournoi, événement de la ville, repas des adhérents, autre), titre, date, lieu, description.
+- **Visibilité choisie à la création** : tous les adhérents (par défaut) ou seulement certains rôles (capitaine, bénévole, Bureau). Une personne voit l'événement si elle a **au moins un** des rôles choisis ; le Bureau voit toujours tout. Appliqué en base via RLS (événement, sondages et réponses).
 - Deux sondages optionnels par événement :
   - **Présence adhérents** (proposé à tous) : je viens / je ne viens pas. Le Bureau choisit s'il demande aussi : venue d'un·e conjoint·e (oui/non), nombre d'enfants, nombre d'autres invités. Le suivi affiche adhérents, conjoint·es, enfants et total de personnes.
   - **Participation bénévole** (proposé aux bénévoles et au Bureau) : besoins par poste (ex. buvette 4), chacun indique sa dispo et son poste.
-- L'événement le plus proche s'affiche sur l'accueil (tous rôles).
+- L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Onglet Bureau
 Historique des reports · Adhérents (import CSV, invitations, niveaux, rôles, équipes, demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
