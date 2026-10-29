@@ -71,11 +71,14 @@ export function splitLocation(location: string): { venue: string | null; city: s
   return { venue: m[1].replace(/\s+/g, " ").trim() || null, city: m[2].replace(/\s+/g, " ").trim() };
 }
 
-/** Matchs de l'équipe à partir de son flux (« X reçoit Y »). */
+/**
+ * Matchs de l'équipe à partir de son flux : « X reçoit Y », ou « X contre Y » (vu sur des matchs
+ * reportés), « X vs Y » ; la première équipe citée est l'équipe qui reçoit.
+ */
 export function teamMatches(events: IcsEvent[], teamFullName: string): Volley34Match[] {
   const norm = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
   return events.flatMap((e) => {
-    const [home, away] = e.summary.split(/\s+reçoit\s+/i);
+    const [home, away] = e.summary.split(/\s+(?:re[çc]oit|contre|vs\.?)\s+/i);
     if (!home || !away) return [];
     const isHome = norm(home) === norm(teamFullName);
     if (!isHome && norm(away) !== norm(teamFullName)) return [];
