@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { formatDay, formatMonth, formatTime } from "@/lib/format";
 import { captainTeamIds, getCurrentMember } from "@/lib/member";
+import { getDirections } from "@/lib/gyms";
 import { createClient } from "@/lib/supabase/server";
 import { Volley34EntryLink } from "@/components/Volley34EntryLink";
+import { DirectionsLink } from "@/components/DirectionsLink";
 import { TeamSelect } from "./TeamSelect";
 
 export const metadata: Metadata = { title: "Matchs" };
@@ -29,10 +31,11 @@ export default async function MatchsPage({
   const member = (await getCurrentMember())!;
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: lastSync }] = await Promise.all([
+  const [{ data: teams }, { data: lastSync }, directions] = await Promise.all([
     supabase.from("teams").select("id, name").order("name"),
     // Visible par tout adhérent : seulement la date de la dernière synchro réussie (vue dédiée).
     supabase.from("last_successful_sync").select("finished_at").maybeSingle(),
+    getDirections(supabase),
   ]);
   const staleSince =
     lastSync?.finished_at && Date.now() - Date.parse(lastSync.finished_at) > 36 * 3600_000
@@ -100,6 +103,7 @@ export default async function MatchsPage({
                     <Link href={`/matchs/${m.id}`} className="match-link">
                       {m.opponent}
                     </Link>
+                    {!m.is_home && !showPast && <DirectionsLink url={directions(m.venue, m.city)} />}
                   </p>
                   <p className="muted small">
                     {m.competition}

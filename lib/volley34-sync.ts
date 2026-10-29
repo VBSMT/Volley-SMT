@@ -1,6 +1,7 @@
 import "server-only";
 import { parisClock } from "@/lib/domain/notifications";
 import { parisDate } from "@/lib/domain/training";
+import { parseGyms } from "@/lib/domain/gyms";
 import { poolOf, parseStandings } from "@/lib/domain/standings";
 import { parseIcs, parseTeams, reconcile, teamMatches } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
@@ -11,6 +12,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 const TEAMS_URL = "https://api.volley34.fr/v1/equipes";
 const ICS_URL = (code: string) => `http://calendrier.volley34.fr/?equipe=${encodeURIComponent(code)}`;
 const STANDINGS_URL = (code: string) => `https://api.volley34.fr/v1/equipes/${encodeURIComponent(code)}/classements`;
+const GYMS_URL = "https://api.volley34.fr/v1/gymnases";
 const CLUB_CODE = "SMDT";
 const SYNC_HOUR = 6;
 
@@ -138,6 +140,30 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
     summary.updated += updates.length;
     summary.moved += updates.filter((u) => u.moved).length;
     summary.created += inserts.length;
+  }
+
+  // Gymnases (itinéraires) : facultatif, sans bloquer la synchro.
+  try {
+    const gyms = parseGyms(await fetchText(GYMS_URL, "application/json"));
+    if (gyms.length) {
+      const { error: e } = await admin.from("gyms").upsert(
+        gyms.map((g) => ({
+          code: g.code,
+          name: g.name,
+          full_name: g.fullName,
+          address: g.address,
+          postal_code: g.postalCode,
+          city: g.city,
+          lat: g.lat,
+          lon: g.lon,
+          updated_at: new Date().toISOString(),
+        })),
+        { onConflict: "code" },
+      );
+      if (e) throw new Error(e.message);
+    }
+  } catch (e) {
+    console.error("Gymnases non lus", (e as Error).message);
   }
   return summary;
 }

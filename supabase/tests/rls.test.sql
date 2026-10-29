@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(21);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -29,6 +29,7 @@ insert into auth.users (id, email) values
   ('10000000-0000-0000-0000-000000000002', 'cap@test.fr'),
   ('10000000-0000-0000-0000-000000000003', 'ben@test.fr'),
   ('10000000-0000-0000-0000-000000000004', 'bur@test.fr');
+insert into public.gyms (code, name, full_name, lat, lon) values ('G1', 'Gymnase', 'Gymnase (Ville)', 43.6, 3.9);
 insert into public.member_levels (member_id, level) values ('00000000-0000-0000-0000-000000000001', 3);
 insert into public.seasons (id, label, starts_on, ends_on) values
   ('00000000-0000-0000-0000-0000000000c1', 'test', current_date - 30, current_date + 300);
@@ -54,6 +55,7 @@ create function pg_temp.logout() returns void language sql as $$ select set_conf
 select pg_temp.login(1);
 select is((select count(*) from public.member_levels)::int, 0, 'adhérent : niveaux invisibles');
 select is((select count(*) from public.lineups)::int, 0, 'adhérent : compo invisible');
+select is((select count(*) from public.gyms)::int, 1, 'adhérent : lit les gymnases');
 select is((select count(*) from public.events)::int, 1, 'adhérent : seulement les événements pour tous');
 select lives_ok($$ insert into public.attendance (session_id, member_id, present)
   values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000001', true) $$, 'adhérent : répond pour lui');
