@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   announcementMessage,
   closureMessage,
+  eventMessage,
   isClosureDue,
   isMatchReminderDue,
   matchMessage,
@@ -191,5 +192,15 @@ describe("announcementMessage", () => {
     const msg = announcementMessage({ id: "a2", title: "T", body: "x ".repeat(400), author: null });
     expect(msg.body.length).toBeLessThanOrEqual(280);
     expect(msg.body.endsWith("…")).toBe(true);
+  });
+});
+
+describe("eventMessage", () => {
+  it("annonce l'événement avec date et lieu", () => {
+    expect(eventMessage({ id: "e1", title: "Repas de fin d'année", startsAt: "2026-12-12T18:30:00.000Z", location: "Salle des fêtes" })).toEqual({
+      title: "🎉 Repas de fin d'année",
+      body: "samedi 12 décembre à 19:30 · Salle des fêtes. Infos et réponse dans l'appli.",
+      url: "/evenements/e1",
+    });
   });
 });

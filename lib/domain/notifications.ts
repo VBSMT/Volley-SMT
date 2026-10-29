@@ -228,3 +228,14 @@ export function announcementMessage(a: { id: string; title: string; body: string
     url: `/annonces#${a.id}`,
   };
 }
+
+// --- Événements -------------------------------------------------------------------
+
+export function eventMessage(e: { id: string; title: string; startsAt: string; location: string | null }): Message {
+  const when = `${fmt(e.startsAt, { weekday: "long", day: "numeric", month: "long" })} à ${fmt(e.startsAt, { hour: "2-digit", minute: "2-digit" })}`;
+  return {
+    title: `🎉 ${e.title}`,
+    body: `${when}${e.location ? ` · ${e.location}` : ""}. Infos et réponse dans l'appli.`,
+    url: `/evenements/${e.id}`,
+  };
+}

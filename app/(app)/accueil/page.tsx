@@ -3,6 +3,8 @@ import Link from "next/link";
 import { MatchPoll } from "@/components/MatchPoll";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { AnnouncementList } from "@/components/AnnouncementList";
+import { EventCard } from "@/components/EventCard";
+import { getEvents } from "@/lib/events";
 import { ReinforcementCard } from "@/components/ReinforcementCard";
 import { getAnnouncements } from "@/lib/announcements";
 import { SessionCard } from "@/components/SessionCard";
@@ -56,6 +58,9 @@ export default async function AccueilPage() {
         supabase.from("reschedule_requests").select("id", { count: "exact", head: true }).eq("status", "requested"),
       ])
     : [{ count: 0 }, { count: 0 }];
+
+  // Prochain événement visible par l'adhérent.
+  const [nextEvent] = await getEvents(supabase, { limit: 1 });
 
   // Annonces des 14 derniers jours (les 3 plus récentes).
   const announcements = await getAnnouncements(supabase, { limit: 3, since: new Date(Date.now() - 14 * 86_400_000) });
@@ -136,9 +141,15 @@ export default async function AccueilPage() {
           Toutes les séances →
         </Link>
       </section>
-      <section className="card stack">
+      <section className="stack">
         <h2>Prochain événement</h2>
-        <p className="muted">Aucun événement prévu pour l&apos;instant.</p>
+        {nextEvent ? (
+          <ul className="list">
+            <EventCard event={nextEvent} />
+          </ul>
+        ) : (
+          <p className="muted">Aucun événement prévu pour l&apos;instant.</p>
+        )}
       </section>
       {!member.phone && (
         <Link href="/profil" className="notice">
