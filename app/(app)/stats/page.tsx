@@ -1,0 +1,115 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { RankChart } from "@/components/stats/RankChart";
+import { HeroStats, SeasonCard, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
+import { StatsTeamSelect } from "@/components/stats/StatsTeamSelect";
+import { poolTitle } from "@/lib/domain/standings";
+import { getCurrentMember } from "@/lib/member";
+import { getLatestSnapshots, getSeasonProgress, getTeamSnapshots } from "@/lib/stats";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Stats" };
+
+export default async function StatsPage({ searchParams }: { searchParams: Promise<{ equipe?: string }> }) {
+  const member = (await getCurrentMember())!;
+  const supabase = await createClient();
+  const { data: teamRows } = await supabase.from("teams").select("id, name, volley34_ref").order("name");
+  const teams = teamRows ?? [];
+  // Par défaut : la première équipe de l'adhérent ; sans équipe, tout le club.
+  const requested = (await searchParams).equipe;
+  const selected = requested && (requested === "club" || teams.some((t) => t.id === requested)) ? requested : (member.teams[0]?.id ?? "club");
+  const progress = await getSeasonProgress(supabase, teams.map((t) => t.id));
+
+  if (selected === "club") {
+    const latest = await getLatestSnapshots(supabase);
+    const ranked = [...teams].sort((a, b) => {
+      const sa = latest.get(a.id);
+      const sb = latest.get(b.id);
+      return (sb ? sb.won / Math.max(1, sb.played) : -1) - (sa ? sa.won / Math.max(1, sa.played) : -1) || a.name.localeCompare(b.name, "fr");
+    });
+    const totals = [...latest.values()].reduce((acc, s) => ({ won: acc.won + s.won, lost: acc.lost + s.lost }), { won: 0, lost: 0 });
+    return (
+      <main className="page stack">
+        <div className="stats-head">
+          <h1>Stats</h1>
+          <StatsTeamSelect teams={teams} value="club" />
+        </div>
+        <section className="card stack">
+          <h2>Bilan du club</h2>
+          {totals.won + totals.lost > 0 ? <WinLoss won={totals.won} lost={totals.lost} /> : <p className="muted small">Les résultats arrivent après les premiers matchs.</p>}
+        </section>
+        <ul className="team-grid">
+          {ranked.map((t) => {
+            const s = latest.get(t.id);
+            const p = progress.get(t.id)!;
+            return (
+              <li key={t.id}>
+                <Link href={`/stats?equipe=${t.id}`} className="card card-link team-tile">
+                  <span className="team-tile-name">{t.name}</span>
+                  {s ? (
+                    <>
+                      <span className="team-tile-rank">{s.rank === 1 ? "1er" : `${s.rank}e`}<small>/{s.poolSize}</small></span>
+                      <span className="muted small">{poolTitle(s.rows[0]?.division ?? null, s.rows[0]?.pool ?? null)} · {s.points} pts</span>
+                      <WinLoss won={s.won} lost={s.lost} />
+                    </>
+                  ) : (
+                    <span className="muted small">{p.total} matchs au calendrier · classement à venir</span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="muted small">Source : volley34.fr, mis à jour chaque matin.</p>
+      </main>
+    );
+  }
+
+  const team = teams.find((t) => t.id === selected)!;
+  const snapshots = await getTeamSnapshots(supabase, team.id);
+  const latest = snapshots.at(-1) ?? null;
+  const previous = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
+  const fullName = `SMDT/${team.name}`;
+
+  return (
+    <main className="page stack">
+      <div className="stats-head">
+        <h1>Stats</h1>
+        <StatsTeamSelect teams={teams} value={team.id} />
+      </div>
+
+      {latest ? (
+        <>
+          <HeroStats s={latest} previous={previous} />
+          <section className="card stack">
+            <h2>Victoires et défaites</h2>
+            <WinLoss won={latest.won} lost={latest.lost} />
+          </section>
+          {snapshots.length > 1 && (
+            <section className="card stack">
+              <h2>Évolution du classement</h2>
+              <RankChart points={snapshots.map((s) => ({ date: s.takenOn, rank: s.rank }))} poolSize={latest.poolSize} />
+            </section>
+          )}
+          <section className="card stack">
+            <h2>Classement · {poolTitle(latest.rows[0]?.division ?? null, latest.rows[0]?.pool ?? null)}</h2>
+            <StandingsTable rows={latest.rows} highlight={(r) => r.code === team.volley34_ref || r.name === fullName} />
+          </section>
+        </>
+      ) : (
+        <section className="card stack empty-stats">
+          <p className="hero-number" aria-hidden="true">–</p>
+          <p>
+            Le classement de <strong>{team.name}</strong> s&apos;affichera ici après les premiers matchs : il est
+            mis à jour chaque matin depuis volley34.fr.
+          </p>
+        </section>
+      )}
+
+      <SeasonCard p={progress.get(team.id)!} />
+      <a href="https://www.volley34.fr/Pages/Classements.aspx?C=CH" target="_blank" rel="noopener noreferrer" className="small">
+        Classements complets sur volley34.fr ↗
+      </a>
+    </main>
+  );
+}

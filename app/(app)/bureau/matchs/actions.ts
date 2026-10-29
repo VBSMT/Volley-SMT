@@ -118,6 +118,6 @@ export async function syncNow(): Promise<{ ok: boolean; text: string }> {
   const s = result.summary;
   return {
     ok: true,
-    text: `${s.teams} équipes synchronisées · ${s.updated} matchs à jour (dont ${s.moved} déplacés) · ${s.created} ajoutés.`,
+    text: `${s.teams} équipes synchronisées · ${s.updated} matchs à jour (dont ${s.moved} déplacés) · ${s.created} ajoutés · ${s.standings} classements.`,
   };
 }

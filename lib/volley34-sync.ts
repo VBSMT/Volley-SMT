@@ -1,6 +1,7 @@
 import "server-only";
 import { parisClock } from "@/lib/domain/notifications";
 import { parisDate } from "@/lib/domain/training";
+import { poolOf, parseStandings } from "@/lib/domain/standings";
 import { parseIcs, parseTeams, reconcile, teamMatches } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -9,6 +10,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 const TEAMS_URL = "https://api.volley34.fr/v1/equipes";
 const ICS_URL = (code: string) => `http://calendrier.volley34.fr/?equipe=${encodeURIComponent(code)}`;
+const STANDINGS_URL = (code: string) => `https://api.volley34.fr/v1/equipes/${encodeURIComponent(code)}/classements`;
 const CLUB_CODE = "SMDT";
 const SYNC_HOUR = 6;
 
@@ -22,7 +24,7 @@ async function fetchText(url: string, accept = "*/*") {
   return res.text();
 }
 
-export type SyncSummary = { teams: number; updated: number; moved: number; created: number };
+export type SyncSummary = { teams: number; updated: number; moved: number; created: number; standings: number };
 
 /**
  * Synchronise le calendrier des équipes SMDT depuis volley34 (flux ICS par équipe).
@@ -39,7 +41,7 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
 
   const { data: teams, error } = await admin.from("teams").select("id, name, volley34_ref");
   if (error) throw new Error(error.message);
-  const summary: SyncSummary = { teams: 0, updated: 0, moved: 0, created: 0 };
+  const summary: SyncSummary = { teams: 0, updated: 0, moved: 0, created: 0, standings: 0 };
 
   for (const remoteTeam of remoteTeams) {
     const shortName = remoteTeam.name.replace(/^SMDT\s*\/\s*/i, "").trim();
@@ -101,6 +103,37 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
       if (e4) throw new Error(e4.message);
     }
 
+    // Classement de la poule : facultatif (vide en début de saison), sans bloquer le calendrier.
+    try {
+      const pool = poolOf(parseStandings(await fetchText(STANDINGS_URL(remoteTeam.code), "application/xml, application/json;q=0.9")), {
+        code: remoteTeam.code,
+        fullName: remoteTeam.name,
+      });
+      const mine = pool.find((r) => r.code === remoteTeam.code) ?? pool.find((r) => r.name === remoteTeam.name);
+      if (mine) {
+        await admin.from("standings_snapshots").upsert(
+          {
+            team_id: team.id,
+            taken_on: parisDate(new Date().toISOString()),
+            rows: pool,
+            rank: mine.rank,
+            pool_size: pool.length,
+            played: mine.played,
+            won: mine.won,
+            lost: mine.lost,
+            points: mine.points,
+            set_diff: mine.setDiff,
+            point_diff: mine.pointDiff,
+            updated_at: now,
+          },
+          { onConflict: "team_id,taken_on" },
+        );
+        summary.standings++;
+      }
+    } catch (e) {
+      console.error("Classement non lu", remoteTeam.code, (e as Error).message);
+    }
+
     summary.teams++;
     summary.updated += updates.length;
     summary.moved += updates.filter((u) => u.moved).length;
@@ -127,7 +160,7 @@ export async function runVolley34Sync(admin: Admin, board: Recipient[]) {
       started_at: startedAt,
       finished_at: new Date().toISOString(),
       success: true,
-      message: `${summary.teams} équipes · ${summary.updated} matchs à jour (${summary.moved} déplacés) · ${summary.created} ajoutés`,
+      message: `${summary.teams} équipes · ${summary.updated} matchs à jour (${summary.moved} déplacés) · ${summary.created} ajoutés · ${summary.standings} classements`,
     });
     return { ok: true as const, summary };
   } catch (e) {
