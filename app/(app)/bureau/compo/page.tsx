@@ -6,6 +6,7 @@ import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 import { LineupBoard } from "./LineupBoard";
+import { TeamCountControls } from "./TeamCountControls";
 import { AttendanceEditor } from "./AttendanceEditor";
 import { RegenerateButton } from "./RegenerateButton";
 
@@ -24,7 +25,7 @@ export default async function CompoPage() {
   const supabase = await createClient();
   const ids = sessions.map((s) => s.id);
   const [{ data: lineups }, { data: members }, { data: levels }, { data: answers }] = await Promise.all([
-    supabase.from("lineups").select("session_id, generated_at, free_courts, teams, warnings").in("session_id", ids),
+    supabase.from("lineups").select("session_id, generated_at, free_courts, forced_teams, teams, warnings").in("session_id", ids),
     supabase.from("members").select("id, first_name, last_name, sex, position_1, position_2"),
     supabase.from("member_levels").select("member_id, level"),
     supabase.from("attendance").select("session_id, member_id, present").in("session_id", ids),
@@ -67,6 +68,12 @@ export default async function CompoPage() {
                     ))}
                   </ul>
                 )}
+                <TeamCountControls
+                  sessionId={s.id}
+                  count={teams.length}
+                  forced={(lineup.forced_teams as number | null) ?? null}
+                  present={teams.reduce((n, t) => n + t.players.length, 0)}
+                />
                 <LineupBoard
                   key={lineup.generated_at}
                   sessionId={s.id}

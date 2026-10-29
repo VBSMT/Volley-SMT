@@ -9,7 +9,13 @@ import { buildLineup, manualLineup, type Lineup, type LineupPlayer } from "@/lib
 export async function generateLineup(
   client: SupabaseClient,
   session: { id: string; freeCourts: number },
+  /** Nombre d'équipes fixé par le Bureau ; non précisé = on garde celui déjà fixé (ou automatique). */
+  forcedTeams?: number | null,
 ): Promise<Lineup & { presentCount: number }> {
+  if (forcedTeams === undefined) {
+    const { data } = await client.from("lineups").select("forced_teams").eq("session_id", session.id).maybeSingle();
+    forcedTeams = (data?.forced_teams as number | null) ?? null;
+  }
   const { data: present, error } = await client
     .from("attendance")
     .select("member_id")
@@ -31,12 +37,13 @@ export async function generateLineup(
     position2: m.position_2,
   }));
 
-  const lineup = buildLineup(players, session.freeCourts);
+  const lineup = buildLineup(players, session.freeCourts, forcedTeams);
   const { error: saveError } = await client.from("lineups").upsert(
     {
       session_id: session.id,
       generated_at: new Date().toISOString(),
       free_courts: session.freeCourts,
+      forced_teams: forcedTeams,
       teams: lineup.teams,
       warnings: lineup.warnings,
     },

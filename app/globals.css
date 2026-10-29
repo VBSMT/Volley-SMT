@@ -620,3 +620,9 @@ a.btn-primary { color: var(--noir); }
   box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
   white-space: nowrap;
 }
+
+.calendar-subscribe summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-weight: 600; }
+.calendar-subscribe .stack { margin-top: 0.5rem; }
+
+.team-count .action-row .btn-secondary { flex: 1 1 10rem; }
+.team-count p { margin: 0; }

@@ -5,6 +5,7 @@ import { captainTeamIds, getCurrentMember } from "@/lib/member";
 import { getDirections } from "@/lib/gyms";
 import { createClient } from "@/lib/supabase/server";
 import { Volley34EntryLink } from "@/components/Volley34EntryLink";
+import { CalendarSubscribe } from "@/components/CalendarSubscribe";
 import { DirectionsLink } from "@/components/DirectionsLink";
 import { TeamSelect } from "./TeamSelect";
 
@@ -32,7 +33,7 @@ export default async function MatchsPage({
   const supabase = await createClient();
 
   const [{ data: teams }, { data: lastSync }, directions] = await Promise.all([
-    supabase.from("teams").select("id, name").order("name"),
+    supabase.from("teams").select("id, name, volley34_ref").order("name"),
     // Visible par tout adhérent : seulement la date de la dernière synchro réussie (vue dédiée).
     supabase.from("last_successful_sync").select("finished_at").maybeSingle(),
     getDirections(supabase),
@@ -76,6 +77,10 @@ export default async function MatchsPage({
         </p>
       )}
       <TeamSelect teams={teams ?? []} value={selected} />
+      {(() => {
+        const team = teams?.find((t) => t.id === selected);
+        return team?.volley34_ref ? <CalendarSubscribe code={team.volley34_ref} teamName={team.name} /> : null;
+      })()}
       <Link href={toggleHref} className="small">
         {showPast ? "← Matchs à venir" : "Voir les matchs passés"}
       </Link>

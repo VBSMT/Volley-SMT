@@ -135,3 +135,25 @@ describe("compo modifiée à la main", () => {
     expect(manualLineup([[p("a", "F", 3, "setter")], []]).warnings).toContain("Équipe 2 vide.");
   });
 });
+
+describe("nombre d'équipes fixé par le Bureau", () => {
+  const players: LineupPlayer[] = Array.from({ length: 16 }, (_, i) => ({
+    id: `p${i}`,
+    sex: i % 3 === 0 ? "F" : "M",
+    level: (i % 5) + 1,
+    position1: (["setter", "front", "back"] as const)[i % 3],
+    position2: null,
+  }));
+  it("ajout d'une équipe : 16 joueurs en 5 équipes (4,3,3,3,3)", () => {
+    const l = buildLineup(players, 3, 5);
+    expect(l.teams).toHaveLength(5);
+    expect(l.teams.map((t) => t.players.length)).toEqual([4, 3, 3, 3, 3]);
+    expect(l.teams.flatMap((t) => t.players).sort()).toEqual(players.map((p) => p.id).sort());
+  });
+  it("suppression d'une équipe : 3 équipes", () => {
+    expect(buildLineup(players, 3, 3).teams).toHaveLength(3);
+  });
+  it("jamais plus d'équipes que de joueurs", () => {
+    expect(buildLineup(players.slice(0, 3), 3, 6).teams).toHaveLength(3);
+  });
+});

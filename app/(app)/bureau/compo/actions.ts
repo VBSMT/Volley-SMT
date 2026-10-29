@@ -58,3 +58,24 @@ export async function moveLineupPlayers(sessionId: string, teams: string[][]): P
   revalidatePath("/bureau/compo");
   return {};
 }
+
+/**
+ * Bureau : ajoute ou supprime une équipe (nombre fixé à la main), ou revient au nombre
+ * automatique (null). La compo est recalculée avec ce nombre d'équipes.
+ */
+export async function setTeamCount(sessionId: string, teams: number | null): Promise<{ error?: string }> {
+  if (!hasRole(await getCurrentMember(), "board")) return { error: "Réservé au Bureau." };
+  if (teams !== null && (!Number.isInteger(teams) || teams < 2 || teams > 20)) return { error: "Entre 2 et 20 équipes." };
+  const supabase = await createClient();
+  const { data: s } = await supabase.from("training_sessions").select("starts_at").eq("id", sessionId).maybeSingle();
+  if (!s) return { error: "Séance introuvable." };
+  const [session] = await getSessions({ from: new Date(new Date(s.starts_at).getTime() - 1000), limit: 1 });
+  if (!session || session.id !== sessionId) return { error: "Séance introuvable." };
+  try {
+    await generateLineup(supabase, session, teams);
+  } catch (e) {
+    return { error: `Recalcul impossible : ${(e as Error).message}` };
+  }
+  revalidatePath("/bureau/compo");
+  return {};
+}
