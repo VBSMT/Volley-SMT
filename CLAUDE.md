@@ -85,7 +85,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
   - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC) — l'API `…/matchs` renvoyait une erreur 500 à l'essai ;
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
   - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;
-  - résultats match par match : `…/resultats` renvoyait une erreur 500 (novembre 2026) → forme récente déduite des photos quotidiennes du classement.
+  - résultats match par match : `https://api.volley34.fr/v1/equipes/{code}/resultats` répond (liste vide en début de saison) pour SMDT1, SMDT6, SMDTX2, SMDTF1 mais renvoie une **erreur 500 pour SMDTX1** ; `…/matchs` renvoie une erreur 500 pour toutes les équipes (signalé à la commission). Format des résultats à observer dès les premiers scores ; en attendant, forme récente déduite des photos quotidiennes du classement.
   - La saisie des scores depuis l'appli n'a pas reçu de réponse : lien vers volley34 uniquement.
 - **Import du fichier Excel** du club : import initial (championnat, poule, phase, journée) et import de secours. La synchro rattache les matchs volley34 aux matchs Excel (adversaire + domicile/extérieur) puis par UID.
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
@@ -165,4 +165,4 @@ Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas 
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
 - Ne jamais exposer `member_levels` ni la compo à un non-Bureau, même via une vue ou une fonction RPC.
 - Demander avant toute décision qui contredit ce fichier ; mettre ce fichier à jour quand une règle métier change.
-- Points ouverts : échelle de niveau (1–5 proposée), API résultats volley34 en erreur 500, saisie des scores (pas de réponse).
+- Points ouverts : échelle de niveau (1–5 proposée), API volley34 `matchs` (500 pour tous) et `resultats` (500 pour SMDTX1), format des résultats à observer, saisie des scores (pas de réponse).
