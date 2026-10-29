@@ -3,12 +3,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteMemberButton } from "./DeleteMemberButton";
 import { MemberForm } from "./MemberForm";
 
 export const metadata: Metadata = { title: "Fiche adhérent" };
 
 export default async function MemberPage({ params }: { params: Promise<{ id: string }> }) {
-  if (!hasRole(await getCurrentMember(), "board")) notFound();
+  const me = await getCurrentMember();
+  if (!hasRole(me, "board")) notFound();
   const { id } = await params;
 
   const supabase = await createClient();
@@ -71,6 +73,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           level: level?.level ?? null,
         }}
       />
+      {me?.id !== m.id && <DeleteMemberButton id={m.id} name={`${m.first_name} ${m.last_name}`} />}
     </main>
   );
 }

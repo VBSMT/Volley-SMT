@@ -1,3 +1,4 @@
+import { ServiceWorker } from "@/components/ServiceWorker";
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import { cookies } from "next/headers";
@@ -28,7 +29,10 @@ export const viewport: Viewport = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr" data-theme={themeAttribute((await cookies()).get(THEME_COOKIE)?.value)}>
-      <body className={`${barlow.variable} ${barlowCondensed.variable}`}>{children}</body>
+      <body className={`${barlow.variable} ${barlowCondensed.variable}`}>
+        <ServiceWorker />
+        {children}
+      </body>
     </html>
   );
 }

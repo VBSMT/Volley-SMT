@@ -136,7 +136,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Onglet Bureau
-Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
+Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles ; suppression définitive d'une fiche avec confirmation) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
 
 ## Tâches planifiées (pg_cron / Edge Functions)
 | Tâche | Quand |
@@ -148,6 +148,8 @@ Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifi
 | Synchro volley34 | quotidien 6h |
 | Purge RGPD (niveaux des adhésions terminées, fiches + comptes 2 ans après) | quotidien 3h (idempotent) |
 | Ping anti-mise en pause | couvert par le tick horaire (requêtes Supabase chaque heure) |
+
+Hors ligne : le service worker garde la dernière version des pages adhérent consultées (jamais `/bureau`), vidée à la déconnexion. Aide publique : `/aide`.
 
 Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), chiffré GPG (`BACKUP_PASSPHRASE`), artefact conservé 30 jours (l'offre gratuite n'a pas de restauration à un instant donné).
 

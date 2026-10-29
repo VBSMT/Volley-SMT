@@ -30,15 +30,18 @@ export async function runPurge(admin: Admin, now: Date) {
     .lt("last_membership_ends_on", memberPurgeCutoff(today));
   const errors: string[] = [];
   for (const m of old ?? []) {
-    if (m.user_id) {
-      const { error } = await admin.auth.admin.deleteUser(m.user_id as string);
-      if (error) {
-        errors.push(error.message);
-        continue;
-      }
-    }
-    const { error } = await admin.from("members").delete().eq("id", m.id);
-    if (error) errors.push(error.message);
+    const error = await deleteMemberAndAccount(admin, m.id as string, m.user_id as string | null);
+    if (error) errors.push(error);
   }
   return { levels, members: (old ?? []).length - errors.length, errors };
+}
+
+/** Supprime une fiche (et tout ce qui en dépend) puis son compte de connexion. Renvoie l'erreur éventuelle. */
+export async function deleteMemberAndAccount(admin: Admin, memberId: string, userId: string | null): Promise<string | null> {
+  if (userId) {
+    const { error } = await admin.auth.admin.deleteUser(userId);
+    if (error && error.status !== 404) return error.message;
+  }
+  const { error } = await admin.from("members").delete().eq("id", memberId);
+  return error?.message ?? null;
 }

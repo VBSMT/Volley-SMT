@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { duesFields, getCurrentSeason } from "@/lib/season";
+import { deleteMemberAndAccount } from "@/lib/purge-server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type EditState = { status: "idle" | "saved" | "error"; message?: string };
@@ -82,4 +84,19 @@ export async function updateMember(memberId: string, _prev: EditState, fd: FormD
   revalidatePath("/bureau/adherents");
   revalidatePath(`/bureau/adherents/${memberId}`);
   return { status: "saved" };
+}
+
+/** Le Bureau supprime définitivement une fiche, ses réponses et son compte de connexion. */
+export async function deleteMember(memberId: string): Promise<{ error?: string }> {
+  const me = await getCurrentMember();
+  if (!hasRole(me, "board")) return { error: "Réservé au Bureau." };
+  if (me!.id === memberId) return { error: "Vous ne pouvez pas supprimer votre propre fiche." };
+
+  const admin = createAdminClient();
+  const { data: m } = await admin.from("members").select("id, user_id").eq("id", memberId).maybeSingle();
+  if (!m) return { error: "Adhérent introuvable." };
+  const error = await deleteMemberAndAccount(admin, m.id, m.user_id);
+  if (error) return { error: `Suppression impossible : ${error}` };
+  revalidatePath("/", "layout");
+  return {};
 }

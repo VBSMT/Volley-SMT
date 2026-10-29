@@ -101,6 +101,7 @@ export default async function ProfilPage() {
         </button>
       </form>
 
+      <Link href="/aide" className="small">Aide : installation, notifications, utilisation →</Link>
       <ZelsyncFooter />
     </main>
   );
