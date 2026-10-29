@@ -22,7 +22,7 @@ export const maxDuration = 60;
 
 type Admin = ReturnType<typeof createAdminClient>;
 type Member = Recipient & {
-  team_id: string | null;
+  team_ids: string[];
   notify_training: boolean;
   notify_match: boolean;
   roles: { role: string }[];
@@ -104,7 +104,7 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
       venue: m.venue,
       city: m.city,
     });
-    const players = members.filter((p) => p.team_id === m.team_id && p.notify_match);
+    const players = members.filter((p) => p.team_ids.includes(m.team_id) && p.notify_match);
     report.push({
       match: m.starts_at,
       team: team?.name,
@@ -133,9 +133,12 @@ export async function POST(request: NextRequest) {
 
   const { data: memberRows } = await admin
     .from("members")
-    .select("id, email, first_name, team_id, notify_training, notify_match, roles:member_roles(role)")
+    .select("id, email, first_name, notify_training, notify_match, roles:member_roles(role), member_teams(team_id)")
     .not("user_id", "is", null);
-  const members = (memberRows ?? []) as Member[];
+  const members: Member[] = (memberRows ?? []).map(({ member_teams, ...m }) => ({
+    ...(m as Omit<Member, "team_ids">),
+    team_ids: (member_teams as { team_id: string }[]).map((t) => t.team_id),
+  }));
   const board = members.filter((m) => m.roles.some((r) => r.role === "board"));
 
   // Séances d'aujourd'hui et de demain.

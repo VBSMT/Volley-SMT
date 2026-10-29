@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { MatchPoll } from "@/components/MatchPoll";
 import { formatDay, formatTime } from "@/lib/format";
 import { getMatchPoll } from "@/lib/match-polls";
-import { captainTeamIds, getCurrentMember, hasRole } from "@/lib/member";
+import { captainTeamIds, getCurrentMember, hasRole, memberTeamIds } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Match" };
@@ -21,7 +21,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
   if (!m) notFound();
 
   const canManage = captainTeamIds(member).includes(m.team_id) || hasRole(member, "board");
-  const inTeam = member.team_id === m.team_id;
+  const inTeam = memberTeamIds(member).includes(m.team_id);
   const past = Date.parse(m.starts_at) <= Date.now();
   const poll = inTeam || canManage ? await getMatchPoll({ id: m.id, teamId: m.team_id }, { memberId: member.id, canManage }) : null;
   const teamName = (m.team as unknown as { name: string } | null)?.name ?? "";

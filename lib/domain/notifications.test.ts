@@ -109,14 +109,15 @@ describe("matchMessage", () => {
 
 describe("reinforcementAudience", () => {
   const members = [
-    { id: "cap", sex: "M" as const, team_id: "t1", notify_reinforcement: true },
-    { id: "coequipiere", sex: "F" as const, team_id: "t1", notify_reinforcement: true },
-    { id: "f-autre", sex: "F" as const, team_id: "t2", notify_reinforcement: true },
-    { id: "f-sans-equipe", sex: "F" as const, team_id: null, notify_reinforcement: true },
-    { id: "f-desactive", sex: "F" as const, team_id: null, notify_reinforcement: false },
-    { id: "m-autre", sex: "M" as const, team_id: "t2", notify_reinforcement: true },
+    { id: "cap", sex: "M" as const, team_ids: ["t1"], notify_reinforcement: true },
+    { id: "coequipiere", sex: "F" as const, team_ids: ["t1"], notify_reinforcement: true },
+    { id: "double-equipe", sex: "F" as const, team_ids: ["t2", "t1"], notify_reinforcement: true },
+    { id: "f-autre", sex: "F" as const, team_ids: ["t2"], notify_reinforcement: true },
+    { id: "f-sans-equipe", sex: "F" as const, team_ids: [], notify_reinforcement: true },
+    { id: "f-desactive", sex: "F" as const, team_ids: [], notify_reinforcement: false },
+    { id: "m-autre", sex: "M" as const, team_ids: ["t2"], notify_reinforcement: true },
   ];
-  it("vise les adhérents hors équipe, du sexe demandé, ayant activé les renforts", () => {
+  it("vise les adhérents hors équipe (même en double équipe), du sexe demandé, ayant activé les renforts", () => {
     const ids = reinforcementAudience(members, { teamId: "t1", sex: "F", captainId: "cap" }).map((m) => m.id);
     expect(ids).toEqual(["f-autre", "f-sans-equipe"]);
   });

@@ -244,3 +244,14 @@ textarea {
 .lineup-players { list-style: none; margin: 0; padding: 0; }
 .lineup-players li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid #eee; }
 .lineup-players li:last-child { border-bottom: 0; }
+
+/* --- Gestion des adhérents --- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem;
+  border: 2px solid var(--noir); border-radius: 999px; color: var(--noir); text-decoration: none; font-size: 0.9rem;
+}
+.chip.active { background: var(--noir); color: var(--jaune); }
+.team-picker { list-style: none; margin: 0; padding: 0; }
+.team-picker li { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; border-bottom: 1px solid #eee; }
+.checkbox.disabled { opacity: 0.4; }

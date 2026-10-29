@@ -30,11 +30,13 @@ export async function launchMatchPoll(matchId: string): Promise<{ error?: string
     const admin = createAdminClient();
     const { data: players } = await admin
       .from("members")
-      .select("id, email, first_name, notify_match")
-      .eq("team_id", match.team_id)
+      .select("id, email, first_name, notify_match, member_teams!inner(team_id)")
+      .eq("member_teams.team_id", match.team_id)
       .not("user_id", "is", null)
       .neq("id", member.id);
-    const recipients = (players ?? []).filter((p) => p.notify_match);
+    const recipients = (players ?? [])
+      .filter((p) => p.notify_match)
+      .map(({ id, email, first_name }) => ({ id, email, first_name }));
     const message = matchPollMessage({
       id: match.id,
       startsAt: match.starts_at,

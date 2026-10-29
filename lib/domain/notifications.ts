@@ -117,12 +117,12 @@ const POSITIONS: Record<Position, string> = { setter: "passeur·se", front: "ava
 
 /** Destinataires d'une demande de renfort : hors équipe, sexe demandé, préférence activée. */
 export function reinforcementAudience<
-  M extends { id: string; sex: Sex; team_id: string | null; notify_reinforcement: boolean },
+  M extends { id: string; sex: Sex; team_ids: string[]; notify_reinforcement: boolean },
 >(members: M[], request: { teamId: string; sex: Sex | null; captainId: string | null }): M[] {
   return members.filter(
     (m) =>
       m.notify_reinforcement &&
-      m.team_id !== request.teamId &&
+      !m.team_ids.includes(request.teamId) &&
       m.id !== request.captainId &&
       (request.sex === null || m.sex === request.sex),
   );

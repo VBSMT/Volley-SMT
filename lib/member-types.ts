@@ -30,8 +30,8 @@ export type CurrentMember = {
   position_2: Position | null;
   fsgt_license: string | null;
   dues_paid: boolean;
-  team_id: string | null;
-  team: { name: string } | null;
+  /** Équipes de l'adhérent (0, 1 ou plusieurs). */
+  teams: { id: string; name: string }[];
   license_season: { label: string } | null;
   roles: { role: Role; team_id: string | null; team: { name: string } | null }[];
   // Préférences de notification (absentes tant que la migration n'est pas appliquée).

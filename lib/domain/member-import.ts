@@ -11,8 +11,8 @@ export type ImportedMember = {
   lastName: string;
   firstName: string;
   sex: "F" | "M";
-  team: string | null;
-  captain: boolean;
+  teams: string[]; // une ou plusieurs équipes
+  captainOf: string[]; // équipes dont l'adhérent est capitaine
   roles: ImportRole[];
   phone: string | null;
   license: string | null;
@@ -43,6 +43,12 @@ export const normalize = (value: unknown) =>
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
+
+const splitList = (value: unknown) =>
+  String(value ?? "")
+    .split(/[,;\n]/)
+    .map((s) => s.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
 
 const text = (value: unknown) => {
   const s = String(value ?? "").replace(/\s+/g, " ").trim();
@@ -161,13 +167,30 @@ export function parseMemberSheet(
     if (!firstName) problems.push("prénom manquant");
     if (!sex) problems.push("sexe invalide (F ou M)");
 
-    const teamText = text(cell("team"));
-    const team = teamText ? (teamByKey.get(normalize(teamText).replace(/^smdt ?\/ ?/, "")) ?? null) : null;
-    if (teamText && !team) problems.push(`équipe inconnue « ${teamText} »`);
+    // Plusieurs équipes séparées par « , » ou « ; » (le « / » sert au préfixe « SMDT/ »).
+    const findTeam = (name: string) => teamByKey.get(normalize(name).replace(/^(smdt|vbsmt) ?\/ ?/, "")) ?? null;
+    const teamNames = splitList(cell("team"));
+    const teams: string[] = [];
+    for (const name of teamNames) {
+      const team = findTeam(name);
+      if (!team) problems.push(`équipe inconnue « ${name} »`);
+      else if (!teams.includes(team)) teams.push(team);
+    }
 
-    const captain = yesNo(cell("captain"));
-    if (captain === "invalid") problems.push("capitaine : oui ou non");
-    if (captain === true && !teamText) problems.push("capitaine sans équipe");
+    // Capitaine : « oui » = de toutes ses équipes ; sinon le nom des équipes concernées.
+    const captainText = cell("captain");
+    const captain = yesNo(captainText);
+    let captainOf: string[] = [];
+    if (captain === true) {
+      captainOf = teams;
+      if (!teamNames.length) problems.push("capitaine sans équipe");
+    } else if (captain === "invalid") {
+      for (const name of splitList(captainText)) {
+        const team = findTeam(name);
+        if (!team) problems.push(`capitaine : équipe inconnue « ${name} »`);
+        else if (!captainOf.includes(team)) captainOf.push(team);
+      }
+    }
 
     const roles = parseRoles(cell("roles"));
     if (roles === "invalid") problems.push("rôles : bureau et/ou benevole");
@@ -193,8 +216,8 @@ export function parseMemberSheet(
       lastName: lastName!,
       firstName: firstName!,
       sex: sex!,
-      team,
-      captain: captain === true,
+      teams,
+      captainOf,
       roles: roles as ImportRole[],
       phone: text(cell("phone")),
       license: text(cell("license")),

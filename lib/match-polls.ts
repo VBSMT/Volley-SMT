@@ -22,11 +22,11 @@ export async function getMatchPoll(
   const [{ data: poll, error }, { data: answers }, { data: team }] = await Promise.all([
     supabase.from("match_polls").select("match_id").eq("match_id", match.id).maybeSingle(),
     supabase.from("match_availability").select("member_id, available, answered_at").eq("match_id", match.id).order("answered_at"),
-    supabase.from("member_directory").select("id, first_name, last_name").eq("team_id", match.teamId),
+    supabase.from("team_roster").select("member_id, first_name, last_name").eq("team_id", match.teamId),
   ]);
   if (error) return null;
 
-  const names = new Map((team ?? []).map((m) => [m.id as string, `${m.first_name} ${m.last_name}`]));
+  const names = new Map((team ?? []).map((m) => [m.member_id as string, `${m.first_name} ${m.last_name}`]));
   const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
   const list = (available: boolean) =>
     (answers ?? [])

@@ -23,7 +23,7 @@ Développeur unique : Benjamin (Windows + VS Code). Langue de l'interface, du co
 Noir `#111111`, jaune `#FFE81A`, gris `#BDBDBD`, fond `#F4F4F2`. Titres Barlow Condensed 700, texte Barlow. Logo du club en en-tête. Barre d'onglets en bas.
 
 ## Rôles (cumulables)
-Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Chaque adhérent a **0 ou 1 équipe**.
+Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Chaque adhérent a **0, 1 ou plusieurs équipes** (table `member_teams`, ex. Totally Spike + une équipe mixte) : rappels de match, sondages de match et renforts valent pour chacune.
 
 | Rôle | Onglets |
 |---|---|
@@ -36,7 +36,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 
 ## Fiche adhérent
 - Modifiable par l'adhérent : téléphone, contact d'urgence, droit à l'image, poste 1 et poste 2 (passe / avant / fond).
-- Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe, rôles, licence FSGT + saison, cotisation réglée, sexe.
+- Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe(s), rôles, licence FSGT + saison, cotisation réglée, sexe.
 - Invisible pour lui : niveau (table séparée `member_levels`, Bureau seulement).
 - Demande « Devenir bénévole » depuis le profil : confirmation, puis demande envoyée au Bureau qui valide ou refuse.
 - **Notifications choisies dans le profil** (toutes activées par défaut) : entraînements (J-1), matchs de mon équipe (J-2), demandes de renfort. Désactiver un type coupe ce message en push **et** en email. Activation du push par appareil.
@@ -125,7 +125,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Onglet Bureau
-Historique des reports · Adhérents (import Excel/CSV reconnu par email : fiches, équipes, rôles ajoutés, niveaux, comptes + email d’invitation ; demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
+Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
 
 ## Tâches planifiées (pg_cron / Edge Functions)
 | Tâche | Quand |

@@ -14,12 +14,12 @@ export function ImportMembersForm() {
       <h2>Importer des adhérents</h2>
       <p className="muted small">
         Fichier Excel (.xlsx) ou CSV, une ligne par adhérent. Colonnes obligatoires : nom, prenom,
-        email, sexe. Facultatives : equipe, capitaine, roles, telephone, licence, cotisation,
-        niveau. <a href="/modele-adherents.csv" download>Télécharger le modèle</a>.
+        email, sexe. Facultatives : equipe (plusieurs séparées par une virgule), capitaine (oui ou
+        nom des équipes), roles, telephone, licence, cotisation, niveau. <a href="/modele-adherents.csv" download>Télécharger le modèle</a>.
       </p>
       <p className="muted small">
         Réimport possible : les fiches sont reconnues par leur email et mises à jour ; les rôles
-        sont ajoutés (jamais retirés) ; un téléphone saisi par l&apos;adhérent n&apos;est pas écrasé.
+        et les équipes sont ajoutés (jamais retirés) ; un téléphone saisi par l&apos;adhérent n&apos;est pas écrasé.
       </p>
 
       <input type="hidden" name="mode" defaultValue="preview" ref={modeRef} />
@@ -64,7 +64,7 @@ export function ImportMembersForm() {
                 <br />
                 <span className="muted small">
                   {r.email}
-                  {r.team && ` · ${r.team}`}
+                  {r.teams.length > 0 && ` · ${r.teams.join(", ")}`}
                   {r.extra && ` · ${r.extra}`}
                 </span>
               </li>

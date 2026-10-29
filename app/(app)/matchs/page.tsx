@@ -38,7 +38,7 @@ export default async function MatchsPage({
       ? new Date(lastSync.finished_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long" })
       : null;
   // Par défaut : l'équipe de l'adhérent ; sans équipe, tout le club.
-  const myTeamId = teams?.find((t) => t.name === member.team?.name)?.id;
+  const myTeamId = member.teams[0]?.id;
   const selected = params.equipe ?? myTeamId ?? "tout";
   const showPast = params.passes === "1";
 

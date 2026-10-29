@@ -9,7 +9,7 @@ import { sendInvitation } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type PreviewRow = { name: string; email: string; team: string | null; extra: string; isNew: boolean };
+export type PreviewRow = { name: string; email: string; teams: string[]; extra: string; isNew: boolean };
 
 export type MemberImportState = {
   status: "idle" | "preview" | "done" | "error";
@@ -37,7 +37,7 @@ const ROLE_LABEL = { board: "Bureau", volunteer: "Bénévole" } as const;
 
 function describe(m: ImportedMember) {
   return [
-    m.captain && "capitaine",
+    m.captainOf.length > 0 && `capitaine (${m.captainOf.join(", ")})`,
     ...m.roles.map((r) => ROLE_LABEL[r]),
     m.level !== null && `niveau ${m.level}`,
     m.duesPaid === true && "cotisation réglée",
@@ -84,7 +84,7 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
         rows: members.map((m) => ({
           name: `${m.firstName} ${m.lastName}`,
           email: m.email,
-          team: m.team,
+          teams: m.teams,
           extra: describe(m),
           isNew: !existing.has(m.email),
         })),
@@ -106,7 +106,6 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
           first_name: m.firstName,
           last_name: m.lastName,
           sex: m.sex,
-          team_id: m.team ? teamId.get(m.team) : null,
           phone: m.phone,
           fsgt_license: m.license,
           dues_paid: m.duesPaid ?? false,
@@ -124,7 +123,6 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
         first_name: m.firstName,
         last_name: m.lastName,
         sex: m.sex,
-        ...(m.team && { team_id: teamId.get(m.team) }),
         ...(m.license && { fsgt_license: m.license }),
         ...(m.duesPaid !== null && { dues_paid: m.duesPaid }),
         ...(m.phone && !e.phone && { phone: m.phone }),
@@ -133,8 +131,17 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
     if (error) problems.push(`${m.email} : mise à jour impossible`);
   }
 
-  // 2. Rôles (ajoutés, jamais retirés par l'import) et niveaux.
+  // 2. Équipes, rôles (ajoutés, jamais retirés par l'import) et niveaux.
   const ids = members.map((m) => existing.get(m.email)!.id as string);
+  const memberTeams = members.flatMap((m) =>
+    m.teams.map((t) => ({ member_id: existing.get(m.email)!.id as string, team_id: teamId.get(t)! })),
+  );
+  if (memberTeams.length) {
+    const { error } = await supabase
+      .from("member_teams")
+      .upsert(memberTeams, { onConflict: "member_id,team_id", ignoreDuplicates: true });
+    if (error) problems.push(`Équipes non enregistrées : ${error.message}`);
+  }
   const { data: currentRoles } = await supabase
     .from("member_roles")
     .select("member_id, role, team_id")
@@ -144,7 +151,7 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
     const id = existing.get(m.email)!.id as string;
     const wanted = [
       ...m.roles.map((role) => ({ member_id: id, role, team_id: null as string | null })),
-      ...(m.captain && m.team ? [{ member_id: id, role: "captain", team_id: teamId.get(m.team)! }] : []),
+      ...m.captainOf.map((t) => ({ member_id: id, role: "captain", team_id: teamId.get(t)! as string | null })),
     ];
     return wanted.filter((r) => !has.has(`${r.member_id}|${r.role}|${r.team_id ?? ""}`));
   });

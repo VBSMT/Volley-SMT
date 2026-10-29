@@ -26,19 +26,31 @@ describe("parseMemberSheet", () => {
     expect(errors).toEqual([]);
     expect(members[0]).toEqual({
       line: 2, email: "julie.martin@mail.fr", lastName: "Martin", firstName: "Julie", sex: "F",
-      team: "Les St Loup", captain: true, roles: ["board", "volunteer"], phone: "06 12 34 56 78",
+      teams: ["Les St Loup"], captainOf: ["Les St Loup"], roles: ["board", "volunteer"], phone: "06 12 34 56 78",
       license: "34-1", duesPaid: true, level: 3,
     });
   });
 
   it("se contente des colonnes obligatoires", () => {
     const { members } = parseMemberSheet([["prenom", "nom", "email", "sexe"], ["Paul", "Durand", "p@d.fr", "H"]], TEAMS);
-    expect(members[0]).toMatchObject({ firstName: "Paul", sex: "M", team: null, roles: [], duesPaid: null, level: null });
+    expect(members[0]).toMatchObject({ firstName: "Paul", sex: "M", teams: [], captainOf: [], roles: [], duesPaid: null, level: null });
   });
 
   it("accepte le nom d'équipe avec préfixe SMDT/", () => {
     const { members } = parseMemberSheet([["nom", "prenom", "email", "sexe", "equipe"], ["A", "B", "a@b.fr", "F", "SMDT/Totally Spike"]], TEAMS);
-    expect(members[0].team).toBe("Totally Spike");
+    expect(members[0].teams).toEqual(["Totally Spike"]);
+  });
+
+  it("accepte plusieurs équipes et un capitanat sur l'une d'elles", () => {
+    const { members, errors } = parseMemberSheet(
+      [["nom", "prenom", "email", "sexe", "equipe", "capitaine"],
+       ["Bollard", "Elise", "e@b.fr", "F", "Les St Loup, SMDT/Totally Spike", "Totally Spike"],
+       ["Grandon", "Yona", "y@g.fr", "F", "Les St Loup; Totally Spike", "oui"]],
+      TEAMS,
+    );
+    expect(errors).toEqual([]);
+    expect(members[0]).toMatchObject({ teams: ["Les St Loup", "Totally Spike"], captainOf: ["Totally Spike"] });
+    expect(members[1]).toMatchObject({ teams: ["Les St Loup", "Totally Spike"], captainOf: ["Les St Loup", "Totally Spike"] });
   });
 
   it("signale les colonnes obligatoires manquantes", () => {
@@ -49,7 +61,7 @@ describe("parseMemberSheet", () => {
     const { members, errors } = parseMemberSheet(
       [
         header,
-        ["Martin", "Julie", "pas-un-email", "X", "Inconnue", "oui", "chef", "", "", "peut-être", "7"],
+        ["Martin", "Julie", "pas-un-email", "X", "Inconnue", "Autre", "chef", "", "", "peut-être", "7"],
         header.map(() => ""),
         ["Durand", "Paul", "p@d.fr", "M", "", "oui", "", "", "", "", ""],
         ["Durand", "Paula", "P@D.fr", "F", "", "", "", "", "", "", ""],
@@ -58,7 +70,7 @@ describe("parseMemberSheet", () => {
     );
     expect(members).toHaveLength(0);
     expect(errors).toEqual([
-      "Ligne 2 : email invalide, sexe invalide (F ou M), équipe inconnue « Inconnue », rôles : bureau et/ou benevole, cotisation : oui ou non, niveau : 1 à 5.",
+      "Ligne 2 : email invalide, sexe invalide (F ou M), équipe inconnue « Inconnue », capitaine : équipe inconnue « Autre », rôles : bureau et/ou benevole, cotisation : oui ou non, niveau : 1 à 5.",
       "Ligne 4 : capitaine sans équipe.",
       "Ligne 5 : email déjà présent ligne 4.",
     ]);

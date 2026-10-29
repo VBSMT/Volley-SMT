@@ -3,7 +3,7 @@ import { wantedLabel } from "@/lib/domain/notifications";
 import { formatDay, formatTime } from "@/lib/format";
 import type { ReinforcementView } from "@/lib/reinforcements";
 
-export function ReinforcementCard({ request: r, myTeamId }: { request: ReinforcementView; myTeamId: string | null }) {
+export function ReinforcementCard({ request: r, myTeamIds }: { request: ReinforcementView; myTeamIds: string[] }) {
   const wanted = wantedLabel(r.sex, r.position);
   return (
     <li className="card stack reinforcement">
@@ -45,7 +45,7 @@ export function ReinforcementCard({ request: r, myTeamId }: { request: Reinforce
           </div>
           <CloseButtons requestId={r.id} />
         </>
-      ) : r.teamId === myTeamId ? (
+      ) : myTeamIds.includes(r.teamId) ? (
         <p className="muted small">Demande de votre équipe.</p>
       ) : (
         <OfferButton requestId={r.id} offered={r.myOffer} />

@@ -16,12 +16,18 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
     .from("members")
     .select(
       // « * » : sa propre fiche (RLS), robuste aux colonnes ajoutées par une migration pas encore appliquée.
-      `*, team:teams(name), license_season:seasons(label),
+      `*, member_teams(team:teams(id, name)), license_season:seasons(label),
        roles:member_roles(role, team_id, team:teams(name))`,
     )
     .eq("user_id", userId)
     .maybeSingle();
-  return data as CurrentMember | null;
+  if (!data) return null;
+  type Team = { id: string; name: string };
+  const { member_teams, ...rest } = data as Record<string, unknown> & { member_teams?: { team: Team }[] };
+  return {
+    ...rest,
+    teams: (member_teams ?? []).map((mt) => mt.team).sort((a: Team, b: Team) => a.name.localeCompare(b.name, "fr")),
+  } as CurrentMember;
 });
 
 export function hasRole(member: CurrentMember | null, role: Role) {
@@ -31,4 +37,9 @@ export function hasRole(member: CurrentMember | null, role: Role) {
 /** Équipes dont l'adhérent est capitaine. */
 export function captainTeamIds(member: CurrentMember | null): string[] {
   return (member?.roles ?? []).filter((r) => r.role === "captain" && r.team_id).map((r) => r.team_id!);
+}
+
+/** Identifiants des équipes de l'adhérent. */
+export function memberTeamIds(member: CurrentMember | null): string[] {
+  return (member?.teams ?? []).map((t) => t.id);
 }
