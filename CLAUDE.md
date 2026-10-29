@@ -34,7 +34,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 | Bénévole | idem + sondages de participation bénévole |
 | Bureau | 6 onglets : + onglet **Bureau** ; tout gérer |
 
-Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle avec un compte de test.
+Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle : `supabase/tests/rls.test.sql` (pgTAP, `supabase test db`, lancé en CI).
 
 ## Fiche adhérent
 - Modifiable par l'adhérent : téléphone, contact d'urgence, droit à l'image, poste 1 et poste 2 (passe / avant / fond).
@@ -57,7 +57,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
 - Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
 - **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
-- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place.
+- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée.
 
 ## Algorithme de composition
 Entrées : présents (sexe, niveau, poste 1, poste 2), T = terrains libres.
@@ -161,6 +161,7 @@ Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), c
 **V1 testable** = étapes 1–2, d'abord avec le Bureau seul.
 
 ## Conventions de travail
+- Toute action qui notifie ou modifie (sondage, report, renfort, présence…) passe par une **confirmation**, puis un message avec **Annuler** (`components/Feedback.tsx`).
 - Petites étapes, une fonctionnalité par branche/PR, migrations réversibles quand c'est possible.
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
 - Ne jamais exposer `member_levels` ni la compo à un non-Bureau, même via une vue ou une fonction RPC.
