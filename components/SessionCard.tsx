@@ -39,6 +39,16 @@ export function SessionCard({ session: s }: { session: SessionView }) {
           {plural(s.homeMatches, "terrain")} pris par {s.homeMatches > 1 ? "des matchs" : "un match"} à domicile.
         </p>
       )}
+      {s.approvedReschedules > 0 && (
+        <p className="muted small">
+          {plural(s.approvedReschedules, "terrain")} pré-réservé{s.approvedReschedules > 1 ? "s" : ""} pour un match reporté.
+        </p>
+      )}
+      {s.pendingReschedules > 0 && (
+        <p className="pending-report small">
+          ⏳ {s.pendingReschedules > 1 ? `${s.pendingReschedules} reports en attente` : "Un report en attente"} de confirmation : un terrain pourrait être pris.
+        </p>
+      )}
 
       {s.pollOpen ? (
         <PollButtons sessionId={s.id} answer={s.myAnswer} />
