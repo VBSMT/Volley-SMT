@@ -105,7 +105,6 @@ export type Lineup = {
  */
 export function buildLineup(players: LineupPlayer[], courts: number): Lineup {
   const plan = planTeams(players.length, courts);
-  const warnings: string[] = [];
   if (plan.n === 0) {
     return { plan, teams: [], warnings: [courts <= 0 ? "Aucun terrain libre ce soir." : "Aucun présent."] };
   }
@@ -153,9 +152,16 @@ export function buildLineup(players: LineupPlayer[], courts: number): Lineup {
     current = best.cost;
   }
 
-  // Contraintes non tenues → Bureau.
-  if (plan.tooFew) warnings.push(`Seulement ${players.length} présents : 2 équipes incomplètes.`);
-  if (plan.overflow) warnings.push(`${players.length} présents : équipes de plus de 6 (débordement).`);
+  return { plan, ...summarize(teams, players.length, plan) };
+}
+
+/** Totaux par équipe et contraintes non tenues (remontées au Bureau). */
+function summarize(teams: LineupPlayer[][], present: number, plan: Pick<TeamPlan, "n" | "tooFew" | "overflow">) {
+  const players = teams.flat();
+  const warnings: string[] = [];
+  const girlsTotal = players.filter((p) => p.sex === "F").length;
+  if (plan.tooFew) warnings.push(`Seulement ${present} présents : 2 équipes incomplètes.`);
+  if (plan.overflow) warnings.push(`${present} présents : équipes de plus de 6 (débordement).`);
   const missingLevels = players.filter((p) => p.level === null).length;
   if (missingLevels) {
     warnings.push(`${missingLevels} présent${missingLevels > 1 ? "s" : ""} sans niveau (compté${missingLevels > 1 ? "s" : ""} ${DEFAULT_LEVEL}).`);
@@ -164,15 +170,14 @@ export function buildLineup(players: LineupPlayer[], courts: number): Lineup {
   if (b.levelSpread > 1) warnings.push(`Écart de niveau de ${b.levelSpread} entre la plus forte et la plus faible équipe.`);
   teams.forEach((team, k) => {
     const label = `Équipe ${k + 1}`;
+    if (!team.length) return warnings.push(`${label} vide.`);
     const girls = team.filter((p) => p.sex === "F").length;
     if (girlsTotal >= plan.n && girls === 0) warnings.push(`${label} sans fille.`);
     if (girlsTotal < plan.n && girls > 1) warnings.push(`${label} : ${girls} filles (moins de filles que d'équipes).`);
     if (!team.some((p) => plays(p, "setter"))) warnings.push(`${label} sans passeur.`);
     if (!team.some((p) => plays(p, "back"))) warnings.push(`${label} sans joueur de fond.`);
   });
-
   return {
-    plan,
     teams: teams.map((team) => ({
       players: team.map((p) => p.id),
       levelSum: team.reduce((s, p) => s + levelOf(p), 0),
@@ -180,4 +185,13 @@ export function buildLineup(players: LineupPlayer[], courts: number): Lineup {
     })),
     warnings,
   };
+}
+
+/**
+ * Compo modifiée à la main par le Bureau (glisser-déposer) : mêmes totaux et alertes,
+ * sans recalcul de la répartition.
+ */
+export function manualLineup(teams: LineupPlayer[][]): Omit<Lineup, "plan"> {
+  const present = teams.flat().length;
+  return summarize(teams, present, { n: teams.length, tooFew: present < 8, overflow: teams.some((t) => t.length > 6) });
 }

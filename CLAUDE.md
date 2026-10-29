@@ -57,7 +57,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
 - Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
 - **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
-- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée.
+- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération.
 
 ## Algorithme de composition
 Entrées : présents (sexe, niveau, poste 1, poste 2), T = terrains libres.

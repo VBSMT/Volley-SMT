@@ -581,3 +581,42 @@ a.btn-primary { color: var(--noir); }
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Compo : glisser-déposer */
+.lineup-team { transition: box-shadow 0.15s; }
+.lineup-team.drop-target { box-shadow: 0 0 0 3px #FFE81A; }
+.lineup-team-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.lineup-team-head h3 { margin: 0 0 0.5rem; }
+.drop-here { width: auto; min-height: 44px; padding: 0 0.75rem; }
+.lineup-players li { align-items: center; }
+.lineup-name { flex: 1; min-width: 0; }
+.drag-handle {
+  min-width: 44px;
+  min-height: 44px;
+  margin: -0.3rem 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--texte-doux);
+  font-size: 1.3rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.lineup-players li.is-selected { background: var(--surface-2); outline: 2px solid #FFE81A; outline-offset: -2px; border-radius: 6px; }
+.lineup-players li.is-dragging { opacity: 0.4; }
+.drag-ghost {
+  position: fixed;
+  z-index: 70;
+  transform: translate(-50%, -120%);
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  background: #111111;
+  color: #FFE81A;
+  font-weight: 700;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.35);
+  white-space: nowrap;
+}

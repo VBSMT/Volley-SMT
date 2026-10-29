@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLineup, planTeams, type LineupPlayer, type Position } from "./lineup";
+import { buildLineup, manualLineup, planTeams, type LineupPlayer, type Position } from "./lineup";
 
 describe("planTeams — exemples de CLAUDE.md (T = 3)", () => {
   const cases: [number, number[], boolean][] = [
@@ -105,5 +105,33 @@ describe("buildLineup", () => {
     const ids = teams.flatMap((t) => t.players).sort();
     expect(ids).toEqual(players.map((p) => p.id).sort());
     expect(teams.map((t) => t.players.length)).toEqual([5, 5, 5, 4, 4]);
+  });
+});
+
+describe("compo modifiée à la main", () => {
+  const p = (id: string, sex: "F" | "M", level: number, position1: "setter" | "front" | "back" | null): LineupPlayer => ({
+    id,
+    sex,
+    level,
+    position1,
+    position2: null,
+  });
+  it("recalcule totaux et alertes sans changer la répartition", () => {
+    const r = manualLineup([
+      [p("a", "F", 5, "setter"), p("b", "M", 4, "back")],
+      [p("c", "M", 1, "front"), p("d", "M", 1, "front")],
+    ]);
+    expect(r.teams.map((t) => t.players)).toEqual([["a", "b"], ["c", "d"]]);
+    expect(r.teams.map((t) => t.levelSum)).toEqual([9, 2]);
+    expect(r.warnings).toEqual(
+      expect.arrayContaining([
+        "Écart de niveau de 7 entre la plus forte et la plus faible équipe.",
+        "Équipe 2 sans passeur.",
+        "Équipe 2 sans joueur de fond.",
+      ]),
+    );
+  });
+  it("signale une équipe vidée", () => {
+    expect(manualLineup([[p("a", "F", 3, "setter")], []]).warnings).toContain("Équipe 2 vide.");
   });
 });

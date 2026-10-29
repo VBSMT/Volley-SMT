@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, hasRole } from "@/lib/member";
-import { generateLineup } from "@/lib/lineup-server";
+import { generateLineup, saveManualLineup } from "@/lib/lineup-server";
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 
@@ -44,5 +44,17 @@ export async function setAttendance(sessionId: string, memberId: string, present
   const { data: lineup } = await supabase.from("lineups").select("session_id").eq("session_id", sessionId).maybeSingle();
   if (lineup) await regenerateLineup(sessionId);
   revalidatePath("/", "layout");
+  return {};
+}
+
+/** Bureau : déplacement de joueurs entre équipes (glisser-déposer). */
+export async function moveLineupPlayers(sessionId: string, teams: string[][]): Promise<{ error?: string }> {
+  if (!hasRole(await getCurrentMember(), "board")) return { error: "Réservé au Bureau." };
+  try {
+    await saveManualLineup(await createClient(), sessionId, teams);
+  } catch (e) {
+    return { error: (e as Error).message };
+  }
+  revalidatePath("/bureau/compo");
   return {};
 }
