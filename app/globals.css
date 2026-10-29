@@ -763,3 +763,8 @@ a.btn-primary { color: var(--noir); }
 .tour-skip { min-height: 44px; border: 0; background: none; color: var(--texte-doux); font: inherit; font-weight: 600; cursor: pointer; }
 .tour-next { min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: 10px; background: #111111; color: #FFE81A; font: inherit; font-weight: 700; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+
+.contact-view { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; background: var(--surface-2); border-radius: 10px; padding: 0.6rem 0.75rem; }
+.contact-view p { margin: 0; }
+.contact-view .btn-secondary { width: auto; min-height: 44px; padding: 0 0.9rem; }
+.contact-view a { color: var(--texte); }
