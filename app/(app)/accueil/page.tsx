@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MatchPoll } from "@/components/MatchPoll";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { AnnouncementList } from "@/components/AnnouncementList";
 import { EventCard } from "@/components/EventCard";
@@ -75,6 +76,7 @@ export default async function AccueilPage() {
   return (
     <main className="page stack">
       <h1>Bonjour {member.first_name}</h1>
+      <InstallPrompt />
       <NotificationToggle compact />
       {!!pendingReschedules && (
         <Link href="/bureau/reports" className="notice">

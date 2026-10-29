@@ -312,7 +312,12 @@ textarea {
 .match-title { font-size: 1.5rem; }
 .match-title .muted { font-family: var(--font-barlow), sans-serif; font-weight: 400; font-size: 1rem; }
 .match-link { color: inherit; text-decoration: underline; text-decoration-color: var(--gris); text-underline-offset: 3px; }
-.captain-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+.captain-links { display: flex; flex-wrap: wrap; column-gap: 1rem; row-gap: 0.25rem; margin-top: 0.4rem !important; }
+/* Liens compacts : zone tactile de 44 px conservée, sans espace visuel (marges négatives). */
+.captain-links .renfort-link,
+.match .directions-link { min-height: 32px; padding-block: 6px; margin-block: -6px; }
+.match .directions-link { margin-left: 0; }
+.match-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
 .poll-lists { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 .poll-lists h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
 
@@ -540,3 +545,6 @@ a.btn-primary { color: var(--noir); }
   text-decoration: underline;
   white-space: nowrap;
 }
+
+.install-prompt h2 { margin: 0; font-size: 1.1rem; }
+.install-prompt ol { margin: 0; padding-left: 1.25rem; display: grid; gap: 0.25rem; }

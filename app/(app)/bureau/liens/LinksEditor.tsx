@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useConfirm, useToast } from "@/components/Feedback";
 import { deleteLink, saveLink } from "./actions";
 
 type Link = { id: string; label: string; url: string };
@@ -10,6 +11,8 @@ function LinkRow({ link }: { link: Link }) {
   const [url, setUrl] = useState(link.url);
   const [msg, setMsg] = useState<{ ok: boolean; text: string }>();
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
+  const toast = useToast();
   const run = (fn: () => Promise<{ error?: string }>, ok: string) =>
     startTransition(async () => {
       const r = await fn();
@@ -17,13 +20,21 @@ function LinkRow({ link }: { link: Link }) {
     });
   return (
     <li className="card stack">
+      {dialog}
       <input aria-label="Libellé" value={label} onChange={(e) => setLabel(e.target.value)} />
       <input aria-label="Adresse" type="url" value={url} onChange={(e) => setUrl(e.target.value)} />
       <div className="action-row">
         <button type="button" className="btn-secondary" disabled={pending} onClick={() => run(() => saveLink(link.id, label, url), "Enregistré")}>
           Enregistrer
         </button>
-        <button type="button" className="btn-secondary" disabled={pending} onClick={() => confirm("Supprimer ce lien ?") && run(() => deleteLink(link.id), "Supprimé")}>
+        <button type="button" className="btn-secondary" disabled={pending} onClick={async () => {
+          if (!(await confirm(`Supprimer le lien « ${link.label} » ?`, { confirmLabel: "Supprimer" }))) return;
+          startTransition(async () => {
+            const r = await deleteLink(link.id);
+            if (r.error) setMsg({ ok: false, text: r.error });
+            else toast({ message: "Lien supprimé.", undo: () => saveLink(null, link.label, link.url) });
+          });
+        }}>
           Supprimer
         </button>
       </div>

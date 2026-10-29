@@ -75,7 +75,8 @@ export function NotificationToggle({ compact = false }: { compact?: boolean }) {
   }
 
   if (status === "loading") return null;
-  if (compact && (status === "on" || status === "unsupported" || status === "denied")) return null;
+  // Sur l'accueil, l'installation sur iPhone est expliquée par InstallPrompt.
+  if (compact && (status === "on" || status === "unsupported" || status === "denied" || status === "ios-install")) return null;
 
   return (
     <div className={compact ? "notice stack" : "stack"}>
