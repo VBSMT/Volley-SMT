@@ -527,3 +527,16 @@ a.btn-primary { color: var(--noir); }
 
 .attendance-edit li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .attendance-edit .btn-secondary { width: auto; min-height: 44px; padding: 0 12px; }
+
+.directions-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-left: 8px;
+  padding: 0 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--texte);
+  text-decoration: underline;
+  white-space: nowrap;
+}

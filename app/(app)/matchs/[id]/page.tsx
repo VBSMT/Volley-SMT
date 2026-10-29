@@ -9,6 +9,8 @@ import { formatDay, formatTime } from "@/lib/format";
 import { getMatchPoll } from "@/lib/match-polls";
 import { captainTeamIds, getCurrentMember, hasRole, memberTeamIds } from "@/lib/member";
 import { getReschedules } from "@/lib/reschedule-server";
+import { DirectionsLink } from "@/components/DirectionsLink";
+import { getDirections } from "@/lib/gyms";
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 
@@ -60,7 +62,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <span className={m.is_home ? "badge home" : "badge away"}>{m.is_home ? "Domicile" : "Extérieur"}</span>{" "}
           <span className="match-date-inline">{formatDay(m.starts_at)}</span> à {formatTime(m.starts_at)}
         </p>
-        {(m.venue || m.city) && <p className="muted">{[m.venue, m.city].filter(Boolean).join(", ")}</p>}
+        {(m.venue || m.city) && (
+          <p className="muted">
+            {[m.venue, m.city].filter(Boolean).join(", ")}
+            {!m.is_home && <DirectionsLink url={(await getDirections(supabase))(m.venue, m.city)} />}
+          </p>
+        )}
         {canManage && <Volley34EntryLink competition={m.competition} />}
       </section>
 
