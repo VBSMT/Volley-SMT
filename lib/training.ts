@@ -66,7 +66,8 @@ export async function getSessions(opts: {
     homeByDate.set(d, (homeByDate.get(d) ?? 0) + 1);
   }
   const names = new Map(
-    (directory ?? []).map((m) => [m.id as string, `${m.first_name} ${m.last_name}`]),
+    // Liste des inscrits : prénom et initiale du nom (« Benjamin R »).
+    (directory ?? []).map((m) => [m.id as string, `${m.first_name} ${(m.last_name as string).trim().charAt(0).toUpperCase()}`.trim()]),
   );
   const now = Date.now();
 
