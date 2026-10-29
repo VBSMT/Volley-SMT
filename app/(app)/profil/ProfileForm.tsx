@@ -114,7 +114,7 @@ export function ProfileForm({ member }: { member: CurrentMember }) {
       {state.status === "saved" && <p className="success" role="status">Modifications enregistrées.</p>}
       {state.status === "error" && <p className="error" role="alert">{state.message}</p>}
 
-      <button type="submit" className="btn-primary" disabled={pending}>
+      <button type="submit" className="btn-primary" disabled={pending} data-tour="save">
         {pending ? "Enregistrement…" : "Enregistrer"}
       </button>
     </form>

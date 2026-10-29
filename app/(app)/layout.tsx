@@ -22,6 +22,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <FeedbackProvider>
             {children}
             <GuidedTour
+              // La clé recrée le guide quand l'avancement change en base (« Revoir le guide »).
+              key={`${(member as { onboarding_step?: number }).onboarding_step ?? 0}-${!!(member as { onboarding_done_at?: string | null }).onboarding_done_at}`}
               initialStep={(member as { onboarding_step?: number }).onboarding_step ?? 0}
               done={!!(member as { onboarding_done_at?: string | null }).onboarding_done_at}
             />
