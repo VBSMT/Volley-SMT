@@ -120,7 +120,7 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
 /**
  * Appelé chaque heure par pg_cron. Selon l'heure de Paris :
  * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
- * - clôture du sondage à 12h le jour J, génération de la compo et notification au Bureau ;
+ * - clôture du sondage à l'heure réglée (Paramètres, 12h par défaut) le jour J, génération de la compo et notification au Bureau ;
  * - rappel J-2 des matchs aux joueurs de l'équipe ;
  * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite) ;
  * - reports : confirmation par la synchro, expiration automatique à J-3.

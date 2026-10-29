@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDay, formatTime } from "@/lib/format";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
+import { getSchedule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 import { LineupBoard } from "./LineupBoard";
@@ -17,6 +18,7 @@ type StoredTeam = { players: string[]; levelSum: number; girls: number };
 export default async function CompoPage() {
   // Compo et niveaux : Bureau uniquement (RLS en base, et écran masqué).
   if (!hasRole(await getCurrentMember(), "board")) notFound();
+  const { closeHour } = await getSchedule(await createClient());
 
   const sessions = (await getSessions({ from: new Date(Date.now() - 6 * 3600_000), limit: 6 }))
     .filter((s) => s.freeCourts > 0)
@@ -40,7 +42,7 @@ export default async function CompoPage() {
       <Link href="/bureau" className="back">← Bureau</Link>
       <h1>Compo du soir</h1>
       <p className="muted small">
-        Générée automatiquement à 12h, à la clôture du sondage. Visible par le Bureau uniquement ;
+        Générée automatiquement à {closeHour}h, à la clôture du sondage (heure réglable dans Paramètres). Visible par le Bureau uniquement ;
         les ajustements de dernière minute se font sur place.
       </p>
 
@@ -93,7 +95,7 @@ export default async function CompoPage() {
                 />
               </>
             ) : (
-              <p className="muted small">Pas encore calculée (elle le sera à 12h le jour même).</p>
+              <p className="muted small">Pas encore calculée (elle le sera à {closeHour}h le jour même).</p>
             )}
             <AttendanceEditor
               sessionId={s.id}
