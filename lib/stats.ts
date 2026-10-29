@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { StandingRow } from "@/lib/domain/standings";
+import { latestVictory, type StandingRow, type Victory } from "@/lib/domain/standings";
+import { parisDate } from "@/lib/domain/training";
 
 export type Snapshot = {
   teamId: string;
@@ -60,4 +61,52 @@ export async function getSeasonProgress(client: SupabaseClient, teamIds: string[
     else if (!p.next) p.next = { id: m.id, startsAt: m.starts_at, opponent: m.opponent, isHome: m.is_home };
   }
   return byTeam;
+}
+
+export type Celebration = Victory & {
+  teamId: string;
+  teamName: string;
+  opponent: string | null;
+  isHome: boolean | null;
+};
+
+/**
+ * Victoires des équipes du club des dernières 48 h (message de félicitations éphémère sur l'accueil).
+ * Calculées à partir des photos quotidiennes du classement ; l'adversaire vient du calendrier.
+ */
+export async function getCelebrations(client: SupabaseClient, now = new Date()): Promise<Celebration[]> {
+  const today = parisDate(now.toISOString());
+  const [{ data: teams }, { data: snaps }] = await Promise.all([
+    client.from("teams").select("id, name, volley34_ref"),
+    client.from("standings_snapshots").select("team_id, taken_on, won, lost, rank, rows").order("taken_on"),
+  ]);
+  const out: Celebration[] = [];
+  for (const team of teams ?? []) {
+    const own = (snaps ?? []).filter((s) => s.team_id === team.id);
+    if (own.length < 2) continue;
+    const isMine = (r: StandingRow) => r.code === team.volley34_ref || r.name === `SMDT/${team.name}`;
+    const victory = latestVictory(
+      own.map((s) => ({
+        takenOn: s.taken_on,
+        won: s.won,
+        lost: s.lost,
+        rank: s.rank,
+        mine: (s.rows as StandingRow[]).find(isMine) ?? null,
+      })),
+      today,
+    );
+    if (!victory) continue;
+    // Match joué entre les deux photos (la synchro passe vers 6h).
+    const { data: match } = await client
+      .from("matches")
+      .select("opponent, is_home")
+      .eq("team_id", team.id)
+      .gte("starts_at", `${victory.prevTakenOn}T00:00:00Z`)
+      .lt("starts_at", `${victory.takenOn}T06:00:00Z`)
+      .order("starts_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    out.push({ ...victory, teamId: team.id, teamName: team.name, opponent: match?.opponent ?? null, isHome: match?.is_home ?? null });
+  }
+  return out.sort((a, b) => b.takenOn.localeCompare(a.takenOn));
 }

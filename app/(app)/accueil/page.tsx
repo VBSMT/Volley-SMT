@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MatchPoll } from "@/components/MatchPoll";
+import { CelebrationCards } from "@/components/CelebrationCard";
+import { getCelebrations } from "@/lib/stats";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { AnnouncementList } from "@/components/AnnouncementList";
@@ -67,6 +69,9 @@ export default async function AccueilPage() {
   // Annonces des 14 derniers jours (les 3 plus récentes).
   const announcements = await getAnnouncements(supabase, { limit: 3, since: new Date(Date.now() - 14 * 86_400_000) });
 
+  // Victoires des dernières 48 h : félicitations éphémères, pour tout le club.
+  const celebrations = await getCelebrations(supabase);
+
   const reinforcements = await getOpenReinforcements({
     memberId: member.id,
     isBoard,
@@ -76,6 +81,7 @@ export default async function AccueilPage() {
   return (
     <main className="page stack">
       <h1>Bonjour {member.first_name}</h1>
+      {celebrations.length > 0 && <CelebrationCards items={celebrations} />}
       <InstallPrompt />
       <NotificationToggle compact />
       {!!pendingReschedules && (

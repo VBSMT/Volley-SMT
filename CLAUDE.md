@@ -99,6 +99,8 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Classement de la poule (équipe du club surlignée, zones montée/podium et descente selon Promus/Relegue), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **forme récente**, **répartition des scores** (3-0…0-3), **sets et points** pour/contre (moyenne par set), **points de chaque équipe de la poule**, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
 - Vue club : toutes les équipes (rang, points, bilan).
 - Graphiques : méthode dataviz (série unique couleur du texte, victoire/défaite selon la charte, toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
+- Aussi : série en cours (meilleure / pire), efficacité (% sets et points gagnés), points marqués/encaissés, différence de sets de la poule (barres divergentes), attaque/défense (points par set de chaque équipe), évolution des points et de la différence de sets.
+- **Félicitations éphémères** : après une victoire d'une équipe du club (détectée par la photo du classement), carte avec confettis animés en haut de l'accueil de **tous** les adhérents pendant **48 h** (score, adversaire, série, rang) ; fermable, mémorisé par appareil ; pas de notification.
 - Avant le premier match de la poule (tout à zéro) : état « pas encore de match joué » et liste des équipes de la poule.
 
 ## Sondage de présence d'un match

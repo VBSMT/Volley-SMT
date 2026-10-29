@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { allResults, efficiency, streaks, parseStandings, poolOf, poolTitle, recentForm, seasonNotStarted, zoneOf } from "./standings";
+import { allResults, efficiency, latestVictory, streaks, parseStandings, poolOf, poolTitle, recentForm, seasonNotStarted, zoneOf } from "./standings";
 
 const REAL = readFileSync(new URL("./__fixtures__/classement-smdtx1.xml", import.meta.url), "utf8");
 
@@ -102,5 +102,27 @@ describe("séries et efficacité", () => {
   it("calcule les pourcentages", () => {
     expect(efficiency({ setsWon: 18, setsLost: 9, pointsWon: 612, pointsLost: 521 })).toEqual({ setsPct: 67, pointsPct: 54 });
     expect(efficiency({ setsWon: 0, setsLost: 0, pointsWon: 0, pointsLost: 0 })).toEqual({ setsPct: null, pointsPct: null });
+  });
+});
+
+describe("latestVictory (félicitations éphémères)", () => {
+  const sc = (s31: number, s30 = 0) => ({ scores: { s30, s31, s32: 0, s23: 0, s13: 0, s03: 0, fWon: 0, fLost: 0 } });
+  const snaps = [
+    { takenOn: "2026-11-03", won: 2, lost: 1, rank: 3, mine: sc(1, 1) },
+    { takenOn: "2026-11-04", won: 2, lost: 1, rank: 3, mine: sc(1, 1) },
+    { takenOn: "2026-11-05", won: 3, lost: 1, rank: 2, mine: sc(2, 1) },
+    { takenOn: "2026-11-06", won: 3, lost: 1, rank: 2, mine: sc(2, 1) },
+  ];
+  it("trouve la victoire du jour ou de la veille, avec score, série et rang", () => {
+    expect(latestVictory(snaps.slice(0, 3), "2026-11-05")).toEqual({
+      takenOn: "2026-11-05", prevTakenOn: "2026-11-04", score: "3-1", streak: 1, rank: 2, rankDelta: 1,
+    });
+    expect(latestVictory(snaps, "2026-11-06")?.takenOn).toBe("2026-11-05");
+  });
+  it("disparaît après 48 h", () => {
+    expect(latestVictory(snaps, "2026-11-07")).toBeNull();
+  });
+  it("rien sans victoire", () => {
+    expect(latestVictory(snaps.slice(0, 2), "2026-11-04")).toBeNull();
   });
 });
