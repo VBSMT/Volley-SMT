@@ -168,6 +168,7 @@ Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), c
 **V1 testable** = étapes 1–2, d'abord avec le Bureau seul.
 
 ## Conventions de travail
+- **Fusion automatique** (demande de Benjamin) : une fois le build, les tests et la vérification passés, Claude ouvre la PR et la fusionne lui-même dans `main` (le déploiement Vercel et les migrations suivent).
 - Toute action qui notifie ou modifie (sondage, report, renfort, présence…) passe par une **confirmation**, puis un message avec **Annuler** (`components/Feedback.tsx`).
 - Petites étapes, une fonctionnalité par branche/PR, migrations réversibles quand c'est possible.
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
