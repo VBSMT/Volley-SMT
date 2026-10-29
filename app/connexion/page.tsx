@@ -28,6 +28,7 @@ export default async function ConnexionPage({
         Pas de mot de passe : un code vous est envoyé par email. Seuls les adhérents inscrits par
         le Bureau peuvent se connecter.
       </p>
+      <a href="/aide" className="small">Besoin d&apos;aide ? Connexion, installation, notifications →</a>
       <ZelsyncFooter />
     </main>
   );

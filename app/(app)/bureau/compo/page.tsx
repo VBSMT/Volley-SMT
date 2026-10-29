@@ -5,6 +5,7 @@ import { formatDay, formatTime } from "@/lib/format";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
+import { LineupBoard } from "./LineupBoard";
 import { AttendanceEditor } from "./AttendanceEditor";
 import { RegenerateButton } from "./RegenerateButton";
 
@@ -56,7 +57,7 @@ export default async function CompoPage() {
             {lineup ? (
               <>
                 <p className="muted small">
-                  Calculée le {formatDay(lineup.generated_at)} à {formatTime(lineup.generated_at)}
+                  Mise à jour le {formatDay(lineup.generated_at)} à {formatTime(lineup.generated_at)}
                   {teams.length % 2 === 1 && " · une équipe au repos à tour de rôle"}
                 </p>
                 {warnings.length > 0 && (
@@ -66,31 +67,23 @@ export default async function CompoPage() {
                     ))}
                   </ul>
                 )}
-                <ol className="lineup">
-                  {teams.map((t, k) => (
-                    <li key={k} className="card">
-                      <h3>
-                        Équipe {k + 1} <span className="muted small">· niveau {t.levelSum} · {t.girls} fille{t.girls > 1 ? "s" : ""}</span>
-                      </h3>
-                      <ul className="lineup-players">
-                        {t.players.map((id) => {
-                          const m = people.get(id);
-                          const positions = [pos(m?.position_1 ?? null), pos(m?.position_2 ?? null)].filter(Boolean).join(" / ");
-                          return (
-                            <li key={id}>
-                              <span>
-                                {m ? `${m.first_name} ${m.last_name}` : "Adhérent"} {m?.sex === "F" && <span aria-label="fille">♀</span>}
-                              </span>
-                              <span className="muted small">
-                                {positions || "poste ?"} · {levelOf.get(id) ?? "?"}
-                              </span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </li>
-                  ))}
-                </ol>
+                <LineupBoard
+                  key={lineup.generated_at}
+                  sessionId={s.id}
+                  teams={teams.map((t) => t.players)}
+                  players={teams.flatMap((t) =>
+                    t.players.map((id) => {
+                      const m = people.get(id);
+                      return {
+                        id,
+                        name: m ? `${m.first_name} ${m.last_name}` : "Adhérent",
+                        girl: m?.sex === "F",
+                        positions: [pos(m?.position_1 ?? null), pos(m?.position_2 ?? null)].filter(Boolean).join(" / "),
+                        level: levelOf.get(id) ?? null,
+                      };
+                    }),
+                  )}
+                />
               </>
             ) : (
               <p className="muted small">Pas encore calculée (elle le sera à 12h le jour même).</p>

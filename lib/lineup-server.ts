@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { buildLineup, type Lineup, type LineupPlayer } from "@/lib/domain/lineup";
+import { buildLineup, manualLineup, type Lineup, type LineupPlayer } from "@/lib/domain/lineup";
 
 /**
  * Génère et enregistre la compo d'une séance à partir des présents du sondage.
@@ -44,4 +44,36 @@ export async function generateLineup(
   );
   if (saveError) throw new Error(saveError.message);
   return { ...lineup, presentCount: players.length };
+}
+
+/**
+ * Enregistre une compo réorganisée à la main (Bureau) : mêmes joueurs, autre répartition.
+ * Totaux et alertes recalculés ; aucun joueur ajouté ni retiré ici.
+ */
+export async function saveManualLineup(client: SupabaseClient, sessionId: string, teamIds: string[][]) {
+  const { data: current, error } = await client.from("lineups").select("teams").eq("session_id", sessionId).maybeSingle();
+  if (error || !current) throw new Error("Compo introuvable.");
+  const before = (current.teams as { players: string[] }[]).flatMap((t) => t.players).sort();
+  const after = teamIds.flat().sort();
+  if (before.length !== after.length || before.some((id, i) => id !== after[i])) {
+    throw new Error("La compo a changé entre-temps : rechargez la page.");
+  }
+
+  const [{ data: members }, { data: levels }] = await Promise.all([
+    client.from("members").select("id, sex, position_1, position_2").in("id", after),
+    client.from("member_levels").select("member_id, level").in("member_id", after),
+  ]);
+  const levelOf = new Map((levels ?? []).map((l) => [l.member_id as string, l.level as number]));
+  const byId = new Map(
+    (members ?? []).map((m) => [
+      m.id as string,
+      { id: m.id, sex: m.sex, level: levelOf.get(m.id) ?? null, position1: m.position_1, position2: m.position_2 } as LineupPlayer,
+    ]),
+  );
+  const lineup = manualLineup(teamIds.map((t) => t.map((id) => byId.get(id)!).filter(Boolean)));
+  const { error: saveError } = await client
+    .from("lineups")
+    .update({ teams: lineup.teams, warnings: lineup.warnings, generated_at: new Date().toISOString() })
+    .eq("session_id", sessionId);
+  if (saveError) throw new Error(saveError.message);
 }

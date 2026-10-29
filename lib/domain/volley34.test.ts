@@ -81,3 +81,38 @@ describe("volley34EntryUrl", () => {
     expect(volley34EntryUrl(null)).toBe("https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CH");
   });
 });
+
+describe("teamMatches — match reporté (« contre » au lieu de « reçoit »)", () => {
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "BEGIN:VEVENT",
+    "UID:2027-CE03377@Volley34.fr",
+    "DTSTART:20261112T194500Z",
+    "LOCATION:Salle Polyvalente (Vailhauquès)",
+    "SUMMARY:VCV/les volleyrieurs contre SMDT/Les Bras Cassés",
+    "END:VEVENT",
+    "BEGIN:VEVENT",
+    "UID:2027-CE03382@Volley34.fr",
+    "DTSTART:20261117T190000Z",
+    "LOCATION:Halle des Sports - Les Champs Noirs (St Mathieu de T.)",
+    "SUMMARY:SMDT/Les Bras Cassés reçoit ASV2M/Sock Touch",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  it("lit les deux formulations", () => {
+    const m = teamMatches(parseIcs(ics), "SMDT/Les Bras Cassés");
+    expect(m).toHaveLength(2);
+    expect(m[0]).toMatchObject({ uid: "2027-CE03377", isHome: false, opponent: "VCV/les volleyrieurs", city: "Vailhauquès" });
+    expect(m[1]).toMatchObject({ isHome: true, opponent: "ASV2M/Sock Touch" });
+  });
+
+  it("déplace le match existant à la nouvelle date", () => {
+    const remote = teamMatches(parseIcs(ics), "SMDT/Les Bras Cassés");
+    const existing: ExistingMatch[] = [
+      { id: "m1", starts_at: "2026-11-10T19:30:00Z", opponent: "VCV/les volleyrieurs", is_home: false, volley34_ref: "2027-CE03377" },
+    ];
+    const { updates } = reconcile(remote.slice(0, 1), existing);
+    expect(updates).toEqual([expect.objectContaining({ id: "m1", moved: true })]);
+  });
+});
