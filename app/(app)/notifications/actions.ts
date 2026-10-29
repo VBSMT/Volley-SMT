@@ -1,5 +1,6 @@
 "use server";
 
+import { isAllowedPushEndpoint } from "@/lib/domain/push";
 import { getCurrentMember } from "@/lib/member";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -13,7 +14,7 @@ export async function savePushSubscription(sub: PushSubscriptionJSON): Promise<{
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
   const { endpoint, keys } = sub;
-  if (!endpoint?.startsWith("https://") || !keys?.p256dh || !keys?.auth) {
+  if (!isAllowedPushEndpoint(endpoint) || !keys?.p256dh || !keys?.auth) {
     return { error: "Abonnement invalide." };
   }
 

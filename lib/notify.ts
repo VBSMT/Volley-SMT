@@ -1,4 +1,5 @@
 import "server-only";
+import { isAllowedPushEndpoint } from "@/lib/domain/push";
 import nodemailer, { type Transporter } from "nodemailer";
 import webpush from "web-push";
 import type { Message } from "@/lib/domain/notifications";
@@ -58,7 +59,7 @@ export async function notifyMembers(
   await Promise.all(
     recipients.map(async ({ recipient, message }) => {
       let delivered = false;
-      for (const sub of byMember.get(recipient.id) ?? []) {
+      for (const sub of (byMember.get(recipient.id) ?? []).filter((x) => isAllowedPushEndpoint(x.endpoint))) {
         try {
           await webpush.sendNotification(
             { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
