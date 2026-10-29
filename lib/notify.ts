@@ -15,6 +15,9 @@ function getMailer() {
   mailer ??= nodemailer.createTransport({
     host: "smtp-relay.brevo.com",
     port: 587,
+    // Connexions réutilisées et limitées : un envoi groupé (70 adhérents) n'ouvre pas 70 connexions SMTP.
+    pool: true,
+    maxConnections: 3,
     auth: { user: process.env.BREVO_SMTP_USER, pass: process.env.BREVO_SMTP_PASS },
   });
   return mailer;
