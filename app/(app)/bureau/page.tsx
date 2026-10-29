@@ -15,7 +15,7 @@ const SECTIONS: [string, string, string?][] = [
   ["Reports", "Demandes en attente, décisions et historique", "/bureau/reports"],
   ["Événements", "Création, visibilité par rôle, sondages de présence et de bénévolat", "/bureau/evenements"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance", "/bureau/annonces"],
-  ["Saison", "Licences, cotisations, relances, exports"],
+  ["Saison", "Licences, cotisations, relances, exports CSV", "/bureau/saison"],
   ["Liens utiles", "volley34, FSGT, documents (visibles par tous)", "/bureau/liens"],
   ["Paramètres", "Horaires de notification et de clôture, expiration des reports, équipes", "/bureau/parametres"],
 ];
