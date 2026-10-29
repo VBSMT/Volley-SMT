@@ -1,5 +1,6 @@
 import { closureReason } from "@/lib/domain/calendar";
 import { freeCourts, parisDate, pollDeadline } from "@/lib/domain/training";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export type SessionView = {
@@ -21,8 +22,10 @@ export async function getSessions(opts: {
   from: Date;
   limit: number;
   memberId?: string;
+  /** Client à utiliser (par défaut : celui de l'utilisateur connecté). */
+  client?: SupabaseClient;
 }): Promise<SessionView[]> {
-  const supabase = await createClient();
+  const supabase = opts.client ?? (await createClient());
   const { data: sessions } = await supabase
     .from("training_sessions")
     .select("id, starts_at, open_courts, poll_closed_at")

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
@@ -54,6 +55,11 @@ export default async function ProfilPage() {
       </section>
 
       <ProfileForm member={member} />
+
+      <section className="card stack">
+        <h2>Notifications</h2>
+        <NotificationToggle />
+      </section>
 
       {!hasRole(member, "volunteer") && (
         <section className="card stack">

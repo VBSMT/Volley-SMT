@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { SessionCard } from "@/components/SessionCard";
 import { getCurrentMember } from "@/lib/member";
 import { getSessions } from "@/lib/training";
@@ -19,6 +20,7 @@ export default async function AccueilPage() {
   return (
     <main className="page stack">
       <h1>Bonjour {member.first_name}</h1>
+      <NotificationToggle compact />
       <section className="stack">
         <h2>Prochain entraînement</h2>
         {next ? (
