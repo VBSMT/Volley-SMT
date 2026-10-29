@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
+import { NotificationPrefs } from "./NotificationPrefs";
 import { ProfileForm } from "./ProfileForm";
 import { VolunteerRequest } from "./VolunteerRequest";
 
@@ -54,6 +56,20 @@ export default async function ProfilPage() {
       </section>
 
       <ProfileForm member={member} />
+
+      <section className="card stack">
+        <h2>Notifications</h2>
+        <NotificationToggle />
+        {member.notify_training !== undefined && (
+          <NotificationPrefs
+            initial={{
+              notify_training: member.notify_training,
+              notify_match: member.notify_match ?? true,
+              notify_reinforcement: member.notify_reinforcement ?? true,
+            }}
+          />
+        )}
+      </section>
 
       {!hasRole(member, "volunteer") && (
         <section className="card stack">

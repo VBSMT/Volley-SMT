@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/member";
-import type { Position } from "@/lib/member-types";
+import { NOTIFICATION_PREFS, type NotificationPref, type Position } from "@/lib/member-types";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProfileState = { status: "idle" | "saved" | "error"; message?: string };
@@ -58,4 +58,16 @@ export async function requestVolunteer(): Promise<ProfileState> {
   }
   revalidatePath("/profil");
   return { status: "saved" };
+}
+
+export async function updateNotificationPref(key: NotificationPref, value: boolean): Promise<{ error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  if (!NOTIFICATION_PREFS.some((p) => p.key === key)) return { error: "Préférence inconnue." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("members").update({ [key]: value }).eq("id", member.id);
+  if (error) return { error: "Enregistrement impossible. Réessayez." };
+  revalidatePath("/profil");
+  return {};
 }

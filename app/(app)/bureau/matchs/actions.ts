@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { readSheet } from "read-excel-file/node";
 import { parseMatchSheet } from "@/lib/domain/match-import";
 import { getCurrentMember, hasRole } from "@/lib/member";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { runVolley34Sync } from "@/lib/volley34-sync";
 
 export type ImportState = {
   status: "idle" | "done" | "error";
@@ -102,4 +104,20 @@ export async function importMatches(_prev: ImportState, formData: FormData): Pro
 
   revalidatePath("/matchs");
   return { status: "done", summary };
+}
+
+/** Synchro volley34 à la demande (Bureau). */
+export async function syncNow(): Promise<{ ok: boolean; text: string }> {
+  const member = await getCurrentMember();
+  if (!hasRole(member, "board")) return { ok: false, text: "Réservé au Bureau." };
+  // Pas d'alerte au Bureau pour une synchro lancée à la main : le résultat s'affiche ici.
+  const result = await runVolley34Sync(createAdminClient(), []);
+  revalidatePath("/matchs");
+  revalidatePath("/bureau/matchs");
+  if (!result.ok) return { ok: false, text: `Échec : ${result.error}` };
+  const s = result.summary;
+  return {
+    ok: true,
+    text: `${s.teams} équipes synchronisées · ${s.updated} matchs à jour (dont ${s.moved} déplacés) · ${s.created} ajoutés.`,
+  };
 }

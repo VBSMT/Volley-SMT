@@ -28,7 +28,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 | Rôle | Onglets |
 |---|---|
 | Adhérent | Accueil, Entraînements, Matchs, Événements (4) |
-| Capitaine | idem + demander un report pour **les matchs de son équipe** |
+| Capitaine | idem + demander un report ou un **renfort** pour **les matchs de son équipe** |
 | Bénévole | idem + sondages de participation bénévole |
 | Bureau | 5 onglets : + onglet **Bureau** ; tout gérer |
 
@@ -39,6 +39,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 - Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe, rôles, licence FSGT + saison, cotisation réglée, sexe.
 - Invisible pour lui : niveau (table séparée `member_levels`, Bureau seulement).
 - Demande « Devenir bénévole » depuis le profil : confirmation, puis demande envoyée au Bureau qui valide ou refuse.
+- **Notifications choisies dans le profil** (toutes activées par défaut) : entraînements (J-1), matchs de mon équipe (J-2), demandes de renfort. Désactiver un type coupe ce message en push **et** en email. Activation du push par appareil.
 
 ## Séances d'entraînement
 - Gymnase : 3 terrains. Créneaux : **tous les mardis et jeudis 20h–22h** de la saison.
@@ -78,10 +79,22 @@ Exemples (T = 3) : 9 → 2 équipes (4+5) ; 12 → 3×4 en rotation ; 16 → 4×
 Méthode : répartition initiale en serpent par niveau décroissant, puis échanges entre équipes tant qu'un échange réduit un coût pondéré (poids décroissants dans l'ordre ci-dessus). Chaque contrainte non tenue est remontée au Bureau. Fonction pure, testée unitairement avec les exemples ci-dessus.
 
 ## Calendrier des matchs
-- Source officielle : **volley34.fr** (championnat et coupe FSGT 34). Pas d'API publique ; synchro quotidienne en attente de l'accord de la commission. En attendant : **import du fichier Excel** du club (qui reste l'import de secours).
+- Source officielle : **volley34.fr** (championnat et coupe FSGT 34). **Accord de la commission obtenu** pour la lecture (octobre 2026) :
+  - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC) — l'API `…/matchs` renvoyait une erreur 500 à l'essai ;
+  - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
+  - classements / résultats : `https://api.volley34.fr/v1/equipes/{code}/classements` et `/resultats` (vides avant le début de saison, format à confirmer).
+  - La saisie des scores depuis l'appli n'a pas reçu de réponse : lien vers volley34 uniquement.
+- **Import du fichier Excel** du club : import initial (championnat, poule, phase, journée) et import de secours. La synchro rattache les matchs volley34 aux matchs Excel (adversaire + domicile/extérieur) puis par UID.
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
 - Affichage : équipe de l'adhérent par défaut, sélecteur pour les autres ; sans équipe → tout le club. Liens sortants vers volley34 (classement, saisie de score).
+
+## Renforts
+- Un capitaine demande un renfort pour **un match à venir de son équipe** : poste (passe / avant / fond / indifférent), sexe (F / M / indifférent), message optionnel.
+- La demande s'affiche sur l'**accueil de tous les adhérents** tant qu'elle est ouverte et que le match n'est pas passé.
+- Notification push/email à la création, aux adhérents **hors de l'équipe**, du sexe demandé, ayant activé « renforts ».
+- Chacun peut **proposer son aide** (et la retirer). Le capitaine (et le Bureau) voit les volontaires **par ordre chronologique** ; le capitaine est notifié à chaque proposition. Les autres ne voient que leur propre proposition.
+- Le capitaine clôt la demande : **renfort trouvé** ou **annulée**.
 
 ## Reports
 Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire et la FSGT. Au plus ~1 demande par semaine.
@@ -113,6 +126,7 @@ Historique des reports · Adhérents (import CSV, invitations, niveaux, rôles, 
 | Tâche | Quand |
 |---|---|
 | Notif J-1 (demande aux non-répondants, rappel aux présents) | lun. et mer. 20h |
+| Notif match J-2 aux joueurs de l'équipe | 20h, 2 jours avant chaque match |
 | Clôture + compo + notif Bureau | mar. et jeu. 12h |
 | Expiration des reports (J-3) | quotidien |
 | Synchro volley34 | quotidien 6h |
@@ -136,4 +150,4 @@ Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas 
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
 - Ne jamais exposer `member_levels` ni la compo à un non-Bureau, même via une vue ou une fonction RPC.
 - Demander avant toute décision qui contredit ce fichier ; mettre ce fichier à jour quand une règle métier change.
-- Points ouverts : échelle de niveau (1–5 proposée), réponse de la commission FSGT 34 sur volley34, liste des adhérents à importer.
+- Points ouverts : échelle de niveau (1–5 proposée), format des classements/résultats volley34, saisie des scores (pas de réponse), liste des adhérents à importer.

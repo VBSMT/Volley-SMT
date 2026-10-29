@@ -202,3 +202,22 @@ details summary { cursor: pointer; min-height: 44px; display: flex; align-items:
 .skeleton-card { height: 7rem; }
 @keyframes pulse { 50% { opacity: 0.5; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* --- Renforts --- */
+.reinforcement { border-left: 4px solid var(--jaune); }
+.reinforcement p, .reinforcement h3, .reinforcement h4 { margin: 0; }
+.reinforcement h3 { font-family: var(--font-barlow-condensed), sans-serif; font-size: 1.2rem; }
+.reinforcement h4 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+.match-date-inline { text-transform: capitalize; }
+.quote { font-style: italic; color: var(--texte-doux); }
+.volunteers { margin: 0; padding-left: 1.5rem; }
+.volunteers li { min-height: 28px; }
+.renfort-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--noir); font-weight: 600; }
+textarea {
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  border: 2px solid var(--gris);
+  border-radius: 8px;
+  background: #fff;
+  resize: vertical;
+}

@@ -30,7 +30,20 @@ export type CurrentMember = {
   position_2: Position | null;
   fsgt_license: string | null;
   dues_paid: boolean;
+  team_id: string | null;
   team: { name: string } | null;
   license_season: { label: string } | null;
-  roles: { role: Role; team: { name: string } | null }[];
+  roles: { role: Role; team_id: string | null; team: { name: string } | null }[];
+  // Préférences de notification (absentes tant que la migration n'est pas appliquée).
+  notify_training?: boolean;
+  notify_match?: boolean;
+  notify_reinforcement?: boolean;
 };
+
+export type NotificationPref = "notify_training" | "notify_match" | "notify_reinforcement";
+
+export const NOTIFICATION_PREFS: { key: NotificationPref; label: string }[] = [
+  { key: "notify_training", label: "Entraînements (la veille : demande ou rappel)" },
+  { key: "notify_match", label: "Matchs de mon équipe (2 jours avant)" },
+  { key: "notify_reinforcement", label: "Demandes de renfort des autres équipes" },
+];
