@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(21);
+select plan(23);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -56,6 +56,8 @@ select pg_temp.login(1);
 select is((select count(*) from public.member_levels)::int, 0, 'adhérent : niveaux invisibles');
 select is((select count(*) from public.lineups)::int, 0, 'adhérent : compo invisible');
 select is((select count(*) from public.gyms)::int, 1, 'adhérent : lit les gymnases');
+select is((select is_captain from public.team_roster where member_id = '00000000-0000-0000-0000-000000000002'), true, 'adhérent : voit le capitaine de l''équipe');
+select hasnt_column('public', 'team_roster', 'level', 'la fiche équipe n''expose pas le niveau');
 select is((select count(*) from public.events)::int, 1, 'adhérent : seulement les événements pour tous');
 select lives_ok($$ insert into public.attendance (session_id, member_id, present)
   values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000001', true) $$, 'adhérent : répond pour lui');
