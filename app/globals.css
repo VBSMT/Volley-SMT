@@ -626,3 +626,74 @@ a.btn-primary { color: var(--noir); }
 
 .team-count .action-row .btn-secondary { flex: 1 1 10rem; }
 .team-count p { margin: 0; }
+
+/* --- Stats complémentaires --- */
+.streak { display: flex; align-items: center; gap: 1rem; }
+.streak-number { font: 700 3.4rem/1 var(--font-barlow-condensed), sans-serif; }
+.streak-number.is-win { color: var(--victoire); }
+.streak-number.is-loss { color: var(--defaite); }
+.streak-label { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.eff-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; }
+.eff-tile { background: var(--surface-2); border-radius: 10px; padding: 0.6rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.eff-tile strong { font: 700 1.6rem/1.1 var(--font-barlow-condensed), sans-serif; }
+.eff-tile span { font-size: 0.75rem; color: var(--texte-doux); }
+.eff-tile .eff-second { margin-top: 0.4rem; }
+.eff-ring {
+  width: 56px; height: 56px; border-radius: 50%; margin-bottom: 0.3rem;
+  background: conic-gradient(var(--texte) calc(var(--p) * 1%), var(--grille) 0);
+  -webkit-mask: radial-gradient(circle, transparent 54%, #000 56%);
+  mask: radial-gradient(circle, transparent 54%, #000 56%);
+}
+.diverging { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; }
+.diverging li { display: grid; grid-template-columns: 7.5rem 1fr; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.diverging li.mine { font-weight: 700; }
+.div-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.div-track { display: grid; grid-template-columns: 1fr 1fr; }
+.div-half { display: flex; align-items: center; gap: 0.3rem; min-height: 1.5rem; }
+.div-neg { justify-content: flex-end; border-right: 1px solid var(--axe); }
+.div-bar { height: 1.25rem; border-radius: 4px; }
+.div-neg .div-bar { border-radius: 4px 0 0 4px; }
+.div-pos .div-bar { border-radius: 0 4px 4px 0; }
+.div-bar.win { background: var(--victoire); }
+.div-bar.loss { background: var(--defaite); }
+.diverging li:not(.mine) .div-bar { opacity: 0.55; }
+.div-value { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+.chart .dot-other { fill: var(--gris); }
+.chart-tooltip { margin: 0; min-height: 1.4em; color: var(--texte-doux); }
+.dot-mine, .dot-other-legend { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 0.3rem; vertical-align: -1px; }
+.dot-mine { background: var(--texte); }
+.dot-other-legend { background: var(--gris); }
+.pts-row { display: grid; gap: 0.2rem; }
+.pts-label { margin: 0; font-weight: 600; font-size: 0.9rem; }
+.pts-line { display: flex; align-items: center; gap: 0.4rem; }
+.pts-bar { height: 1.25rem; border-radius: 0 4px 4px 0; min-width: 2px; }
+.pts-bar.win { background: var(--victoire); }
+.pts-bar.loss { background: var(--defaite); }
+.pts-value { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
+
+/* --- Félicitations éphémères (accueil) --- */
+.bravo { position: relative; overflow: hidden; background: #111111; color: #ffffff; border-radius: 16px; padding: 1rem; display: grid; gap: 0.4rem; }
+.bravo > *:not(.confetti) { position: relative; z-index: 1; }
+.bravo-top { display: flex; justify-content: space-between; align-items: center; }
+.bravo-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; color: #FFE81A; }
+.bravo-close { width: 44px; height: 44px; margin: -0.6rem -0.6rem 0 0; border: 0; background: transparent; color: #bdbdbd; font-size: 1.6rem; cursor: pointer; }
+.bravo h2 { margin: 0; font-size: 1.6rem; line-height: 1.05; color: #FFE81A; }
+.bravo-score { margin: 0; font: 700 2rem/1.1 var(--font-barlow-condensed), sans-serif; }
+.bravo-score small { margin-left: 0.4rem; font: 600 0.85rem var(--font-barlow), sans-serif; color: #bdbdbd; }
+.bravo-meta { margin: 0; font-size: 0.85rem; color: #d6d6d6; }
+.bravo-link { color: #FFE81A; font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i {
+  position: absolute; width: 7px; height: 12px; border-radius: 2px; opacity: 0.45;
+  transform: rotate(var(--r));
+  animation: confetti-fall cubic-bezier(0.2, 0.6, 0.4, 1) both;
+}
+/* Pluie de confettis qui se posent dans la carte. */
+@keyframes confetti-fall {
+  0% { opacity: 1; transform: translate(var(--dx), -220px) rotate(calc(var(--r) - 540deg)); }
+  80% { opacity: 0.9; }
+  100% { opacity: 0.45; transform: translate(0, 0) rotate(var(--r)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti i { animation: none; }
+}

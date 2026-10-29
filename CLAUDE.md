@@ -83,7 +83,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 ## Calendrier des matchs
 - Source officielle : **volley34.fr** (championnat et coupe FSGT 34). **Accord de la commission obtenu** pour la lecture (octobre 2026) :
   - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC ; intitulé « X reçoit Y », ou « X contre Y » pour certains matchs reportés) — l'API `…/matchs` renvoyait une erreur 500 à l'essai. Un événement citant l'équipe mais illisible est signalé au Bureau (Bureau > Calendrier + notif quand la liste change) ;
-  - abonnement agenda pour les adhérents : lien vers le flux officiel `https://www.volley34.fr/icalendar.aspx?equipe={code}` (webcal) depuis l'onglet Matchs ;
+  - abonnement agenda pour les adhérents : flux servi par l'appli `/api/calendrier/{code}.ics` (public, données du calendrier public, adresse du gymnase), boutons Google Agenda / webcal depuis l'onglet Matchs ;
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
   - gymnases : `https://api.volley34.fr/v1/gymnases` (JSON : nom, adresse, GPS `lat|lon`, `NomComplet` = lieu du flux ICS), table `gyms` mise à jour à la synchro ; lien « Itinéraire » Google Maps pour les matchs à l'extérieur ;
   - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;
@@ -99,6 +99,8 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Classement de la poule (équipe du club surlignée, zones montée/podium et descente selon Promus/Relegue), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **forme récente**, **répartition des scores** (3-0…0-3), **sets et points** pour/contre (moyenne par set), **points de chaque équipe de la poule**, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
 - Vue club : toutes les équipes (rang, points, bilan).
 - Graphiques : méthode dataviz (série unique couleur du texte, victoire/défaite selon la charte, toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
+- Aussi : série en cours (meilleure / pire), efficacité (% sets et points gagnés), points marqués/encaissés, différence de sets de la poule (barres divergentes), attaque/défense (points par set de chaque équipe), évolution des points et de la différence de sets.
+- **Félicitations éphémères** : après une victoire d'une équipe du club (détectée par la photo du classement), carte avec confettis animés en haut de l'accueil de **tous** les adhérents pendant **48 h** (score, adversaire, série, rang) ; fermable, mémorisé par appareil ; pas de notification.
 - Avant le premier match de la poule (tout à zéro) : état « pas encore de match joué » et liste des équipes de la poule.
 
 ## Sondage de présence d'un match

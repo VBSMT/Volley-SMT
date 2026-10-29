@@ -196,3 +196,89 @@ export function poolTitle(division: string | null, pool: string | null): string 
   const poule = pool && pool !== "0" ? `Poule ${pool}` : "";
   return [level, poule].filter(Boolean).join(" - ");
 }
+
+/** Tous les résultats déduits des photos quotidiennes (du plus ancien au plus récent). */
+export function allResults(snapshots: { takenOn: string; won: number; lost: number }[]): FormResult[] {
+  return recentForm(snapshots, Number.MAX_SAFE_INTEGER);
+}
+
+export type Streaks = {
+  current: { result: "V" | "D"; count: number } | null;
+  bestWin: number; // plus longue série de victoires
+  worstLoss: number; // plus longue série de défaites
+};
+
+/** Série en cours et records de la saison. */
+export function streaks(results: FormResult[]): Streaks {
+  let bestWin = 0;
+  let worstLoss = 0;
+  let run = 0;
+  let prev: "V" | "D" | null = null;
+  for (const r of results) {
+    run = r.result === prev ? run + 1 : 1;
+    prev = r.result;
+    if (prev === "V") bestWin = Math.max(bestWin, run);
+    else worstLoss = Math.max(worstLoss, run);
+  }
+  return { current: prev ? { result: prev, count: run } : null, bestWin, worstLoss };
+}
+
+/** Pourcentages de sets et de points gagnés (null si rien joué). */
+export function efficiency(row: Pick<StandingRow, "setsWon" | "setsLost" | "pointsWon" | "pointsLost">) {
+  const sets = row.setsWon + row.setsLost;
+  const points = row.pointsWon + row.pointsLost;
+  return {
+    setsPct: sets ? Math.round((row.setsWon / sets) * 100) : null,
+    pointsPct: points ? Math.round((row.pointsWon / points) * 100) : null,
+  };
+}
+
+/** Points marqués et encaissés par set pour chaque équipe de la poule (équipes sans set exclues). */
+export function attackDefense(rows: StandingRow[]) {
+  return rows.flatMap((r) => {
+    const sets = r.setsWon + r.setsLost;
+    return sets ? [{ name: r.name, code: r.code, scored: r.pointsWon / sets, conceded: r.pointsLost / sets }] : [];
+  });
+}
+
+export type Victory = {
+  takenOn: string; // photo du classement où la victoire apparaît
+  prevTakenOn: string;
+  score: "3-0" | "3-1" | "3-2" | "forfait" | null; // null si plusieurs victoires entre deux photos
+  streak: number; // victoires de suite à ce jour
+  rank: number;
+  rankDelta: number; // places gagnées (> 0) ou perdues
+};
+
+const dayDiff = (a: string, b: string) => Math.round((Date.parse(`${b}T12:00:00Z`) - Date.parse(`${a}T12:00:00Z`)) / 86_400_000);
+
+/**
+ * Dernière victoire d'une équipe vue dans les photos quotidiennes du classement, si elle date
+ * d'au plus 48 h (photo d'aujourd'hui ou d'hier) : sert au message de félicitations éphémère.
+ */
+export function latestVictory(
+  snapshots: { takenOn: string; won: number; lost: number; rank: number; mine: Pick<StandingRow, "scores"> | null }[],
+  today: string,
+): Victory | null {
+  for (let i = snapshots.length - 1; i >= 1; i--) {
+    const cur = snapshots[i];
+    const prev = snapshots[i - 1];
+    if (dayDiff(cur.takenOn, today) > 1) return null;
+    if (cur.won <= prev.won) continue;
+    let score: Victory["score"] = null;
+    if (cur.won - prev.won === 1 && cur.mine && prev.mine) {
+      const inc = (["s30", "s31", "s32", "fWon"] as const).filter((k) => cur.mine!.scores[k] > prev.mine!.scores[k]);
+      if (inc.length === 1) score = inc[0] === "fWon" ? "forfait" : (`${inc[0][1]}-${inc[0][2]}` as Victory["score"]);
+    }
+    const s = streaks(allResults(snapshots.slice(0, i + 1)));
+    return {
+      takenOn: cur.takenOn,
+      prevTakenOn: prev.takenOn,
+      score,
+      streak: s.current?.result === "V" ? s.current.count : 1,
+      rank: cur.rank,
+      rankDelta: prev.rank - cur.rank,
+    };
+  }
+  return null;
+}
