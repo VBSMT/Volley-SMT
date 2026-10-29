@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { after } from "next/server";
 import {
   offerMessage,
@@ -16,7 +15,7 @@ import { notifyMembers } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type RequestState = { status: "idle" | "error"; message?: string };
+export type RequestState = { status: "idle" | "error" | "ok"; message?: string; id?: string };
 
 const POSITIONS: Position[] = ["setter", "front", "back"];
 const SEXES: Sex[] = ["F", "M"];
@@ -89,7 +88,7 @@ export async function createReinforcement(_prev: RequestState, formData: FormDat
 
   notifyNewRequest(created.id);
   revalidatePath("/", "layout");
-  redirect("/accueil");
+  return { status: "ok", id: created.id };
 }
 
 export async function offerHelp(requestId: string): Promise<{ error?: string }> {
@@ -144,6 +143,29 @@ export async function closeReinforcement(requestId: string, status: "filled" | "
     .update({ status, closed_at: new Date().toISOString() })
     .eq("id", requestId)
     .eq("status", "open")
+    .select("id");
+  if (error || !data?.length) return { error: "Action impossible." };
+  revalidatePath("/", "layout");
+  return {};
+}
+
+/** Annule une clôture (renfort trouvé / annulée) tant que le match n'est pas passé. */
+export async function reopenReinforcement(requestId: string): Promise<{ error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  const supabase = await createClient();
+  const { data: r } = await supabase
+    .from("reinforcement_requests")
+    .select("id, match:matches(starts_at)")
+    .eq("id", requestId)
+    .maybeSingle();
+  const startsAt = (r?.match as unknown as { starts_at: string } | null)?.starts_at;
+  if (!r || !startsAt || Date.parse(startsAt) <= Date.now()) return { error: "Le match est passé." };
+  const { data, error } = await supabase
+    .from("reinforcement_requests")
+    .update({ status: "open", closed_at: null })
+    .eq("id", requestId)
+    .neq("status", "open")
     .select("id");
   if (error || !data?.length) return { error: "Action impossible." };
   revalidatePath("/", "layout");

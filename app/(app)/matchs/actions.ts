@@ -68,3 +68,14 @@ export async function answerMatchPoll(matchId: string, available: boolean): Prom
   revalidatePath("/", "layout");
   return {};
 }
+
+/** Annule un sondage de présence (capitaine ou Bureau) : les réponses sont effacées. */
+export async function cancelMatchPoll(matchId: string): Promise<{ error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("match_polls").delete().eq("match_id", matchId).select("match_id");
+  if (error || !data?.length) return { error: "Annulation impossible." };
+  revalidatePath("/", "layout");
+  return {};
+}

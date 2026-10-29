@@ -478,3 +478,49 @@ a.btn-primary { color: var(--noir); }
 .season-kpis .progress { height: 8px; display: block; }
 .season-row { display: grid; gap: 0.5rem; }
 .season-row p { margin: 0; }
+
+/* Confirmation et message « Annuler » */
+.confirm-dialog {
+  border: none;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(92vw, 360px);
+  background: var(--surface);
+  color: var(--texte);
+}
+.confirm-dialog::backdrop { background: rgb(0 0 0 / 0.5); }
+.confirm-dialog .action-row { justify-content: flex-end; }
+.toast-zone {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 50;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  width: 100%;
+  padding: 8px 8px 8px 16px;
+  border-radius: 10px;
+  background: #111111;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
+}
+.toast span { flex: 1; }
+.toast-undo, .toast-close {
+  min-height: 44px;
+  min-width: 44px;
+  background: none;
+  border: none;
+  color: #FFE81A;
+  font-weight: 700;
+  cursor: pointer;
+}
+.toast-close { color: #BDBDBD; font-size: 1.4rem; }
