@@ -3,7 +3,7 @@
  */
 
 export type Sex = "F" | "M";
-export type Position = "setter" | "front" | "back";
+export type Position = "setter" | "front" | "front_right" | "front_left" | "back";
 
 export type LineupPlayer = {
   id: string;

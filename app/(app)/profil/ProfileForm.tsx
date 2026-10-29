@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member-types";
+import { PLAYER_POSITIONS, POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member-types";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { updateProfile, type ProfileState } from "./actions";
 
@@ -13,9 +13,10 @@ function PositionSelect({ name, label, value }: { name: string; label: string; v
       <label htmlFor={name}>{label}</label>
       <select id={name} name={name} defaultValue={value ?? ""}>
         <option value="">Non renseigné</option>
-        {Object.entries(POSITION_LABELS).map(([key, text]) => (
+        {/* Ancien choix « Avant » (côté non précisé) : affiché tant qu'il n'est pas remplacé. */}
+        {(value === "front" ? (["front", ...PLAYER_POSITIONS] as Position[]) : PLAYER_POSITIONS).map((key) => (
           <option key={key} value={key}>
-            {text}
+            {key === "front" ? "Avant (côté à préciser)" : POSITION_LABELS[key]}
           </option>
         ))}
       </select>

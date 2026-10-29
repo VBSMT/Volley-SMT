@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { placeOnCourt, SLOT_XY, type Slot } from "@/lib/domain/court";
 
-export type RosterPlayer = { id: string; firstName: string; initials: string; position1: "setter" | "front" | "back" | null };
+export type RosterPlayer = { id: string; firstName: string; initials: string; position1: "setter" | "front" | "front_right" | "front_left" | "back" | null };
 
-const SLOT_LABEL: Record<Slot, string> = { passe: "Passe", avantG: "Avant", avantD: "Avant", fond: "Fond" };
+const SLOT_LABEL: Record<Slot, string> = { passe: "Passe", avantG: "Avant (4)", avantD: "Avant (2)", fond: "Fond" };
 
 /**
  * Demi-terrain vu de dessus (filet en haut) : les joueurs arrivent un par un et glissent à leur poste.

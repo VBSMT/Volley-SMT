@@ -4,7 +4,7 @@
  * Plusieurs joueurs au même poste sont superposés ; sans poste : place tirée au hasard.
  */
 export type Slot = "passe" | "avantG" | "avantD" | "fond";
-export type CourtPlayer = { id: string; position1: "setter" | "front" | "back" | null };
+export type CourtPlayer = { id: string; position1: "setter" | "front" | "front_right" | "front_left" | "back" | null };
 
 /** Coordonnées en % du terrain (filet en haut). */
 export const SLOT_XY: Record<Slot, { x: number; y: number }> = {
@@ -21,7 +21,12 @@ export function placeOnCourt<P extends CourtPlayer>(players: P[], rng: () => num
   for (const p of players) {
     if (p.position1 === "setter") out.passe.push(p);
     else if (p.position1 === "back") out.fond.push(p);
-    else if (p.position1 === "front") (out.avantG.length <= out.avantD.length ? out.avantG : out.avantD).push(p);
+    else if (p.position1 === "front_right") out.avantD.push(p); // Avant (2) : à droite au filet
+    else if (p.position1 === "front_left") out.avantG.push(p); // Avant (4) : à gauche au filet
+  }
+  // Avants sans côté précisé : répartis à gauche / à droite.
+  for (const p of players) {
+    if (p.position1 === "front") (out.avantG.length <= out.avantD.length ? out.avantG : out.avantD).push(p);
   }
   for (const p of players.filter((x) => !x.position1)) out[SLOTS[Math.floor(rng() * SLOTS.length) % SLOTS.length]].push(p);
   return out;

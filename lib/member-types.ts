@@ -1,13 +1,21 @@
 // Types et libellés partagés client/serveur (aucun import serveur ici).
 
 export type Role = "member" | "captain" | "volunteer" | "board";
-export type Position = "setter" | "front" | "back";
+/** « front » : avant sans côté précisé (ancien choix, et poste des demandes de renfort). */
+export type Position = "setter" | "front" | "front_right" | "front_left" | "back";
 
 export const POSITION_LABELS: Record<Position, string> = {
   setter: "Passe",
   front: "Avant",
+  front_right: "Avant (2)",
+  front_left: "Avant (4)",
   back: "Fond",
 };
+
+/** Postes proposés aux joueurs : Avant (2) à droite au filet, Avant (4) à gauche. */
+export const PLAYER_POSITIONS: Position[] = ["setter", "front_right", "front_left", "back"];
+/** Postes d'une demande de renfort (avant sans côté). */
+export const REINFORCEMENT_POSITIONS: Position[] = ["setter", "front", "back"];
 
 export const ROLE_LABELS: Record<Role, string> = {
   member: "Adhérent",

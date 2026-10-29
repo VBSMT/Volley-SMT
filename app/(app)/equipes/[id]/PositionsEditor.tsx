@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useToast } from "@/components/Feedback";
-import { POSITION_LABELS } from "@/lib/member-types";
+import { PLAYER_POSITIONS, POSITION_LABELS, type Position } from "@/lib/member-types";
 import { setPlayerPositions } from "../actions";
 
 type Player = { id: string; name: string; p1: string | null; p2: string | null };
@@ -45,7 +45,8 @@ export function PositionsEditor({ players }: { players: Player[] }) {
       onChange={(e) => change(p, key, e.target.value)}
     >
       <option value="">{key === "p1" ? "Poste 1 ?" : "Poste 2 —"}</option>
-      {Object.entries(POSITION_LABELS)
+      {(values.get(p.id)![key] === "front" ? (["front", ...PLAYER_POSITIONS] as Position[]) : PLAYER_POSITIONS)
+        .map((k) => [k, k === "front" ? "Avant (côté ?)" : POSITION_LABELS[k]] as const)
         .filter(([k]) => key === "p1" || k !== values.get(p.id)!.p1)
         .map(([k, l]) => (
           <option key={k} value={k}>

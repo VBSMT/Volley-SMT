@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type ProfileState = { status: "idle" | "saved" | "error"; message?: string };
 
-const POSITIONS: Position[] = ["setter", "front", "back"];
+const POSITIONS: Position[] = ["setter", "front", "front_right", "front_left", "back"];
 
 function text(formData: FormData, key: string, max = 100) {
   const value = String(formData.get(key) ?? "").trim().slice(0, max);
