@@ -37,6 +37,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <h1>Stats</h1>
           <StatsTeamSelect teams={teams} value="club" />
         </div>
+        <Link href="/equipes" className="btn-secondary center">Les équipes du club et leurs joueurs →</Link>
         <section className="card stack">
           <h2>Bilan du club</h2>
           {totals.won + totals.lost > 0 ? <WinLoss won={totals.won} lost={totals.lost} /> : <p className="muted small">Les résultats arrivent après les premiers matchs.</p>}
@@ -87,6 +88,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <h1>Stats</h1>
         <StatsTeamSelect teams={teams} value={team.id} />
       </div>
+      <Link href={`/equipes/${team.id}`} className="small">Voir l&apos;équipe sur le terrain · toutes les équipes du club →</Link>
 
       {latest && started ? (
         <>

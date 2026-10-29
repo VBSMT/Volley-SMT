@@ -19,7 +19,9 @@ export function TabBar({ isBoard }: { isBoard: boolean }) {
   return (
     <nav className="tab-bar" aria-label="Navigation principale">
       {tabs.map((tab) => {
-        const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+        // Les fiches équipes (/equipes) dépendent de l'onglet Stats.
+        const path = pathname.startsWith("/equipes") ? "/stats" : pathname;
+        const active = path === tab.href || path.startsWith(`${tab.href}/`);
         return (
           <Link
             key={tab.href}
