@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CourtView, type RosterPlayer } from "@/components/CourtView";
-import { formatDay, formatTime } from "@/lib/format";
+import { formatDay, formatTime, shortName } from "@/lib/format";
 import { POSITION_LABELS, type Position } from "@/lib/member-types";
 import { captainTeamIds, getCurrentMember, hasRole } from "@/lib/member";
 import { getLatestSnapshots } from "@/lib/stats";
@@ -41,7 +41,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
     initials: `${p.first_name[0] ?? ""}${p.last_name[0] ?? ""}`.toUpperCase(),
     position1: p.position_1,
   }));
-  const captains = players.filter((p) => p.is_captain).map((p) => `${p.first_name} ${p.last_name[0] ?? ""}.`);
+  const captains = players.filter((p) => p.is_captain).map((p) => shortName(p.first_name, p.last_name));
   const s = latest.get(team.id);
   const pos = (p: Position | null) => (p ? POSITION_LABELS[p] : null);
 
@@ -69,7 +69,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
               <PositionsEditor
                 players={players.map((p) => ({
                   id: p.member_id,
-                  name: `${p.first_name} ${p.last_name[0] ?? ""}.${p.is_captain ? " ©" : ""}`,
+                  name: `${shortName(p.first_name, p.last_name)}${p.is_captain ? " ©" : ""}`,
                   p1: p.position_1,
                   p2: p.position_2,
                 }))}
@@ -80,7 +80,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
             {players.map((p) => (
               <li key={p.member_id}>
                 <span>
-                  {p.first_name} {p.last_name[0] ?? ""}.{p.is_captain && <span aria-label="capitaine"> ©</span>}
+                  {shortName(p.first_name, p.last_name)}{p.is_captain && <span aria-label="capitaine"> ©</span>}
                 </span>
                 <span className="muted small">{[pos(p.position_1), pos(p.position_2)].filter(Boolean).join(" / ") || "poste non renseigné"}</span>
               </li>

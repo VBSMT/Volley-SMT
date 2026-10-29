@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type AnnouncementTarget = "club" | "team" | "volunteers" | "session";
@@ -26,7 +27,7 @@ export async function getAnnouncements(client: SupabaseClient, opts: { limit?: n
   // Nom de l'auteur via l'annuaire (la fiche complète n'est pas lisible par les adhérents).
   const authorIds = [...new Set(data.map((a) => a.author_id).filter(Boolean))] as string[];
   const { data: authors } = await client.from("member_directory").select("id, first_name, last_name").in("id", authorIds);
-  const names = new Map((authors ?? []).map((m) => [m.id as string, `${m.first_name} ${m.last_name}`]));
+  const names = new Map((authors ?? []).map((m) => [m.id as string, shortName(m.first_name, m.last_name)]));
   const day = (iso: string) =>
     new Date(iso).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", weekday: "short", day: "numeric", month: "short" });
 
