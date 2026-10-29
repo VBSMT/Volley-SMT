@@ -524,3 +524,6 @@ a.btn-primary { color: var(--noir); }
   cursor: pointer;
 }
 .toast-close { color: #BDBDBD; font-size: 1.4rem; }
+
+.attendance-edit li { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.attendance-edit .btn-secondary { width: auto; min-height: 44px; padding: 0 12px; }
