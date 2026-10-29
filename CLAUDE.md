@@ -46,7 +46,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 ## Séances d'entraînement
 - Gymnase : 3 terrains. Créneaux : **tous les mardis et jeudis 20h–22h** de la saison.
 - Vacances scolaires (zone C) et jours fériés : **0 terrain disponible par défaut**. Le Bureau peut rouvrir 1 à 3 terrains sur un créneau.
-- Terrains libres d'une séance = terrains ouverts − matchs à domicile − pré-réservations de report validées.
+- Terrains libres d'une séance = terrains ouverts − matchs à domicile − pré-réservations de report validées. Une demande de report en attente (`requested`) ne prend pas de terrain mais est signalée sur la séance (« report en attente de confirmation »).
 
 ## Sondage de présence
 - Ouvert en permanence pour toutes les séances à venir ; un adhérent peut répondre plusieurs séances d'avance.

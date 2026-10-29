@@ -43,7 +43,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           .filter((s) => s.freeCourts > 0)
           .map((s) => ({
             id: s.id,
-            label: `${formatDay(s.startsAt)} ${formatTime(s.startsAt)} · ${s.freeCourts} terrain${s.freeCourts > 1 ? "s" : ""} libre${s.freeCourts > 1 ? "s" : ""}`,
+            label: `${formatDay(s.startsAt)} ${formatTime(s.startsAt)} · ${s.freeCourts} terrain${s.freeCourts > 1 ? "s" : ""} libre${s.freeCourts > 1 ? "s" : ""}${s.pendingReschedules ? ` · ${s.pendingReschedules} report${s.pendingReschedules > 1 ? "s" : ""} en attente` : ""}`,
           }))
       : [];
 

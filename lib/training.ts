@@ -10,6 +10,8 @@ export type SessionView = {
   openCourts: number;
   homeMatches: number;
   approvedReschedules: number;
+  /** Demandes de report vers ce créneau en attente du Bureau (pas encore de terrain pris). */
+  pendingReschedules: number;
   freeCourts: number;
   closedReason: string | null; // vacances / férié (affichage)
   pollOpen: boolean;
@@ -50,8 +52,8 @@ export async function getSessions(opts: {
         .lte("starts_at", new Date(new Date(last).getTime() + dayMs).toISOString()),
       supabase
         .from("reschedule_requests")
-        .select("requested_session_id")
-        .eq("status", "approved")
+        .select("requested_session_id, status")
+        .in("status", ["approved", "requested"])
         .in("requested_session_id", ids),
       supabase.from("attendance").select("session_id, member_id, present").in("session_id", ids),
       supabase.from("member_directory").select("id, first_name, last_name"),
@@ -71,7 +73,9 @@ export async function getSessions(opts: {
   return sessions.map((s) => {
     const date = parisDate(s.starts_at);
     const homeMatches = homeByDate.get(date) ?? 0;
-    const approved = (reschedules ?? []).filter((r) => r.requested_session_id === s.id).length;
+    const forSlot = (reschedules ?? []).filter((r) => r.requested_session_id === s.id);
+    const approved = forSlot.filter((r) => r.status === "approved").length;
+    const pending = forSlot.filter((r) => r.status === "requested").length;
     const answers = (attendance ?? []).filter((a) => a.session_id === s.id);
     const free = freeCourts(s.open_courts, homeMatches, approved);
     const mine = answers.find((a) => a.member_id === opts.memberId);
@@ -81,6 +85,7 @@ export async function getSessions(opts: {
       openCourts: s.open_courts,
       homeMatches,
       approvedReschedules: approved,
+      pendingReschedules: pending,
       freeCourts: free,
       closedReason: s.open_courts === 0 ? closureReason(date) : null,
       pollOpen: free > 0 && !s.poll_closed_at && now < pollDeadline(s.starts_at, schedule.closeHour).getTime(),
