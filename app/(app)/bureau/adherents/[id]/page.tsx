@@ -5,6 +5,7 @@ import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib
 import { createClient } from "@/lib/supabase/server";
 import { DeleteMemberButton } from "./DeleteMemberButton";
 import { MemberForm } from "./MemberForm";
+import { PositionsEditor } from "@/app/(app)/equipes/[id]/PositionsEditor";
 
 export const metadata: Metadata = { title: "Fiche adhérent" };
 
@@ -56,6 +57,11 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           <dt>Droit à l&apos;image</dt>
           <dd>{m.image_consent ? "Oui" : "Non"}</dd>
         </dl>
+      </section>
+
+      <section className="card stack">
+        <h2>Postes</h2>
+        <PositionsEditor players={[{ id: m.id, name: `${m.first_name} ${m.last_name}`, p1: m.position_1, p2: m.position_2 }]} />
       </section>
 
       <MemberForm

@@ -4,7 +4,9 @@ import { notFound } from "next/navigation";
 import { CourtView, type RosterPlayer } from "@/components/CourtView";
 import { formatDay, formatTime } from "@/lib/format";
 import { POSITION_LABELS, type Position } from "@/lib/member-types";
+import { captainTeamIds, getCurrentMember, hasRole } from "@/lib/member";
 import { getLatestSnapshots } from "@/lib/stats";
+import { PositionsEditor } from "./PositionsEditor";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Équipe" };
@@ -27,6 +29,8 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
     getLatestSnapshots(supabase),
   ]);
   if (!team) notFound();
+  const me = await getCurrentMember();
+  const canEdit = hasRole(me, "board") || captainTeamIds(me).includes(team.id);
 
   const players = [...(roster ?? [])].sort(
     (a, b) => Number(b.is_captain) - Number(a.is_captain) || a.first_name.localeCompare(b.first_name, "fr"),
@@ -59,6 +63,19 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
       {players.length > 0 && (
         <section className="card stack">
           <h2>L&apos;équipe</h2>
+          {canEdit ? (
+            <>
+              <p className="muted small">Capitaine / Bureau : modifiez les postes, enregistrés à chaque changement.</p>
+              <PositionsEditor
+                players={players.map((p) => ({
+                  id: p.member_id,
+                  name: `${p.first_name} ${p.last_name[0] ?? ""}.${p.is_captain ? " ©" : ""}`,
+                  p1: p.position_1,
+                  p2: p.position_2,
+                }))}
+              />
+            </>
+          ) : (
           <ul className="roster">
             {players.map((p) => (
               <li key={p.member_id}>
@@ -69,6 +86,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
               </li>
             ))}
           </ul>
+          )}
         </section>
       )}
 
