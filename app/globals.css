@@ -466,3 +466,4 @@ fieldset.card legend { font-family: var(--font-barlow-condensed), sans-serif; fo
 .pool-bars li.mine .pool-name { font-weight: 700; color: var(--noir); background: var(--jaune); padding: 0 0.25rem; border-radius: 4px; }
 .pool-value { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
 .names .strong { font-weight: 700; }
+a.btn-primary { color: var(--noir); }
