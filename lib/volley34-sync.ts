@@ -1,7 +1,7 @@
 import "server-only";
 import { parisClock } from "@/lib/domain/notifications";
 import { parisDate } from "@/lib/domain/training";
-import { parseIcs, parseTeamsXml, reconcile, teamMatches } from "@/lib/domain/volley34";
+import { parseIcs, parseTeams, reconcile, teamMatches } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -12,8 +12,12 @@ const ICS_URL = (code: string) => `http://calendrier.volley34.fr/?equipe=${encod
 const CLUB_CODE = "SMDT";
 const SYNC_HOUR = 6;
 
-async function fetchText(url: string) {
-  const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(20_000) });
+async function fetchText(url: string, accept = "*/*") {
+  const res = await fetch(url, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+    headers: { Accept: accept, "User-Agent": "VolleySMT/1.0 (appli du club SMDT)" },
+  });
   if (!res.ok) throw new Error(`${url} : HTTP ${res.status}`);
   return res.text();
 }
@@ -26,8 +30,12 @@ export type SyncSummary = { teams: number; updated: number; moved: number; creat
  * rien n'est modifié pour l'équipe concernée et le planning reste sur la dernière version.
  */
 export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
-  const remoteTeams = parseTeamsXml(await fetchText(TEAMS_URL), CLUB_CODE);
-  if (!remoteTeams.length) throw new Error("Aucune équipe SMDT dans la réponse volley34");
+  const body = await fetchText(TEAMS_URL, "application/xml, application/json;q=0.9");
+  const remoteTeams = parseTeams(body, CLUB_CODE);
+  if (!remoteTeams.length) {
+    // Début de la réponse dans le message, pour diagnostiquer depuis Bureau > Calendrier.
+    throw new Error(`Aucune équipe SMDT dans la réponse volley34 (début : ${body.slice(0, 120).replace(/\s+/g, " ")})`);
+  }
 
   const { data: teams, error } = await admin.from("teams").select("id, name, volley34_ref");
   if (error) throw new Error(error.message);
