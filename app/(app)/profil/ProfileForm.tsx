@@ -30,6 +30,7 @@ export function ProfileForm({ member }: { member: CurrentMember }) {
     <form onSubmit={submitWithoutReset(formAction)} className="card stack">
       <h2>Mes informations</h2>
 
+      <div className="stack" data-tour="contact">
       <label htmlFor="phone">Téléphone</label>
       <input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={member.phone ?? ""} />
 
@@ -49,11 +50,14 @@ export function ProfileForm({ member }: { member: CurrentMember }) {
           defaultValue={member.emergency_contact_phone ?? ""}
         />
       </fieldset>
+      </div>
 
-      <PositionSelect name="position_1" label="Poste préféré" value={member.position_1} />
-      <PositionSelect name="position_2" label="Deuxième poste" value={member.position_2} />
+      <div className="stack" data-tour="positions">
+        <PositionSelect name="position_1" label="Poste préféré" value={member.position_1} />
+        <PositionSelect name="position_2" label="Deuxième poste" value={member.position_2} />
+      </div>
 
-      <label className="checkbox">
+      <label className="checkbox" data-tour="image">
         <input type="checkbox" name="image_consent" defaultChecked={member.image_consent} />
         J&apos;accepte que le club publie des photos où j&apos;apparais
       </label>

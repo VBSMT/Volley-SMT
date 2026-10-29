@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { ThemeChooser } from "@/components/ThemeChooser";
 import { THEME_COOKIE, type ThemeChoice } from "@/lib/theme";
+import { RestartTourButton } from "@/components/GuidedTour";
 import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +37,7 @@ export default async function ProfilPage() {
         {member.first_name} {member.last_name}
       </h1>
 
-      <section className="card">
+      <section className="card" data-tour="fiche">
         <h2>Ma fiche</h2>
         <p className="muted small">Pour corriger ces informations, contactez le Bureau.</p>
         <dl className="facts">
@@ -61,7 +62,7 @@ export default async function ProfilPage() {
 
       <ProfileForm member={member} />
 
-      <section className="card stack">
+      <section className="card stack" data-tour="notif-prefs">
         <h2>Notifications</h2>
         <NotificationToggle />
         {member.notify_training !== undefined && (
@@ -101,6 +102,7 @@ export default async function ProfilPage() {
         </button>
       </form>
 
+      <RestartTourButton />
       <Link href="/aide" className="small">Aide : installation, notifications, utilisation →</Link>
       <ZelsyncFooter />
     </main>
