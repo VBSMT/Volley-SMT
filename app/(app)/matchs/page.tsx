@@ -103,6 +103,7 @@ export default async function MatchsPage({
                     <Link href={`/matchs/${m.id}`} className="match-link">
                       {m.opponent}
                     </Link>
+                    {!m.is_home && !showPast && " "}
                     {!m.is_home && !showPast && <DirectionsLink url={directions(m.venue, m.city)} />}
                   </p>
                   <p className="muted small">
