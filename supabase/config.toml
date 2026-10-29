@@ -1,0 +1,3 @@
+# Configuration minimale de la CLI Supabase (utilisée par « supabase link / db push »).
+# Les réglages Auth, SMTP et modèles d'email sont gérés dans le tableau de bord Supabase.
+project_id = "volley-smt"

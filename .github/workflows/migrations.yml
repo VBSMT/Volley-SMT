@@ -1,0 +1,40 @@
+# Applique les migrations Supabase à chaque mise à jour de main.
+# Secrets à créer dans GitHub (Settings > Secrets and variables > Actions) :
+#   SUPABASE_ACCESS_TOKEN : jeton d'accès Supabase (sbp_…) du compte du club
+#   SUPABASE_DB_PASSWORD  : mot de passe de la base
+name: Migrations Supabase
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+# Jamais deux applications de migrations en même temps.
+concurrency:
+  group: supabase-migrations
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: vkspyzkvxzkbwezdqipr
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+
+      - name: Lier le projet
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Migrations en attente
+        run: supabase migration list --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Appliquer les migrations
+        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
