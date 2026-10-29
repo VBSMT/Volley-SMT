@@ -155,3 +155,14 @@ export function offerMessage(volunteerName: string, teamName: string): Message {
     url: "/accueil",
   };
 }
+
+// --- Sondage de présence d'un match -----------------------------------------
+
+export function matchPollMessage(match: { id: string; startsAt: string; teamName: string; opponent: string }): Message {
+  const when = `${fmt(match.startsAt, { weekday: "long", day: "numeric", month: "long" })} à ${fmt(match.startsAt, { hour: "2-digit", minute: "2-digit" })}`;
+  return {
+    title: `📋 ${match.teamName} : es-tu dispo ?`,
+    body: `Match du ${when} contre ${match.opponent}. Réponds dans l'appli.`,
+    url: `/matchs/${match.id}`,
+  };
+}

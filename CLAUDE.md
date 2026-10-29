@@ -28,7 +28,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 | Rôle | Onglets |
 |---|---|
 | Adhérent | Accueil, Entraînements, Matchs, Événements (4) |
-| Capitaine | idem + demander un report ou un **renfort** pour **les matchs de son équipe** |
+| Capitaine | idem + demander un report ou un **renfort**, lancer un **sondage de présence** pour **les matchs de son équipe** |
 | Bénévole | idem + sondages de participation bénévole |
 | Bureau | 5 onglets : + onglet **Bureau** ; tout gérer |
 
@@ -88,6 +88,11 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
 - Affichage : équipe de l'adhérent par défaut, sélecteur pour les autres ; sans équipe → tout le club. Liens sortants vers volley34 (classement, saisie de score).
+
+## Sondage de présence d'un match
+- Le capitaine lance un sondage pour **un match à venir de son équipe** ; les joueurs de l'équipe sont notifiés (préférence « matchs ») et répondent **dispo / pas dispo** (modifiable jusqu'au match).
+- Visible par les joueurs de l'équipe (noms des dispos et pas dispos), le capitaine (et le Bureau) voit aussi les non-répondants. Appliqué via RLS.
+- S'il manque des joueurs, raccourci vers la demande de renfort.
 
 ## Renforts
 - Un capitaine demande un renfort pour **un match à venir de son équipe** : poste (passe / avant / fond / indifférent), sexe (F / M / indifférent), message optionnel.

@@ -96,7 +96,9 @@ export default async function MatchsPage({
                     <span className={m.is_home ? "badge home" : "badge away"}>
                       {m.is_home ? "Dom." : "Ext."}
                     </span>{" "}
-                    {m.opponent}
+                    <Link href={`/matchs/${m.id}`} className="match-link">
+                      {m.opponent}
+                    </Link>
                   </p>
                   <p className="muted small">
                     {m.competition}
@@ -108,9 +110,14 @@ export default async function MatchsPage({
                     </p>
                   )}
                   {!showPast && m.team && myCaptainTeams.includes(m.team.id) && (
-                    <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
-                      Demander un renfort
-                    </Link>
+                    <p className="captain-links">
+                      <Link href={`/matchs/${m.id}`} className="small renfort-link">
+                        Sondage de présence
+                      </Link>
+                      <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
+                        Demander un renfort
+                      </Link>
+                    </p>
                   )}
                 </div>
               </li>

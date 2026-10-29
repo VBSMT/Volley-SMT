@@ -4,6 +4,7 @@ import {
   isClosureDue,
   isMatchReminderDue,
   matchMessage,
+  matchPollMessage,
   offerMessage,
   reinforcementAudience,
   reinforcementMessage,
@@ -134,5 +135,16 @@ describe("messages de renfort", () => {
     expect(msg.title).toBe("🙋 Renfort recherché · Les St Loup");
     expect(msg.body).toBe("Une joueuse pour le match du mardi 10 novembre à 20:00. Tu peux aider ?");
     expect(offerMessage("Eve Martin", "Les St Loup").body).toBe("Eve Martin propose son aide à Les St Loup.");
+  });
+});
+
+describe("matchPollMessage", () => {
+  it("demande la dispo de l'équipe et ouvre le match", () => {
+    const msg = matchPollMessage({ id: "m1", startsAt: "2026-11-10T19:00:00.000Z", teamName: "Les St Loup", opponent: "CLAPIERS/Spike Tyson" });
+    expect(msg).toEqual({
+      title: "📋 Les St Loup : es-tu dispo ?",
+      body: "Match du mardi 10 novembre à 20:00 contre CLAPIERS/Spike Tyson. Réponds dans l'appli.",
+      url: "/matchs/m1",
+    });
   });
 });
