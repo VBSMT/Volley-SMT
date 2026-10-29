@@ -21,6 +21,8 @@ Développeur unique : Benjamin (Windows + VS Code). Langue de l'interface, du co
 
 ## Charte
 Noir `#111111`, jaune `#FFE81A`, gris `#BDBDBD`, fond `#F4F4F2`. Titres Barlow Condensed 700, texte Barlow. Logo du club en en-tête. Barre d'onglets en bas.
+- **Thème** clair / sombre / automatique (selon le téléphone), choisi dans le profil, mémorisé par appareil (cookie lu côté serveur : pas de flash). Couleurs en variables CSS (`--fond`, `--surface`, `--texte`…) redéfinies pour le sombre ; en-tête, barre d'onglets et jaune identiques dans les deux thèmes.
+- Victoire / défaite : paires validées (contraste ≥ 3:1 et distinctes pour les daltoniens) — clair `#0ca30c` / `#b91c1c`, sombre `#0ca30c` / `#ff5c7a` ; toujours avec libellé ou lettre.
 
 ## Rôles (cumulables)
 Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Chaque adhérent a **0, 1 ou plusieurs équipes** (table `member_teams`, ex. Totally Spike + une équipe mixte) : rappels de match, sondages de match et renforts valent pour chacune.
@@ -94,7 +96,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Onglet **Stats** : par défaut la (première) équipe de l'adhérent, menu pour une autre équipe ou « Tout le club » ; sans équipe → tout le club.
 - Classement de la poule (équipe du club surlignée, zones montée/podium et descente selon Promus/Relegue), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **forme récente**, **répartition des scores** (3-0…0-3), **sets et points** pour/contre (moyenne par set), **points de chaque équipe de la poule**, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
 - Vue club : toutes les équipes (rang, points, bilan).
-- Graphiques : méthode dataviz (série unique en noir, statuts vert/rouge toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
+- Graphiques : méthode dataviz (série unique couleur du texte, victoire/défaite selon la charte, toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
 - Avant le premier match de la poule (tout à zéro) : état « pas encore de match joué » et liste des équipes de la poule.
 
 ## Sondage de présence d'un match
