@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export type MatchPollView = {
@@ -26,7 +27,7 @@ export async function getMatchPoll(
   ]);
   if (error) return null;
 
-  const names = new Map((team ?? []).map((m) => [m.member_id as string, `${m.first_name} ${m.last_name}`]));
+  const names = new Map((team ?? []).map((m) => [m.member_id as string, shortName(m.first_name, m.last_name)]));
   const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
   const list = (available: boolean) =>
     (answers ?? [])

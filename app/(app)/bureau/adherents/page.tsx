@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatDay } from "@/lib/format";
+import { formatDay, shortName } from "@/lib/format";
 import { getCurrentMember, hasRole, ROLE_LABELS, type Role } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { ImportMembersForm } from "./ImportMembersForm";
@@ -51,7 +51,7 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
         <VolunteerRequests
           requests={requests.map((r) => {
             const m = r.member as unknown as { first_name: string; last_name: string };
-            return { id: r.id, name: `${m.first_name} ${m.last_name}`, at: `demandé le ${formatDay(r.created_at)}` };
+            return { id: r.id, name: shortName(m.first_name, m.last_name), at: `demandé le ${formatDay(r.created_at)}` };
           })}
         />
       )}

@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -48,7 +49,7 @@ const toView = (r: Row): RescheduleView => ({
   note: r.note,
   createdAt: r.created_at,
   updatedAt: r.updated_at,
-  requestedBy: r.requester ? `${r.requester.first_name} ${r.requester.last_name}` : null,
+  requestedBy: r.requester ? shortName(r.requester.first_name, r.requester.last_name) : null,
   match: {
     id: r.match.id,
     teamId: r.match.team_id,
@@ -91,7 +92,7 @@ export async function getRescheduleEvents(client: SupabaseClient, requestIds?: s
       requestId: e.request_id,
       from: e.from_status,
       to: e.to_status,
-      actor: actor ? `${actor.first_name} ${actor.last_name}` : "Automatique",
+      actor: actor ? shortName(actor.first_name, actor.last_name) : "Automatique",
       at: e.created_at,
     };
   });

@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import type { Position, Sex } from "@/lib/domain/notifications";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,7 +41,7 @@ export async function getOpenReinforcements(viewer: {
     supabase.from("reinforcement_offers").select("request_id, member_id, created_at").in("request_id", ids).order("created_at"),
     supabase.from("member_directory").select("id, first_name, last_name"),
   ]);
-  const names = new Map((directory ?? []).map((m) => [m.id as string, `${m.first_name} ${m.last_name}`]));
+  const names = new Map((directory ?? []).map((m) => [m.id as string, shortName(m.first_name, m.last_name)]));
 
   return requests
     .map((r) => {

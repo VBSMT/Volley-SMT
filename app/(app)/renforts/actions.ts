@@ -1,5 +1,6 @@
 "use server";
 
+import { shortName } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import {
@@ -113,7 +114,7 @@ export async function offerHelp(requestId: string): Promise<{ error?: string }> 
     // Journal : pour « offer », member_id = le volontaire (un message au capitaine par volontaire).
     const claimed = await claimNotifications(admin, "offer", target, [member.id]);
     if (!claimed.size) return;
-    const message = offerMessage(`${member.first_name} ${member.last_name}`, (r.team as unknown as { name: string }).name);
+    const message = offerMessage(shortName(member.first_name, member.last_name), (r.team as unknown as { name: string }).name);
     const channels = await notifyMembers([{ recipient: captain, message }]);
     await recordChannels(admin, "offer", target, new Map([[member.id, channels.get(captain.id) ?? "none"]]));
   });

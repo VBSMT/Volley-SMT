@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatDay, formatTime } from "@/lib/format";
+import { formatDay, formatTime, shortName } from "@/lib/format";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
 import { getSchedule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
@@ -85,7 +85,7 @@ export default async function CompoPage() {
                       const m = people.get(id);
                       return {
                         id,
-                        name: m ? `${m.first_name} ${m.last_name}` : "Adhérent",
+                        name: m ? shortName(m.first_name, m.last_name) : "Adhérent",
                         girl: m?.sex === "F",
                         positions: [pos(m?.position_1 ?? null), pos(m?.position_2 ?? null)].filter(Boolean).join(" / "),
                         level: levelOf.get(id) ?? null,
@@ -104,7 +104,7 @@ export default async function CompoPage() {
                 .filter((m) => !s.present.some((p) => p.id === m.id))
                 .map((m) => ({
                   id: m.id as string,
-                  name: `${m.first_name} ${m.last_name}`,
+                  name: shortName(m.first_name, m.last_name),
                   answer: answers?.find((a) => a.session_id === s.id && a.member_id === m.id) ? false : null,
                 }))
                 .sort(byName)}

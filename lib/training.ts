@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import { closureReason } from "@/lib/domain/calendar";
 import { freeCourts, parisDate, pollDeadline } from "@/lib/domain/training";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -66,8 +67,8 @@ export async function getSessions(opts: {
     homeByDate.set(d, (homeByDate.get(d) ?? 0) + 1);
   }
   const names = new Map(
-    // Liste des inscrits : prénom et initiale du nom (« Benjamin R »).
-    (directory ?? []).map((m) => [m.id as string, `${m.first_name} ${(m.last_name as string).trim().charAt(0).toUpperCase()}`.trim()]),
+    // Liste des inscrits : prénom et initiale du nom (« Benjamin R. »).
+    (directory ?? []).map((m) => [m.id as string, shortName(m.first_name, m.last_name)]),
   );
   const now = Date.now();
 

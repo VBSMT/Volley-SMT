@@ -8,3 +8,9 @@ export const formatTime = (iso: string) =>
 
 export const formatMonth = (iso: string) =>
   new Date(iso).toLocaleDateString("fr-FR", { timeZone: TZ, month: "long", year: "numeric" });
+
+/** Nom affiché dans l'appli : prénom et initiale du nom (« Benjamin R. »). */
+export function shortName(firstName: string | null | undefined, lastName: string | null | undefined): string {
+  const initial = (lastName ?? "").trim().charAt(0).toUpperCase();
+  return `${(firstName ?? "").trim()}${initial ? ` ${initial}.` : ""}`;
+}

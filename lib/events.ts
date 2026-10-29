@@ -1,3 +1,4 @@
+import { shortName } from "@/lib/format";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   attendanceTotals,
@@ -73,7 +74,7 @@ export async function getEventDetail(
     client.from("event_volunteer_signups").select("member_id, available, need_id, answered_at").eq("event_id", id).order("answered_at"),
     client.from("member_directory").select("id, first_name, last_name"),
   ]);
-  const names = new Map((directory ?? []).map((m) => [m.id as string, `${m.first_name} ${m.last_name}`]));
+  const names = new Map((directory ?? []).map((m) => [m.id as string, shortName(m.first_name, m.last_name)]));
   const list = answers ?? [];
   const extra = (a: (typeof list)[number]) =>
     [

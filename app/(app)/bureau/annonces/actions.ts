@@ -1,5 +1,6 @@
 "use server";
 
+import { shortName } from "@/lib/format";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import type { AnnouncementTarget } from "@/lib/announcements";
@@ -59,7 +60,7 @@ export async function createAnnouncement(_prev: AnnouncementState, fd: FormData)
   if (notify) {
     after(async () => {
       const recipients = await audience(target, teamId, sessionId);
-      const message = announcementMessage({ id: data.id, title, body, author: `${me!.first_name} ${me!.last_name}` });
+      const message = announcementMessage({ id: data.id, title, body, author: shortName(me!.first_name, me!.last_name) });
       await notifyMembers(recipients.map((recipient) => ({ recipient, message })));
     });
   }
