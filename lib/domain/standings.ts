@@ -196,3 +196,47 @@ export function poolTitle(division: string | null, pool: string | null): string 
   const poule = pool && pool !== "0" ? `Poule ${pool}` : "";
   return [level, poule].filter(Boolean).join(" - ");
 }
+
+/** Tous les résultats déduits des photos quotidiennes (du plus ancien au plus récent). */
+export function allResults(snapshots: { takenOn: string; won: number; lost: number }[]): FormResult[] {
+  return recentForm(snapshots, Number.MAX_SAFE_INTEGER);
+}
+
+export type Streaks = {
+  current: { result: "V" | "D"; count: number } | null;
+  bestWin: number; // plus longue série de victoires
+  worstLoss: number; // plus longue série de défaites
+};
+
+/** Série en cours et records de la saison. */
+export function streaks(results: FormResult[]): Streaks {
+  let bestWin = 0;
+  let worstLoss = 0;
+  let run = 0;
+  let prev: "V" | "D" | null = null;
+  for (const r of results) {
+    run = r.result === prev ? run + 1 : 1;
+    prev = r.result;
+    if (prev === "V") bestWin = Math.max(bestWin, run);
+    else worstLoss = Math.max(worstLoss, run);
+  }
+  return { current: prev ? { result: prev, count: run } : null, bestWin, worstLoss };
+}
+
+/** Pourcentages de sets et de points gagnés (null si rien joué). */
+export function efficiency(row: Pick<StandingRow, "setsWon" | "setsLost" | "pointsWon" | "pointsLost">) {
+  const sets = row.setsWon + row.setsLost;
+  const points = row.pointsWon + row.pointsLost;
+  return {
+    setsPct: sets ? Math.round((row.setsWon / sets) * 100) : null,
+    pointsPct: points ? Math.round((row.pointsWon / points) * 100) : null,
+  };
+}
+
+/** Points marqués et encaissés par set pour chaque équipe de la poule (équipes sans set exclues). */
+export function attackDefense(rows: StandingRow[]) {
+  return rows.flatMap((r) => {
+    const sets = r.setsWon + r.setsLost;
+    return sets ? [{ name: r.name, code: r.code, scored: r.pointsWon / sets, conceded: r.pointsLost / sets }] : [];
+  });
+}

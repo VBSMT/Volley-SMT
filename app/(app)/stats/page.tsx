@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RankChart } from "@/components/stats/RankChart";
-import { FormStrip, HeroStats, PoolComparison, ScoreBreakdown, SeasonCard, SetsAndPoints, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
+import { AttackDefense } from "@/components/stats/AttackDefense";
+import { Efficiency, PointsTotals, SetDiffPool, StreakCard } from "@/components/stats/MoreStats";
+import { HeroStats, PoolComparison, ScoreBreakdown, SeasonCard, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
+import { TrendChart } from "@/components/stats/TrendChart";
 import { StatsTeamSelect } from "@/components/stats/StatsTeamSelect";
-import { poolTitle, recentForm, seasonNotStarted, type StandingRow } from "@/lib/domain/standings";
+import { allResults, attackDefense, efficiency, poolTitle, recentForm, streaks, seasonNotStarted, type StandingRow } from "@/lib/domain/standings";
 import { getCurrentMember } from "@/lib/member";
 import { getLatestSnapshots, getSeasonProgress, getTeamSnapshots } from "@/lib/stats";
 import { createClient } from "@/lib/supabase/server";
@@ -74,6 +77,9 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const myRow = latest?.rows.find(isMine) ?? null;
   const started = latest ? !seasonNotStarted(latest.rows) : false;
   const form = recentForm(snapshots);
+  const results = allResults(snapshots);
+  const series = streaks(results);
+  const eff = myRow ? efficiency(myRow) : null;
 
   return (
     <main className="page stack">
@@ -88,13 +94,19 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <section className="card stack">
             <h2>Victoires et défaites</h2>
             <WinLoss won={latest.won} lost={latest.lost} />
-            {form.length > 0 && (
-              <>
-                <p className="muted small">Forme récente</p>
-                <FormStrip form={form} />
-              </>
-            )}
           </section>
+          {series.current && (
+            <section className="card stack">
+              <h2>Série en cours</h2>
+              <StreakCard s={series} form={form} />
+            </section>
+          )}
+          {myRow && eff && (
+            <section className="card stack">
+              <h2>Efficacité</h2>
+              <Efficiency row={myRow} setsPct={eff.setsPct} pointsPct={eff.pointsPct} />
+            </section>
+          )}
           {myRow && myRow.played > 0 && (
             <section className="card stack">
               <h2>Scores des matchs</h2>
@@ -103,14 +115,34 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           )}
           {myRow && (
             <section className="card stack">
-              <h2>Sets et points</h2>
-              <SetsAndPoints row={myRow} />
+              <h2>Points marqués et encaissés</h2>
+              <PointsTotals row={myRow} />
+            </section>
+          )}
+          <section className="card stack">
+            <h2>Différence de sets · la poule</h2>
+            <SetDiffPool rows={latest.rows} highlight={isMine} />
+          </section>
+          {attackDefense(latest.rows).length > 1 && (
+            <section className="card stack">
+              <h2>Attaque et défense</h2>
+              <p className="muted small">Points marqués et encaissés par set, chaque équipe de la poule.</p>
+              <AttackDefense points={attackDefense(latest.rows).map((p) => ({ ...p, mine: isMine(latest.rows.find((r) => r.name === p.name)!) }))} />
             </section>
           )}
           <section className="card stack">
             <h2>Points dans la poule</h2>
             <PoolComparison rows={latest.rows} highlight={isMine} />
           </section>
+          {snapshots.length > 1 && (
+            <section className="card stack">
+              <h2>Évolution de la saison</h2>
+              <p className="muted small">Points au classement</p>
+              <TrendChart label="Points au classement" points={snapshots.map((s) => ({ date: s.takenOn, value: s.points }))} />
+              <p className="muted small">Différence de sets</p>
+              <TrendChart label="Différence de sets" signedValues points={snapshots.map((s) => ({ date: s.takenOn, value: s.setDiff }))} />
+            </section>
+          )}
           {snapshots.length > 1 && (
             <section className="card stack">
               <h2>Évolution du classement</h2>

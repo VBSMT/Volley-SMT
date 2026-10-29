@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { parseStandings, poolOf, poolTitle, recentForm, seasonNotStarted, zoneOf } from "./standings";
+import { allResults, efficiency, streaks, parseStandings, poolOf, poolTitle, recentForm, seasonNotStarted, zoneOf } from "./standings";
 
 const REAL = readFileSync(new URL("./__fixtures__/classement-smdtx1.xml", import.meta.url), "utf8");
 
@@ -82,5 +82,25 @@ describe("zones et titres", () => {
   it("nomme la poule", () => {
     expect(poolTitle("2", "1")).toBe("Niveau 2 - Poule 1");
     expect(poolTitle("5", "0")).toBe("Niveau 5");
+  });
+});
+
+describe("séries et efficacité", () => {
+  const snaps = [
+    { takenOn: "2026-10-01", won: 0, lost: 0 },
+    { takenOn: "2026-10-08", won: 0, lost: 1 },
+    { takenOn: "2026-10-15", won: 2, lost: 1 },
+    { takenOn: "2026-10-22", won: 2, lost: 3 },
+    { takenOn: "2026-10-29", won: 5, lost: 3 },
+  ];
+  it("déduit tous les résultats et les séries", () => {
+    const all = allResults(snaps);
+    expect(all.map((r) => r.result).join("")).toBe("DVVDDVVV");
+    expect(streaks(all)).toEqual({ current: { result: "V", count: 3 }, bestWin: 3, worstLoss: 2 });
+    expect(streaks([])).toEqual({ current: null, bestWin: 0, worstLoss: 0 });
+  });
+  it("calcule les pourcentages", () => {
+    expect(efficiency({ setsWon: 18, setsLost: 9, pointsWon: 612, pointsLost: 521 })).toEqual({ setsPct: 67, pointsPct: 54 });
+    expect(efficiency({ setsWon: 0, setsLost: 0, pointsWon: 0, pointsLost: 0 })).toEqual({ setsPct: null, pointsPct: null });
   });
 });
