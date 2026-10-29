@@ -145,10 +145,10 @@ Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifi
 | Clôture + compo + notif Bureau | mar. et jeu. 12h |
 | Expiration des reports (J-3) | quotidien |
 | Synchro volley34 | quotidien 6h |
-| Purge RGPD | mensuel |
-| Ping anti-mise en pause | hebdo hors saison |
+| Purge RGPD (niveaux des adhésions terminées, fiches + comptes 2 ans après) | quotidien 3h (idempotent) |
+| Ping anti-mise en pause | couvert par le tick horaire (requêtes Supabase chaque heure) |
 
-Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas de restauration à un instant donné).
+Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), chiffré GPG (`BACKUP_PASSPHRASE`), artefact conservé 30 jours (l'offre gratuite n'a pas de restauration à un instant donné).
 
 ## Ordre de développement
 1. Migration initiale (tables, rôles, RLS) + connexion lien magique + import adhérents CSV + profil.

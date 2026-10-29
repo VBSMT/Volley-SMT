@@ -12,6 +12,7 @@ import {
 } from "@/lib/domain/notifications";
 import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
+import { isPurgeDue, runPurge } from "@/lib/purge-server";
 import { runRescheduleMaintenance } from "@/lib/reschedule-server";
 import { getSchedule } from "@/lib/settings";
 import { notifyMembers, type Recipient } from "@/lib/notify";
@@ -164,6 +165,8 @@ export async function POST(request: NextRequest) {
     }
   }
   report.push(...(await sendMatchReminders(admin, now, sendHour, members)));
+  // Purge RGPD quotidienne (idempotente).
+  if (isPurgeDue(now)) report.push({ purge: await runPurge(admin, now) });
 
   return NextResponse.json({ ok: true, at: now.toISOString(), report });
 }
