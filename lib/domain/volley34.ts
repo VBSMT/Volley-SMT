@@ -143,3 +143,9 @@ function parseTeamsXml(xml: string, clubCode: string): Volley34Team[] {
     .map((m) => ({ code: tag(m[1], "EquipeCode"), name: tag(m[1], "NomEquipe"), clubCode: tag(m[1], "ClubCode") }))
     .filter((t) => t.code && t.clubCode === clubCode);
 }
+
+/** Page volley34 de saisie d'un résultat ou d'un report (championnat ou coupe). */
+export function volley34EntryUrl(competition: string | null): string {
+  const cup = /coupe/i.test(competition ?? "");
+  return `https://www.volley34.fr/Pages/SaisieResultat.aspx?C=${cup ? "CO" : "CH"}`;
+}

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { formatDay, formatMonth, formatTime } from "@/lib/format";
 import { captainTeamIds, getCurrentMember } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
+import { Volley34EntryLink } from "@/components/Volley34EntryLink";
 import { TeamSelect } from "./TeamSelect";
 
 export const metadata: Metadata = { title: "Matchs" };
@@ -122,6 +123,13 @@ export default async function MatchsPage({
                       <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
                         Demander un renfort
                       </Link>
+                      <Volley34EntryLink competition={m.competition} variant="link" />
+                    </p>
+                  )}
+                  {/* Après le match : saisie du résultat sur volley34. */}
+                  {showPast && m.team && myCaptainTeams.includes(m.team.id) && (
+                    <p className="captain-links">
+                      <Volley34EntryLink competition={m.competition} variant="link" />
                     </p>
                   )}
                 </div>

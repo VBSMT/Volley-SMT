@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, type ExistingMatch } from "./volley34";
+import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, volley34EntryUrl, type ExistingMatch } from "./volley34";
 
 const ICS = readFileSync(new URL("./__fixtures__/smdtx1.ics", import.meta.url), "utf8");
 
@@ -71,5 +71,13 @@ describe("parseTeams", () => {
       { EquipeCode: "VLM1", ClubCode: "VLM", NomEquipe: "VLM/1" },
     ]);
     expect(parseTeams(json, "SMDT")).toEqual([{ code: "SMDTF1", name: "SMDT/Totally Spike", clubCode: "SMDT" }]);
+  });
+});
+
+describe("volley34EntryUrl", () => {
+  it("pointe vers la saisie championnat, ou coupe", () => {
+    expect(volley34EntryUrl("4x4 Mixte")).toBe("https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CH");
+    expect(volley34EntryUrl("Coupe FSGT 34")).toBe("https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CO");
+    expect(volley34EntryUrl(null)).toBe("https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CH");
   });
 });

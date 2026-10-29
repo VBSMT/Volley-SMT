@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MatchPoll } from "@/components/MatchPoll";
 import { RescheduleButtons, RescheduleRequestForm } from "@/components/RescheduleActions";
+import { Volley34EntryLink } from "@/components/Volley34EntryLink";
 import { ACTIVE, nextStatuses, STATUS_LABELS } from "@/lib/domain/reschedule";
 import { formatDay, formatTime } from "@/lib/format";
 import { getMatchPoll } from "@/lib/match-polls";
@@ -60,6 +61,7 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
           <span className="match-date-inline">{formatDay(m.starts_at)}</span> à {formatTime(m.starts_at)}
         </p>
         {(m.venue || m.city) && <p className="muted">{[m.venue, m.city].filter(Boolean).join(", ")}</p>}
+        {canManage && <Volley34EntryLink competition={m.competition} />}
       </section>
 
       {m.is_home && canManage && (
@@ -72,6 +74,12 @@ export default async function MatchPage({ params }: { params: Promise<{ id: stri
                 vers le <span className="match-date-inline">{formatDay(active.slot.startsAt)}</span> à {formatTime(active.slot.startsAt)}
               </p>
               {active.note && <p className="quote">« {active.note} »</p>}
+              {active.status === "approved" && (
+                <p className="notice small">
+                  Créneau pré-réservé : pensez à déclarer le report sur volley34 une fois accepté par
+                  l&apos;adversaire. Il sera confirmé automatiquement dès que volley34 affichera la nouvelle date.
+                </p>
+              )}
               <RescheduleButtons requestId={active.id} next={nextStatuses(active.status, isBoard ? "board" : "captain")} />
             </>
           ) : past ? (

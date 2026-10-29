@@ -86,7 +86,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
   - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;
   - résultats match par match : `https://api.volley34.fr/v1/equipes/{code}/resultats` répond (liste vide en début de saison) pour SMDT1, SMDT6, SMDTX2, SMDTF1 mais renvoie une **erreur 500 pour SMDTX1** ; `…/matchs` renvoie une erreur 500 pour toutes les équipes (signalé à la commission). Format des résultats à observer dès les premiers scores ; en attendant, forme récente déduite des photos quotidiennes du classement.
-  - La saisie des scores depuis l'appli n'a pas reçu de réponse : lien vers volley34 uniquement.
+  - La saisie des scores depuis l'appli n'a pas reçu de réponse : **lien vers la page de saisie** `https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CH` (`C=CO` pour la coupe), pour les **capitaines et le Bureau** : page du match, liste des matchs (à venir et passés), rappel après validation d'un report.
 - **Import du fichier Excel** du club : import initial (championnat, poule, phase, journée) et import de secours. La synchro rattache les matchs volley34 aux matchs Excel (adversaire + domicile/extérieur) puis par UID.
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
