@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { NotificationToggle } from "@/components/NotificationToggle";
+import { ThemeChooser } from "@/components/ThemeChooser";
+import { THEME_COOKIE, type ThemeChoice } from "@/lib/theme";
 import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
@@ -81,6 +84,11 @@ export default async function ProfilPage() {
           )}
         </section>
       )}
+
+      <section className="card stack">
+        <h2>Apparence</h2>
+        <ThemeChooser initial={((await cookies()).get(THEME_COOKIE)?.value as ThemeChoice | undefined) ?? "auto"} />
+      </section>
 
       <form action="/auth/deconnexion" method="post">
         <button type="submit" className="btn-secondary full">

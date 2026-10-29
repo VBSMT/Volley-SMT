@@ -21,6 +21,8 @@ Développeur unique : Benjamin (Windows + VS Code). Langue de l'interface, du co
 
 ## Charte
 Noir `#111111`, jaune `#FFE81A`, gris `#BDBDBD`, fond `#F4F4F2`. Titres Barlow Condensed 700, texte Barlow. Logo du club en en-tête. Barre d'onglets en bas.
+- **Thème** clair / sombre / automatique (selon le téléphone), choisi dans le profil, mémorisé par appareil (cookie lu côté serveur : pas de flash). Couleurs en variables CSS (`--fond`, `--surface`, `--texte`…) redéfinies pour le sombre ; en-tête, barre d'onglets et jaune identiques dans les deux thèmes.
+- Victoire / défaite : paires validées (contraste ≥ 3:1 et distinctes pour les daltoniens) — clair `#0ca30c` / `#b91c1c`, sombre `#0ca30c` / `#ff5c7a` ; toujours avec libellé ou lettre.
 
 ## Rôles (cumulables)
 Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Chaque adhérent a **0, 1 ou plusieurs équipes** (table `member_teams`, ex. Totally Spike + une équipe mixte) : rappels de match, sondages de match et renforts valent pour chacune.
@@ -82,7 +84,8 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Source officielle : **volley34.fr** (championnat et coupe FSGT 34). **Accord de la commission obtenu** pour la lecture (octobre 2026) :
   - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC) — l'API `…/matchs` renvoyait une erreur 500 à l'essai ;
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
-  - classements / résultats : `https://api.volley34.fr/v1/equipes/{code}/classements` et `/resultats` (vides avant le début de saison, format à confirmer).
+  - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;
+  - résultats match par match : `…/resultats` renvoyait une erreur 500 (novembre 2026) → forme récente déduite des photos quotidiennes du classement.
   - La saisie des scores depuis l'appli n'a pas reçu de réponse : lien vers volley34 uniquement.
 - **Import du fichier Excel** du club : import initial (championnat, poule, phase, journée) et import de secours. La synchro rattache les matchs volley34 aux matchs Excel (adversaire + domicile/extérieur) puis par UID.
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
@@ -91,10 +94,10 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 
 ## Stats
 - Onglet **Stats** : par défaut la (première) équipe de l'adhérent, menu pour une autre équipe ou « Tout le club » ; sans équipe → tout le club.
-- Classement de la poule (équipe du club surlignée, zones montée/podium et descente), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
+- Classement de la poule (équipe du club surlignée, zones montée/podium et descente selon Promus/Relegue), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **forme récente**, **répartition des scores** (3-0…0-3), **sets et points** pour/contre (moyenne par set), **points de chaque équipe de la poule**, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
 - Vue club : toutes les équipes (rang, points, bilan).
-- Graphiques : méthode dataviz (série unique en noir, statuts vert/rouge toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
-- Résultats match par match : à brancher quand volley34 publiera des résultats (format non encore observé).
+- Graphiques : méthode dataviz (série unique couleur du texte, victoire/défaite selon la charte, toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
+- Avant le premier match de la poule (tout à zéro) : état « pas encore de match joué » et liste des équipes de la poule.
 
 ## Sondage de présence d'un match
 - Le capitaine lance un sondage pour **un match à venir de son équipe** ; les joueurs de l'équipe sont notifiés (préférence « matchs ») et répondent **dispo / pas dispo** (modifiable jusqu'au match).
@@ -162,4 +165,4 @@ Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas 
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
 - Ne jamais exposer `member_levels` ni la compo à un non-Bureau, même via une vue ou une fonction RPC.
 - Demander avant toute décision qui contredit ce fichier ; mettre ce fichier à jour quand une règle métier change.
-- Points ouverts : échelle de niveau (1–5 proposée), format des classements/résultats volley34, saisie des scores (pas de réponse), liste des adhérents à importer.
+- Points ouverts : échelle de niveau (1–5 proposée), API résultats volley34 en erreur 500, saisie des scores (pas de réponse).
