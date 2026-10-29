@@ -32,13 +32,29 @@ const toSnapshot = (s: Record<string, unknown>): Snapshot => ({
 
 /** Historique des classements d'une équipe (du plus ancien au plus récent). Vide avant migration. */
 export async function getTeamSnapshots(client: SupabaseClient, teamId: string): Promise<Snapshot[]> {
-  const { data, error } = await client.from("standings_snapshots").select("*").eq("team_id", teamId).order("taken_on");
-  return error ? [] : (data ?? []).map(toSnapshot);
+  // Le classement complet (jsonb) n'est lu que pour la dernière photo : le reste ne sert qu'aux courbes.
+  const { data, error } = await client
+    .from("standings_snapshots")
+    .select("team_id, taken_on, rank, pool_size, played, won, lost, points, set_diff, point_diff")
+    .eq("team_id", teamId)
+    .order("taken_on");
+  if (error || !data?.length) return [];
+  const snaps = data.map((s) => toSnapshot({ ...s, rows: [] }));
+  const last = snaps[snaps.length - 1];
+  const { data: full } = await client.from("standings_snapshots").select("rows").eq("team_id", teamId).eq("taken_on", last.takenOn).maybeSingle();
+  last.rows = (full?.rows as StandingRow[]) ?? [];
+  return snaps;
 }
 
 /** Dernier classement connu de chaque équipe. */
 export async function getLatestSnapshots(client: SupabaseClient): Promise<Map<string, Snapshot>> {
-  const { data, error } = await client.from("standings_snapshots").select("*").order("taken_on", { ascending: false }).limit(400);
+  // Photos des 7 derniers jours seulement (synchro quotidienne) : évite de relire tout l'historique.
+  const since = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await client
+    .from("standings_snapshots")
+    .select("*")
+    .gte("taken_on", since)
+    .order("taken_on", { ascending: false });
   const latest = new Map<string, Snapshot>();
   if (error) return latest;
   for (const s of data ?? []) if (!latest.has(s.team_id)) latest.set(s.team_id, toSnapshot(s));
@@ -78,8 +94,12 @@ export async function getCelebrations(client: SupabaseClient, now = new Date()):
   const today = parisDate(now.toISOString());
   const [{ data: teams }, { data: snaps }] = await Promise.all([
     client.from("teams").select("id, name, volley34_ref"),
-    client.from("standings_snapshots").select("team_id, taken_on, won, lost, rank, rows").order("taken_on"),
+    // Historique léger (séries) ; le classement complet seulement pour les 3 derniers jours (score du match).
+    client.from("standings_snapshots").select("team_id, taken_on, won, lost, rank").order("taken_on"),
   ]);
+  const since = new Date(now.getTime() - 3 * 86_400_000).toISOString().slice(0, 10);
+  const { data: recent } = await client.from("standings_snapshots").select("team_id, taken_on, rows").gte("taken_on", since);
+  const rowsOf = new Map((recent ?? []).map((r) => [`${r.team_id}|${r.taken_on}`, r.rows as StandingRow[]]));
   const out: Celebration[] = [];
   for (const team of teams ?? []) {
     const own = (snaps ?? []).filter((s) => s.team_id === team.id);
@@ -91,7 +111,7 @@ export async function getCelebrations(client: SupabaseClient, now = new Date()):
         won: s.won,
         lost: s.lost,
         rank: s.rank,
-        mine: (s.rows as StandingRow[]).find(isMine) ?? null,
+        mine: rowsOf.get(`${s.team_id}|${s.taken_on}`)?.find(isMine) ?? null,
       })),
       today,
     );
