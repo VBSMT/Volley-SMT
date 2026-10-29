@@ -5,6 +5,7 @@ import { formatDay } from "@/lib/format";
 import { getCurrentMember, hasRole, ROLE_LABELS, type Role } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { ImportMembersForm } from "./ImportMembersForm";
+import { TeamFilter } from "./TeamFilter";
 import { VolunteerRequests } from "./VolunteerRequests";
 
 export const metadata: Metadata = { title: "Adhérents" };
@@ -59,15 +60,7 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
         <h2>
           {members.length} adhérent{members.length > 1 ? "s" : ""}
         </h2>
-        <nav className="chips" aria-label="Filtrer par équipe">
-          <Link href="/bureau/adherents" className={filter === "" ? "chip active" : "chip"}>Tous</Link>
-          {(teams ?? []).map((t) => (
-            <Link key={t.name} href={`/bureau/adherents?equipe=${encodeURIComponent(t.name)}`} className={filter === t.name ? "chip active" : "chip"}>
-              {t.name}
-            </Link>
-          ))}
-          <Link href="/bureau/adherents?equipe=aucune" className={filter === "aucune" ? "chip active" : "chip"}>Sans équipe</Link>
-        </nav>
+        <TeamFilter teams={(teams ?? []).map((t) => t.name)} value={filter} />
         <ul className="list">
           {members.map((m) => (
             <li key={m.id}>
