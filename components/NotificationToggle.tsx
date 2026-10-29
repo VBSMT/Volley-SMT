@@ -79,7 +79,7 @@ export function NotificationToggle({ compact = false }: { compact?: boolean }) {
   if (compact && (status === "on" || status === "unsupported" || status === "denied" || status === "ios-install")) return null;
 
   return (
-    <div className={compact ? "notice stack" : "stack"}>
+    <div className={compact ? "notice stack" : "stack"} data-tour={compact ? "notifications" : undefined}>
       {status === "on" && <p className="success">Notifications activées sur cet appareil.</p>}
       {status === "off" && (
         <p className={compact ? "" : "muted small"}>

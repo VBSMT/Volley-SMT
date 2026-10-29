@@ -47,7 +47,7 @@ export function InstallPrompt() {
   };
 
   return (
-    <section className="notice stack install-prompt" aria-labelledby="install-title">
+    <section className="notice stack install-prompt" aria-labelledby="install-title" data-tour="install">
       <h2 id="install-title">Installer l&apos;appli</h2>
       {mode === "ios" ? (
         <ol className="small">

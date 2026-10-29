@@ -153,6 +153,8 @@ Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifi
 | Purge RGPD (niveaux des adhésions terminées, fiches + comptes 2 ans après) | quotidien 3h (idempotent) |
 | Ping anti-mise en pause | couvert par le tick horaire (requêtes Supabase chaque heure) |
 
+Guide de première connexion (`components/GuidedTour.tsx`) : zones en surbrillance (`data-tour`), 5 étapes (installer, notifications, profil — postes, contact, droit à l'image, vérification, préférences —, « Informe si tu viens, ou pas », fin) ; avancement en base (`members.onboarding_step`, `onboarding_done_at`), reprise à l'étape suivante si interrompu, « Passer le guide » définitif, « Revoir le guide » dans le profil.
+
 Hors ligne : le service worker garde la dernière version des pages adhérent consultées (jamais `/bureau`), vidée à la déconnexion. Aide publique : `/aide`.
 
 Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), chiffré GPG (`BACKUP_PASSPHRASE`), artefact conservé 30 jours (l'offre gratuite n'a pas de restauration à un instant donné).

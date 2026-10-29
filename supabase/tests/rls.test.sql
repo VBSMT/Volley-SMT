@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(28);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -67,6 +67,7 @@ select is((select count(*) from public.attendance)::int, 1, 'adhérent : voit le
 select throws_ok($$ insert into public.match_polls (match_id, created_by)
   values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000001') $$, '42501', null, 'adhérent : ne lance pas de sondage de match');
 update public.members set last_name = 'Pirate' where id = '00000000-0000-0000-0000-000000000003';
+select lives_ok($$ update public.members set onboarding_step = 3 where id = '00000000-0000-0000-0000-000000000001' $$, 'adhérent : enregistre l''avancement de son guide');
 select throws_ok($$ select public.set_member_positions('00000000-0000-0000-0000-000000000002', 'setter', null) $$, '42501', null, 'adhérent : ne modifie pas les postes d''un autre');
 select pg_temp.logout();
 select is((select last_name from public.members where id = '00000000-0000-0000-0000-000000000003'), 'Vole', 'adhérent : ne modifie pas la fiche d''un autre');

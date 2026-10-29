@@ -739,3 +739,27 @@ a.btn-primary { color: var(--noir); }
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
 }
 .team-nav-btn:active { transform: scale(0.98); }
+
+/* --- Guide de première connexion --- */
+.tour { position: fixed; inset: 0; z-index: 80; pointer-events: none; }
+.tour-spot {
+  position: fixed; box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.72); outline: 3px solid #FFE81A; outline-offset: 2px;
+  transition: top 0.35s, left 0.35s, width 0.35s, height 0.35s;
+}
+.tour-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.72); }
+.tour-tip {
+  position: fixed; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; pointer-events: auto;
+  background: var(--surface); color: var(--texte); border-radius: 16px; padding: 1rem; display: grid; gap: 0.6rem;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
+}
+.tour-tip.is-centered { top: 50%; transform: translateY(-50%); }
+.tour-tip h2 { margin: 0; font-size: 1.35rem; }
+.tour-tip p { margin: 0; line-height: 1.4; }
+.tour-dots { display: flex; gap: 6px; }
+.tour-dots i { width: 8px; height: 8px; border-radius: 4px; background: var(--grille); }
+.tour-dots i.done { background: var(--gris); }
+.tour-dots i.on { width: 20px; background: var(--texte); }
+.tour-actions { display: flex; justify-content: space-between; align-items: center; }
+.tour-skip { min-height: 44px; border: 0; background: none; color: var(--texte-doux); font: inherit; font-weight: 600; cursor: pointer; }
+.tour-next { min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: 10px; background: #111111; color: #FFE81A; font: inherit; font-weight: 700; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }

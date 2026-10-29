@@ -142,7 +142,7 @@ export default async function AccueilPage() {
         </section>
       )}
 
-      <section className="stack">
+      <section className="stack" data-tour="next-session">
         <h2>Prochain entraînement</h2>
         {next ? (
           <ul className="list">
