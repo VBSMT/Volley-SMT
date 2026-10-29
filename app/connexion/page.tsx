@@ -22,7 +22,7 @@ export default async function ConnexionPage({
         className="logo-login"
       />
       <h1 className="brand">Volley SMT</h1>
-      <p className="muted">Volley-Ball Loisirs Saint-Mathieu-de-Tréviers</p>
+      <p className="muted">L&apos;appli de gestion de notre club !</p>
       <LoginForm linkError={erreur === "lien"} />
       <p className="muted small">
         Pas de mot de passe : un code vous est envoyé par email. Seuls les adhérents inscrits par
