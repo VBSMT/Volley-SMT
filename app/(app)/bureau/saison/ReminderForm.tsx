@@ -26,10 +26,10 @@ export function ReminderForm({ kind, count }: { kind: "dues" | "license"; count:
           type="button"
           className="btn-primary"
           disabled={pending}
-          onClick={async () => (await confirm(`Envoyer la relance à ${count} adhérent${count > 1 ? "s" : ""} ?`, { text: "Notification, sinon email. Un envoi ne peut pas être annulé.", confirmLabel: "Envoyer" })) &&
+          onClick={async () => (await confirm(`Envoyer la relance à ${count} adhérent${count > 1 ? "s" : ""} ?`, { text: "Notification aux adhérents qui les ont activées. Un envoi ne peut pas être annulé.", confirmLabel: "Envoyer" })) &&
             startTransition(async () => {
               const r = await sendReminder(kind, text);
-              setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: `Relance envoyée à ${r.count} adhérent${(r.count ?? 0) > 1 ? "s" : ""} (notification, sinon email).` });
+              setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: `Relance envoyée à ${r.count} adhérent${(r.count ?? 0) > 1 ? "s" : ""} (notification).` });
             })}
         >
           {pending ? "Envoi…" : "Envoyer la relance"}

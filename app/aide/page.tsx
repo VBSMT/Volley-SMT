@@ -54,7 +54,7 @@ export default function AidePage() {
         <ul>
           <li>Activez-les sur l&apos;accueil ou dans le profil, puis acceptez la demande du téléphone. À refaire sur chaque appareil.</li>
           <li>Choisissez dans le profil ce que vous recevez : entraînements (la veille à 20h), matchs de votre équipe (2 jours avant), demandes de renfort.</li>
-          <li>Sans notifications activées, les messages arrivent par email.</li>
+          <li><strong>Important :</strong> sans notifications activées, tu ne reçois aucun rappel (pas d&apos;email).</li>
         </ul>
       </details>
 

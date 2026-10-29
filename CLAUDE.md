@@ -15,7 +15,7 @@ Développeur unique : Benjamin (Windows + VS Code). Langue de l'interface, du co
 - **Front** : Next.js (App Router, TypeScript), PWA (`short_name: "Volley SMT"`, icône carrée fond noir), déployé sur Vercel.
 - **Back** : Supabase (Postgres, Auth, RLS, Edge Functions, pg_cron), région UE.
 - **Auth** : lien magique uniquement. Inscription libre **désactivée** : seuls les comptes importés par le Bureau existent.
-- **Emails** : SMTP Brevo. **Push** : Web Push (VAPID), email en secours.
+- **Notifications** : Web Push (VAPID) **uniquement**, pas d'email de secours (décision du club). **Emails** (SMTP Brevo) réservés au code de connexion et à l'invitation.
 - Schéma versionné : **toute évolution de la base passe par une migration** dans `supabase/migrations/`. Jamais de modif manuelle dans le dashboard.
 - Secrets dans les variables d'environnement. La clé `service_role` reste côté serveur.
 
@@ -41,7 +41,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 - Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe(s), rôles, licence FSGT + saison, cotisation réglée, sexe.
 - Invisible pour lui : niveau (table séparée `member_levels`, Bureau seulement).
 - Demande « Devenir bénévole » depuis le profil : confirmation, puis demande envoyée au Bureau qui valide ou refuse.
-- **Notifications choisies dans le profil** (toutes activées par défaut) : entraînements (J-1), matchs de mon équipe (J-2), demandes de renfort. Désactiver un type coupe ce message en push **et** en email. Activation du push par appareil.
+- **Notifications choisies dans le profil** (toutes activées par défaut) : entraînements (J-1), matchs de mon équipe (J-2), demandes de renfort. Désactiver un type coupe ce message. Activation du push par appareil.
 
 ## Séances d'entraînement
 - Gymnase : 3 terrains. Créneaux : **tous les mardis et jeudis 20h–22h** de la saison.
@@ -55,7 +55,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - **non-répondants** : la demande (« Entraînement demain 20h–22h — tu viens ? Réponds avant 12h demain. »), ouvre le sondage ;
   - **inscrits présents** : un rappel (« N'oublie pas : entraînement demain 20h–22h, X inscrits »).
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
-- Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
+- Envoi en **push** (Web Push) uniquement ; sans notifications activées, rien n'est reçu (l'accueil invite à les activer).
 - **Clôture à 12h le jour J** (réglable dans Paramètres, de 6h à 20h ; textes de l'appli alignés sur ce réglage), puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
 - La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération. Il peut aussi **ajouter ou supprimer une équipe** : le nombre d'équipes est alors fixé à la main (`lineups.forced_teams`) et la compo recalculée avec ce nombre (retour possible au nombre automatique).
 
@@ -112,7 +112,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 ## Renforts
 - Un capitaine demande un renfort pour **un match à venir de son équipe** : poste (passe / avant / fond / indifférent), sexe (F / M / indifférent), message optionnel.
 - La demande s'affiche sur l'**accueil de tous les adhérents** tant qu'elle est ouverte et que le match n'est pas passé.
-- Notification push/email à la création, aux adhérents **hors de l'équipe**, du sexe demandé, ayant activé « renforts ».
+- Notification push à la création, aux adhérents **hors de l'équipe**, du sexe demandé, ayant activé « renforts ».
 - Chacun peut **proposer son aide** (et la retirer). Le capitaine (et le Bureau) voit les volontaires **par ordre chronologique** ; le capitaine est notifié à chaque proposition. Les autres ne voient que leur propre proposition.
 - Le capitaine clôt la demande : **renfort trouvé** ou **annulée**.
 
@@ -140,7 +140,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Onglet Bureau
-Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles ; suppression définitive d'une fiche avec confirmation) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
+Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles ; suppression définitive d'une fiche avec confirmation) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
 
 ## Tâches planifiées (pg_cron / Edge Functions)
 | Tâche | Quand |
@@ -161,7 +161,7 @@ Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), c
 
 ## Ordre de développement
 1. Migration initiale (tables, rôles, RLS) + connexion lien magique + import adhérents CSV + profil.
-2. Génération des séances de la saison + sondage de présence + notif J-1 (push + email en secours).
+2. Génération des séances de la saison + sondage de présence + notif J-1 (push).
 3. Import Excel du calendrier + onglet Matchs.
 4. Compo automatique (fonction pure + tests) + écran Bureau.
 5. Reports + journal + historique.

@@ -35,7 +35,7 @@ export async function setLicense(memberId: string, license: string): Promise<{ e
   return {};
 }
 
-/** Relance (notification, sinon email) des adhérents sans cotisation ou sans licence. */
+/** Relance (notification) des adhérents sans cotisation ou sans licence. */
 export async function sendReminder(kind: "dues" | "license", text: string): Promise<{ error?: string; count?: number }> {
   if (!(await board())) return { error: "Réservé au Bureau." };
   const body = text.trim().slice(0, 600);

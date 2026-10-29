@@ -39,7 +39,7 @@ export function EventForm({ values }: { values: EventFormValues }) {
       onSubmit={submitWithoutReset(formAction, async (fd) =>
         fd.get("notify") !== "on" ||
         confirm(values.id ? "Enregistrer et prévenir les adhérents ?" : "Créer l'événement et prévenir les adhérents ?", {
-          text: "Les adhérents concernés recevront une notification (sinon un email).",
+          text: "Les adhérents concernés recevront une notification (s'ils les ont activées).",
           confirmLabel: values.id ? "Enregistrer" : "Créer",
         }),
       )}
@@ -150,7 +150,7 @@ export function EventForm({ values }: { values: EventFormValues }) {
       {!values.id && (
         <label className="checkbox">
           <input type="checkbox" name="notify" defaultChecked />
-          Prévenir les adhérents concernés (notification, sinon email)
+          Prévenir les adhérents concernés (notification)
         </label>
       )}
       {state.status === "error" && <p className="error" role="alert">{state.message}</p>}
