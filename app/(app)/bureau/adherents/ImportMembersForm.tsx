@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef } from "react";
+import { submitWithoutReset } from "@/lib/use-form-submit";
 import { importMembers, type MemberImportState } from "./actions";
 
 const initialState: MemberImportState = { status: "idle" };
@@ -10,7 +11,7 @@ export function ImportMembersForm() {
   const modeRef = useRef<HTMLInputElement>(null);
 
   return (
-    <form action={formAction} className="card stack">
+    <form onSubmit={submitWithoutReset(formAction)} className="card stack">
       <h2>Importer des adhérents</h2>
       <p className="muted small">
         Fichier Excel (.xlsx) ou CSV, une ligne par adhérent. Colonnes obligatoires : nom, prenom,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { submitWithoutReset } from "@/lib/use-form-submit";
 import { updateMember, type EditState } from "./actions";
 
 const initialState: EditState = { status: "idle" };
@@ -23,7 +24,7 @@ export function MemberForm({ member, teams }: { member: MemberFormData; teams: {
   const [selected, setSelected] = useState(member.teamIds);
 
   return (
-    <form action={formAction} className="stack">
+    <form onSubmit={submitWithoutReset(formAction)} className="stack">
       <section className="card stack">
         <h2>Identité</h2>
         <label htmlFor="last_name">Nom</label>

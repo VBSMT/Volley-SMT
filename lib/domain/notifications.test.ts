@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  announcementMessage,
   closureMessage,
+  eventMessage,
   isClosureDue,
   isMatchReminderDue,
   matchMessage,
@@ -175,5 +177,30 @@ describe("messages de report", () => {
       "Report non confirmé à J-3 : le créneau du jeudi 26 novembre est libéré (match contre MHSC/BEES).",
     );
     expect(rescheduleDecisionMessage(r, "confirmed").url).toBe("/matchs/m1");
+  });
+});
+
+describe("announcementMessage", () => {
+  it("reprend le titre, le texte et l'auteur", () => {
+    expect(announcementMessage({ id: "a1", title: "Gymnase fermé", body: "Pas d'entraînement\njeudi.", author: "Benjamin Recoules" })).toEqual({
+      title: "📣 Gymnase fermé",
+      body: "Pas d'entraînement jeudi. — Benjamin Recoules",
+      url: "/annonces#a1",
+    });
+  });
+  it("tronque les messages longs", () => {
+    const msg = announcementMessage({ id: "a2", title: "T", body: "x ".repeat(400), author: null });
+    expect(msg.body.length).toBeLessThanOrEqual(280);
+    expect(msg.body.endsWith("…")).toBe(true);
+  });
+});
+
+describe("eventMessage", () => {
+  it("annonce l'événement avec date et lieu", () => {
+    expect(eventMessage({ id: "e1", title: "Repas de fin d'année", startsAt: "2026-12-12T18:30:00.000Z", location: "Salle des fêtes" })).toEqual({
+      title: "🎉 Repas de fin d'année",
+      body: "samedi 12 décembre à 19:30 · Salle des fêtes. Infos et réponse dans l'appli.",
+      url: "/evenements/e1",
+    });
   });
 });

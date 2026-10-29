@@ -27,10 +27,10 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 
 | Rôle | Onglets |
 |---|---|
-| Adhérent | Accueil, Entraînements, Matchs, Événements (4) |
+| Adhérent | Accueil, Entraînements, Matchs, Stats, Événements (5) |
 | Capitaine | idem + demander un report ou un **renfort**, lancer un **sondage de présence** pour **les matchs de son équipe** |
 | Bénévole | idem + sondages de participation bénévole |
-| Bureau | 5 onglets : + onglet **Bureau** ; tout gérer |
+| Bureau | 6 onglets : + onglet **Bureau** ; tout gérer |
 
 Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle avec un compte de test.
 
@@ -88,6 +88,13 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
 - Affichage : équipe de l'adhérent par défaut, sélecteur pour les autres ; sans équipe → tout le club. Liens sortants vers volley34 (classement, saisie de score).
+
+## Stats
+- Onglet **Stats** : par défaut la (première) équipe de l'adhérent, menu pour une autre équipe ou « Tout le club » ; sans équipe → tout le club.
+- Classement de la poule (équipe du club surlignée, zones montée/podium et descente), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
+- Vue club : toutes les équipes (rang, points, bilan).
+- Graphiques : méthode dataviz (série unique en noir, statuts vert/rouge toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
+- Résultats match par match : à brancher quand volley34 publiera des résultats (format non encore observé).
 
 ## Sondage de présence d'un match
 - Le capitaine lance un sondage pour **un match à venir de son équipe** ; les joueurs de l'équipe sont notifiés (préférence « matchs ») et répondent **dispo / pas dispo** (modifiable jusqu'au match).

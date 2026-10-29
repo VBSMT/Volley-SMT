@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member-types";
+import { submitWithoutReset } from "@/lib/use-form-submit";
 import { updateProfile, type ProfileState } from "./actions";
 
 const initialState: ProfileState = { status: "idle" };
@@ -26,7 +27,7 @@ export function ProfileForm({ member }: { member: CurrentMember }) {
   const [state, formAction, pending] = useActionState(updateProfile, initialState);
 
   return (
-    <form action={formAction} className="card stack">
+    <form onSubmit={submitWithoutReset(formAction)} className="card stack">
       <h2>Mes informations</h2>
 
       <label htmlFor="phone">Téléphone</label>
