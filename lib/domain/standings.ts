@@ -1,8 +1,9 @@
 /**
  * Classements volley34 (accord de la commission). Fonctions pures.
- * Champs repris du site volley34 (Classements.js) : Rang, Nom, Joue, Gagne, Perdu, Forfait,
- * Total, SefDiff (sic), PointDiff, Division, Poule, ClassementCode, CodeCompetition, NomCompetition.
- * Le format exact de l'API n'a pas encore été observé avec des données : lecture tolérante.
+ * Format de l'API (/v1/equipes/{code}/classements, observé en novembre 2026) : un <Classement> par
+ * poule (Promus, Relegue, Libelle) contenant des <ClassementCompetition> : Rang, Nom, Joue, Gagne,
+ * Perdu, Forfait, Total, SetP/SetC, SefDiff (sic), PointsP/PointsC, PointDiff, NbSets_30…NbSets_03,
+ * NbSets_3F/F3. Le JSON du site (Classements.asmx) est aussi accepté.
  */
 
 export type StandingRow = {
@@ -20,9 +21,19 @@ export type StandingRow = {
   pool: string | null;
   group: string; // identifiant du classement (une poule)
   competition: string | null;
+  setsWon: number;
+  setsLost: number;
+  pointsWon: number;
+  pointsLost: number;
+  /** Matchs par score : victoires 3-0, 3-1, 3-2 ; défaites 2-3, 1-3, 0-3 ; forfaits gagnés/perdus. */
+  scores: { s30: number; s31: number; s32: number; s23: number; s13: number; s03: number; fWon: number; fLost: number };
+  /** Nombre de montées et de descentes de la poule (null si non fourni). */
+  promoted: number | null;
+  relegated: number | null;
 };
 
-const ALIASES: Record<keyof Omit<StandingRow, "group">, string[]> = {
+type Field = Exclude<keyof StandingRow, "group" | "scores" | "promoted" | "relegated">;
+const ALIASES: Record<Field, string[]> = {
   rank: ["rang", "rank", "position"],
   name: ["nom", "nomequipe", "equipe", "name"],
   code: ["equipecode", "codeequipe", "code"],
@@ -35,7 +46,11 @@ const ALIASES: Record<keyof Omit<StandingRow, "group">, string[]> = {
   pointDiff: ["pointdiff", "diffpoints", "differencepoints"],
   division: ["division"],
   pool: ["poule", "pool"],
-  competition: ["nomcompetition", "codecompetition"],
+  competition: ["nomcompetition", "libelle", "codecompetition"],
+  setsWon: ["setp", "setsgagnes"],
+  setsLost: ["setc", "setsperdus"],
+  pointsWon: ["pointsp"],
+  pointsLost: ["pointsc"],
 };
 
 const decode = (s: string) =>
@@ -55,15 +70,23 @@ function rawObjects(body: string): Record<string, string>[] {
       Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase(), v == null ? "" : String(v)])),
     );
   }
-  // XML : chaque élément qui contient des sous-éléments simples est un enregistrement.
+  // XML : en-têtes de poule (montées, descentes), puis chaque élément aux sous-éléments simples.
+  const pools = new Map(
+    [...text.matchAll(/<ClassementCode>([^<]*)<\/ClassementCode>(?:(?!<classementDetail>)[\s\S])*?<Promus>(\d+)<\/Promus><Relegue>(\d+)<\/Relegue>/g)].map(
+      (m) => [m[1], { promus: m[2], relegue: m[3] }],
+    ),
+  );
   return [...text.matchAll(/<(\w+)>((?:\s*<\w+(?:\s[^>]*)?(?:\/>|>[^<]*<\/\w+>))+)\s*<\/\1>/g)].map((m) =>
     Object.fromEntries(
       [...m[2].matchAll(/<(\w+)(?:\s[^>]*)?(?:\/>|>([^<]*)<\/\1>)/g)].map((f) => [f[1].toLowerCase(), decode(f[2] ?? "")]),
     ),
-  );
+  ).map((o) => {
+    const pool = pools.get(o.classementcode ?? "");
+    return pool ? { promus: pool.promus, relegue: pool.relegue, ...o } : o;
+  });
 }
 
-const pick = (o: Record<string, string>, key: keyof typeof ALIASES) => {
+const pick = (o: Record<string, string>, key: Field) => {
   for (const alias of ALIASES[key]) if (o[alias] !== undefined && o[alias] !== "") return o[alias];
   return null;
 };
@@ -93,6 +116,22 @@ export function parseStandings(body: string): StandingRow[] {
         pool,
         group: o.classementcode || `${pick(o, "competition") ?? ""}|${division ?? ""}|${pool ?? ""}`,
         competition: pick(o, "competition"),
+        setsWon: num(pick(o, "setsWon")),
+        setsLost: num(pick(o, "setsLost")),
+        pointsWon: num(pick(o, "pointsWon")),
+        pointsLost: num(pick(o, "pointsLost")),
+        scores: {
+          s30: num(o.nbsets_30 ?? null),
+          s31: num(o.nbsets_31 ?? null),
+          s32: num(o.nbsets_32 ?? null),
+          s23: num(o.nbsets_23 ?? null),
+          s13: num(o.nbsets_13 ?? null),
+          s03: num(o.nbsets_03 ?? null),
+          fWon: num(o.nbsets_3f ?? null),
+          fLost: num(o.nbsets_f3 ?? null),
+        },
+        promoted: o.promus !== undefined ? num(o.promus) : null,
+        relegated: o.relegue !== undefined ? num(o.relegue) : null,
       };
     })
     .filter((r) => r.name && r.rank > 0)
@@ -110,12 +149,44 @@ export function poolOf(rows: StandingRow[], team: { code: string | null; fullNam
 
 export type Zone = "gold" | "silver" | "bronze" | "promotion" | "relegation" | null;
 
-/** Zones du site volley34 : podium en niveau 1, sinon 2 premiers montent ; 2 derniers descendent. */
-export function zoneOf(rank: number, poolSize: number, division: string | null): Zone {
+/**
+ * Zones : podium en niveau 1, sinon montée ; descente en bas. Nombres de la poule (Promus, Relegue)
+ * quand l'API les fournit, sinon règle du site volley34 (2 et 2).
+ */
+export function zoneOf(
+  rank: number,
+  poolSize: number,
+  division: string | null,
+  counts: { promoted?: number | null; relegated?: number | null } = {},
+): Zone {
   const top = division === "1" || division === "EX";
-  if (poolSize >= 4 && rank >= poolSize - 1) return "relegation";
+  const down = counts.relegated ?? (poolSize >= 4 ? 2 : 0);
+  const up = counts.promoted ?? 2;
+  if (down > 0 && rank > poolSize - down) return "relegation";
   if (top) return rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : null;
-  return rank <= 2 ? "promotion" : null;
+  return rank <= up ? "promotion" : null;
+}
+
+/** Aucune équipe de la poule n'a encore joué : classement provisoire (ordre alphabétique). */
+export function seasonNotStarted(rows: StandingRow[]): boolean {
+  return rows.every((r) => r.played === 0);
+}
+
+export type FormResult = { date: string; result: "V" | "D" };
+
+/**
+ * Forme récente déduite des photos quotidiennes du classement (l'API des résultats n'étant pas
+ * disponible) : chaque match joué entre deux photos est une victoire ou une défaite.
+ */
+export function recentForm(snapshots: { takenOn: string; won: number; lost: number }[], last = 5): FormResult[] {
+  const form: FormResult[] = [];
+  for (let i = 1; i < snapshots.length; i++) {
+    const wins = snapshots[i].won - snapshots[i - 1].won;
+    const losses = snapshots[i].lost - snapshots[i - 1].lost;
+    for (let k = 0; k < Math.max(0, losses); k++) form.push({ date: snapshots[i].takenOn, result: "D" });
+    for (let k = 0; k < Math.max(0, wins); k++) form.push({ date: snapshots[i].takenOn, result: "V" });
+  }
+  return form.slice(-last);
 }
 
 /** « Niveau 2 - Poule 1 » à partir des codes de division et de poule. */

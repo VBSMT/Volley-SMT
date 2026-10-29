@@ -363,3 +363,27 @@ fieldset.card legend { font-family: var(--font-barlow-condensed), sans-serif; fo
 .empty-stats .hero-number { color: var(--gris); }
 .chart { margin: 0; }
 .season-lines p { margin: 0; }
+.form-strip { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.4rem; }
+.form-strip li { width: 2rem; height: 2rem; border-radius: 8px; display: grid; place-items: center; font-weight: 700; color: #fff; }
+.form-win { background: #0ca30c; }
+.form-loss { background: #d03b3b; }
+.score-chart { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; height: 9rem; align-items: end; }
+.score-col { display: grid; grid-template-rows: auto 1fr auto; height: 100%; align-items: end; justify-items: center; gap: 0.25rem; }
+.score-bar { width: 70%; min-height: 2px; border-radius: 4px 4px 0 0; align-self: end; }
+.score-bar.win { background: #0ca30c; }
+.score-bar.loss { background: #d03b3b; }
+.score-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+.score-label { font-size: 0.8rem; color: var(--texte-doux); border-top: 1px solid #c3c2b7; width: 100%; text-align: center; padding-top: 0.2rem; }
+.duel { display: grid; gap: 0.3rem; }
+.duel-title { margin: 0; font-weight: 600; }
+.duel-values { margin: 0; display: flex; justify-content: space-between; font-size: 0.85rem; }
+.winloss-bar .empty { background: #e1e0d9; border-radius: 4px; }
+.pool-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.pool-bars li { display: grid; grid-template-columns: 8.5rem 1fr 2rem; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.pool-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pool-track { height: 12px; }
+.pool-bar { display: block; height: 100%; background: #8a8a85; border-radius: 0 4px 4px 0; }
+.pool-bars li.mine .pool-bar { background: var(--noir); }
+.pool-bars li.mine .pool-name { font-weight: 700; background: var(--jaune); padding: 0 0.25rem; border-radius: 4px; }
+.pool-value { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.names .strong { font-weight: 700; }

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RankChart } from "@/components/stats/RankChart";
-import { HeroStats, SeasonCard, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
+import { FormStrip, HeroStats, PoolComparison, ScoreBreakdown, SeasonCard, SetsAndPoints, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
 import { StatsTeamSelect } from "@/components/stats/StatsTeamSelect";
-import { poolTitle } from "@/lib/domain/standings";
+import { poolTitle, recentForm, seasonNotStarted, type StandingRow } from "@/lib/domain/standings";
 import { getCurrentMember } from "@/lib/member";
 import { getLatestSnapshots, getSeasonProgress, getTeamSnapshots } from "@/lib/stats";
 import { createClient } from "@/lib/supabase/server";
@@ -70,6 +70,10 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
   const latest = snapshots.at(-1) ?? null;
   const previous = snapshots.length > 1 ? snapshots[snapshots.length - 2] : null;
   const fullName = `SMDT/${team.name}`;
+  const isMine = (r: StandingRow) => r.code === team.volley34_ref || r.name === fullName;
+  const myRow = latest?.rows.find(isMine) ?? null;
+  const started = latest ? !seasonNotStarted(latest.rows) : false;
+  const form = recentForm(snapshots);
 
   return (
     <main className="page stack">
@@ -78,12 +82,34 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <StatsTeamSelect teams={teams} value={team.id} />
       </div>
 
-      {latest ? (
+      {latest && started ? (
         <>
           <HeroStats s={latest} previous={previous} />
           <section className="card stack">
             <h2>Victoires et défaites</h2>
             <WinLoss won={latest.won} lost={latest.lost} />
+            {form.length > 0 && (
+              <>
+                <p className="muted small">Forme récente</p>
+                <FormStrip form={form} />
+              </>
+            )}
+          </section>
+          {myRow && myRow.played > 0 && (
+            <section className="card stack">
+              <h2>Scores des matchs</h2>
+              <ScoreBreakdown scores={myRow.scores} />
+            </section>
+          )}
+          {myRow && (
+            <section className="card stack">
+              <h2>Sets et points</h2>
+              <SetsAndPoints row={myRow} />
+            </section>
+          )}
+          <section className="card stack">
+            <h2>Points dans la poule</h2>
+            <PoolComparison rows={latest.rows} highlight={isMine} />
           </section>
           {snapshots.length > 1 && (
             <section className="card stack">
@@ -93,7 +119,25 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           )}
           <section className="card stack">
             <h2>Classement · {poolTitle(latest.rows[0]?.division ?? null, latest.rows[0]?.pool ?? null)}</h2>
-            <StandingsTable rows={latest.rows} highlight={(r) => r.code === team.volley34_ref || r.name === fullName} />
+            <StandingsTable rows={latest.rows} highlight={isMine} />
+          </section>
+        </>
+      ) : latest ? (
+        <>
+          <section className="card stack empty-stats">
+            <p className="hero-number" aria-hidden="true">0</p>
+            <p>
+              Pas encore de match joué dans la poule de <strong>{team.name}</strong>. Les statistiques
+              apparaîtront après la première journée.
+            </p>
+          </section>
+          <section className="card stack">
+            <h2>La poule · {poolTitle(latest.rows[0]?.division ?? null, latest.rows[0]?.pool ?? null)}</h2>
+            <ul className="names">
+              {latest.rows.map((r) => (
+                <li key={r.name} className={isMine(r) ? "strong" : undefined}>{r.name}</li>
+              ))}
+            </ul>
           </section>
         </>
       ) : (
