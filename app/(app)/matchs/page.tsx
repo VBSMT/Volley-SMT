@@ -28,7 +28,15 @@ export default async function MatchsPage({
   const member = (await getCurrentMember())!;
   const supabase = await createClient();
 
-  const { data: teams } = await supabase.from("teams").select("id, name").order("name");
+  const [{ data: teams }, { data: lastSync }] = await Promise.all([
+    supabase.from("teams").select("id, name").order("name"),
+    // Visible par tout adhérent : seulement la date de la dernière synchro réussie (vue dédiée).
+    supabase.from("last_successful_sync").select("finished_at").maybeSingle(),
+  ]);
+  const staleSince =
+    lastSync?.finished_at && Date.now() - Date.parse(lastSync.finished_at) > 36 * 3600_000
+      ? new Date(lastSync.finished_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long" })
+      : null;
   // Par défaut : l'équipe de l'adhérent ; sans équipe, tout le club.
   const myTeamId = teams?.find((t) => t.name === member.team?.name)?.id;
   const selected = params.equipe ?? myTeamId ?? "tout";
@@ -58,6 +66,11 @@ export default async function MatchsPage({
   return (
     <main className="page stack">
       <h1>Matchs</h1>
+      {staleSince && (
+        <p className="notice" role="status">
+          Calendrier non mis à jour depuis le {staleSince} : dates à vérifier sur volley34.fr.
+        </p>
+      )}
       <TeamSelect teams={teams ?? []} value={selected} />
       <Link href={toggleHref} className="small">
         {showPast ? "← Matchs à venir" : "Voir les matchs passés"}

@@ -14,6 +14,7 @@ import { claimNotifications, recordChannels } from "@/lib/notification-log";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessions, type SessionView } from "@/lib/training";
+import { isVolley34SyncDue, runVolley34Sync } from "@/lib/volley34-sync";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -113,7 +114,8 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
  * Appelé chaque heure par pg_cron. Selon l'heure de Paris :
  * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
  * - clôture du sondage à 12h le jour J et résumé au Bureau ;
- * - rappel J-2 des matchs aux joueurs de l'équipe.
+ * - rappel J-2 des matchs aux joueurs de l'équipe ;
+ * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite).
  * Idempotent : le journal empêche tout double envoi.
  */
 export async function POST(request: NextRequest) {
@@ -138,6 +140,9 @@ export async function POST(request: NextRequest) {
   ).filter((s) => new Date(s.startsAt).getTime() < now.getTime() + 48 * 3600_000);
 
   const report: Record<string, unknown>[] = [];
+  // Synchro d'abord : les rappels de match utilisent alors les dates à jour.
+  if (await isVolley34SyncDue(admin, now)) report.push({ volley34: await runVolley34Sync(admin, board) });
+
   for (const session of sessions) {
     if (session.freeCourts > 0 && isReminderDue(now, session.startsAt, sendHour)) {
       report.push({ session: session.startsAt, reminders: await sendReminders(admin, session, members) });
