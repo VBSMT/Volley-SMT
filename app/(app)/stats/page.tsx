@@ -5,6 +5,7 @@ import { AttackDefense } from "@/components/stats/AttackDefense";
 import { Efficiency, PointsTotals, SetDiffPool, StreakCard } from "@/components/stats/MoreStats";
 import { HeroStats, PoolComparison, ScoreBreakdown, SeasonCard, StandingsTable, WinLoss } from "@/components/stats/StatsBlocks";
 import { TrendChart } from "@/components/stats/TrendChart";
+import { TeamNav } from "@/components/TeamNav";
 import { StatsTeamSelect } from "@/components/stats/StatsTeamSelect";
 import { allResults, attackDefense, efficiency, poolTitle, recentForm, streaks, seasonNotStarted, type StandingRow } from "@/lib/domain/standings";
 import { getCurrentMember } from "@/lib/member";
@@ -37,7 +38,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
           <h1>Stats</h1>
           <StatsTeamSelect teams={teams} value="club" />
         </div>
-        <Link href="/equipes" className="btn-secondary center">Les équipes du club et leurs joueurs →</Link>
+        <TeamNav myTeamId={member.teams[0]?.id ?? null} />
         <section className="card stack">
           <h2>Bilan du club</h2>
           {totals.won + totals.lost > 0 ? <WinLoss won={totals.won} lost={totals.lost} /> : <p className="muted small">Les résultats arrivent après les premiers matchs.</p>}
@@ -88,7 +89,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
         <h1>Stats</h1>
         <StatsTeamSelect teams={teams} value={team.id} />
       </div>
-      <Link href={`/equipes/${team.id}`} className="small">Voir l&apos;équipe sur le terrain · toutes les équipes du club →</Link>
+      <TeamNav myTeamId={member.teams[0]?.id ?? null} />
 
       {latest && started ? (
         <>

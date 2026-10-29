@@ -37,7 +37,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle : `supabase/tests/rls.test.sql` (pgTAP, `supabase test db`, lancé en CI).
 
 ## Fiche adhérent
-- Modifiable par l'adhérent : téléphone, contact d'urgence, droit à l'image, poste 1 et poste 2 (passe / avant / fond).
+- Modifiable par l'adhérent : téléphone, contact d'urgence, droit à l'image, poste 1 et poste 2 (passe / avant / fond). Les postes sont aussi modifiables par le **capitaine** (joueurs de son équipe, fiche équipe) et le **Bureau** (tous) via la fonction `set_member_positions` (ne touche que les postes).
 - Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe(s), rôles, licence FSGT + saison, cotisation réglée, sexe.
 - Invisible pour lui : niveau (table séparée `member_levels`, Bureau seulement).
 - Demande « Devenir bénévole » depuis le profil : confirmation, puis demande envoyée au Bureau qui valide ou refuse.
@@ -98,7 +98,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Onglet **Stats** : par défaut la (première) équipe de l'adhérent, menu pour une autre équipe ou « Tout le club » ; sans équipe → tout le club.
 - Classement de la poule (équipe du club surlignée, zones montée/podium et descente selon Promus/Relegue), chiffres clés (rang, points, matchs, différences de sets et de points), victoires/défaites, **forme récente**, **répartition des scores** (3-0…0-3), **sets et points** pour/contre (moyenne par set), **points de chaque équipe de la poule**, **évolution du rang** (une photo du classement par équipe et par jour, `standings_snapshots`, prise à la synchro volley34 de 6h), avancement de la saison et prochain match.
 - Vue club : toutes les équipes (rang, points, bilan).
-- **Équipes du club** (`/equipes`, depuis Stats) : une carte par équipe ; la fiche montre un demi-terrain animé (joueurs placés selon leur poste 1 : passe au filet au centre, avants au filet gauche/droite, fond au fond ; même poste = superposés ; sans poste = au hasard), l'effectif (capitaine ©, postes) et le prochain match. Vue `team_roster` : prénom, nom, postes, capitaine — jamais le niveau ni le sexe.
+- **Équipes du club** (`/equipes`, boutons « Mon équipe » / « Le club » en haut de Stats) : une carte par équipe ; la fiche montre un demi-terrain animé (joueurs placés selon leur poste 1 : passe au filet au centre, avants au filet gauche/droite, fond au fond ; même poste = superposés ; sans poste = au hasard), l'effectif (capitaine ©, postes) et le prochain match. Vue `team_roster` : prénom, nom, postes, capitaine — jamais le niveau ni le sexe.
 - Graphiques : méthode dataviz (série unique couleur du texte, victoire/défaite selon la charte, toujours avec libellé ou icône, infobulle au survol et au clavier, données consultables en tableau).
 - Aussi : série en cours (meilleure / pire), efficacité (% sets et points gagnés), points marqués/encaissés, différence de sets de la poule (barres divergentes), attaque/défense (points par set de chaque équipe), évolution des points et de la différence de sets.
 - **Félicitations éphémères** : après une victoire d'une équipe du club (détectée par la photo du classement), carte avec confettis animés en haut de l'accueil de **tous** les adhérents pendant **48 h** (score, adversaire, série, rang) ; fermable, mémorisé par appareil ; pas de notification.
