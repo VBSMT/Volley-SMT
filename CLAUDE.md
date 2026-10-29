@@ -57,7 +57,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
 - Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
 - **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
-- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération.
+- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération. Il peut aussi **ajouter ou supprimer une équipe** : le nombre d'équipes est alors fixé à la main (`lineups.forced_teams`) et la compo recalculée avec ce nombre (retour possible au nombre automatique).
 
 ## Algorithme de composition
 Entrées : présents (sexe, niveau, poste 1, poste 2), T = terrains libres.
@@ -82,7 +82,8 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 
 ## Calendrier des matchs
 - Source officielle : **volley34.fr** (championnat et coupe FSGT 34). **Accord de la commission obtenu** pour la lecture (octobre 2026) :
-  - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC) — l'API `…/matchs` renvoyait une erreur 500 à l'essai ;
+  - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC ; intitulé « X reçoit Y », ou « X contre Y » pour certains matchs reportés) — l'API `…/matchs` renvoyait une erreur 500 à l'essai. Un événement citant l'équipe mais illisible est signalé au Bureau (Bureau > Calendrier + notif quand la liste change) ;
+  - abonnement agenda pour les adhérents : lien vers le flux officiel `https://www.volley34.fr/icalendar.aspx?equipe={code}` (webcal) depuis l'onglet Matchs ;
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
   - gymnases : `https://api.volley34.fr/v1/gymnases` (JSON : nom, adresse, GPS `lat|lon`, `NomComplet` = lieu du flux ICS), table `gyms` mise à jour à la synchro ; lien « Itinéraire » Google Maps pour les matchs à l'extérieur ;
   - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;

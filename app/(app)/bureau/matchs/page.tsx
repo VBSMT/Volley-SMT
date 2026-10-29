@@ -54,10 +54,16 @@ export default async function BureauMatchsPage() {
         {lastVolley34 ? (
           <p className={lastVolley34.success ? "small" : "error small"}>
             Dernière synchro le {at(lastVolley34.finished_at!)} : {lastVolley34.success ? "réussie" : "en échec"}
-            {lastVolley34.message && ` — ${lastVolley34.message}`}
+            {lastVolley34.message && ` — ${lastVolley34.message.split(" · ⚠")[0]}`}
           </p>
         ) : (
           <p className="small">Aucune synchro pour l&apos;instant.</p>
+        )}
+        {lastVolley34?.message?.includes(" · ⚠") && (
+          <p className="notice small" role="status">
+            ⚠ {lastVolley34.message.split(" · ⚠ ")[1].replace(/\s*\[non lus:[^\]]*\]$/, "")}. Ces matchs ne sont pas
+            mis à jour automatiquement : vérifiez-les sur volley34 et signalez la formulation pour que la synchro la reconnaisse.
+          </p>
         )}
         <SyncButton />
       </section>

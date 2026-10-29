@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, volley34EntryUrl, type ExistingMatch } from "./volley34";
+import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, unreadEvents, volley34EntryUrl, type ExistingMatch } from "./volley34";
 
 const ICS = readFileSync(new URL("./__fixtures__/smdtx1.ics", import.meta.url), "utf8");
 
@@ -114,5 +114,17 @@ describe("teamMatches — match reporté (« contre » au lieu de « reçoit »)
     ];
     const { updates } = reconcile(remote.slice(0, 1), existing);
     expect(updates).toEqual([expect.objectContaining({ id: "m1", moved: true })]);
+  });
+});
+
+describe("unreadEvents", () => {
+  const ev = (uid: string, summary: string) => ({ uid, startsAt: "2026-11-12T19:45:00Z", location: "", summary });
+  it("signale un match de l'équipe dans une formulation inconnue", () => {
+    const events = [
+      ev("1", "SMDT/Les Bras Cassés reçoit ASV2M/Sock Touch"),
+      ev("2", "VCV/les volleyrieurs face à SMDT/Les Bras Cassés"),
+      ev("3", "Réunion des capitaines"),
+    ];
+    expect(unreadEvents(events, "SMDT/Les Bras Cassés").map((e) => e.uid)).toEqual(["2"]);
   });
 });

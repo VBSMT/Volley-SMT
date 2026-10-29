@@ -3,7 +3,7 @@ import { parisClock } from "@/lib/domain/notifications";
 import { parisDate } from "@/lib/domain/training";
 import { parseGyms } from "@/lib/domain/gyms";
 import { poolOf, parseStandings } from "@/lib/domain/standings";
-import { parseIcs, parseTeams, reconcile, teamMatches } from "@/lib/domain/volley34";
+import { parseIcs, parseTeams, reconcile, teamMatches, unreadEvents } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -26,7 +26,8 @@ async function fetchText(url: string, accept = "*/*") {
   return res.text();
 }
 
-export type SyncSummary = { teams: number; updated: number; moved: number; created: number; standings: number };
+export type UnreadEvent = { uid: string; team: string; startsAt: string; summary: string };
+export type SyncSummary = { teams: number; updated: number; moved: number; created: number; standings: number; unread: UnreadEvent[] };
 
 /**
  * Synchronise le calendrier des équipes SMDT depuis volley34 (flux ICS par équipe).
@@ -43,7 +44,7 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
 
   const { data: teams, error } = await admin.from("teams").select("id, name, volley34_ref");
   if (error) throw new Error(error.message);
-  const summary: SyncSummary = { teams: 0, updated: 0, moved: 0, created: 0, standings: 0 };
+  const summary: SyncSummary = { teams: 0, updated: 0, moved: 0, created: 0, standings: 0, unread: [] };
 
   for (const remoteTeam of remoteTeams) {
     const shortName = remoteTeam.name.replace(/^SMDT\s*\/\s*/i, "").trim();
@@ -60,7 +61,11 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
       await admin.from("teams").update({ volley34_ref: remoteTeam.code }).eq("id", team.id);
     }
 
-    const remote = teamMatches(parseIcs(await fetchText(ICS_URL(remoteTeam.code))), remoteTeam.name);
+    const events = parseIcs(await fetchText(ICS_URL(remoteTeam.code)));
+    const remote = teamMatches(events, remoteTeam.name);
+    summary.unread.push(
+      ...unreadEvents(events, remoteTeam.name).map((e) => ({ uid: e.uid, team: shortName, startsAt: e.startsAt, summary: e.summary })),
+    );
     const { data: existing, error: e2 } = await admin
       .from("matches")
       .select("id, opponent, is_home, starts_at, volley34_ref, competition")
@@ -173,7 +178,7 @@ export async function runVolley34Sync(admin: Admin, board: Recipient[]) {
   const startedAt = new Date().toISOString();
   const { data: previous } = await admin
     .from("sync_runs")
-    .select("success")
+    .select("success, message")
     .eq("source", "volley34")
     .order("started_at", { ascending: false })
     .limit(1)
@@ -186,8 +191,23 @@ export async function runVolley34Sync(admin: Admin, board: Recipient[]) {
       started_at: startedAt,
       finished_at: new Date().toISOString(),
       success: true,
-      message: `${summary.teams} équipes · ${summary.updated} matchs à jour (${summary.moved} déplacés) · ${summary.created} ajoutés · ${summary.standings} classements`,
+      message: syncMessage(summary),
     });
+    // Événements non lus : alerte au Bureau seulement quand la liste change (pas tous les jours).
+    const unreadKey = unreadSignature(summary.unread);
+    if (unreadKey && !previous?.message?.includes(unreadKey)) {
+      const first = summary.unread[0];
+      await notifyMembers(
+        board.map((recipient) => ({
+          recipient,
+          message: {
+            title: `Synchro volley34 : ${summary.unread.length} match${summary.unread.length > 1 ? "s" : ""} non lu${summary.unread.length > 1 ? "s" : ""}`,
+            body: `Ex. ${first.team} : « ${first.summary} ». À vérifier sur volley34 et dans Bureau > Calendrier.`,
+            url: "/bureau/matchs",
+          },
+        })),
+      );
+    }
     return { ok: true as const, summary };
   } catch (e) {
     const message = (e as Error).message.slice(0, 500);
@@ -228,4 +248,17 @@ export async function isVolley34SyncDue(admin: Admin, now: Date) {
     .limit(1)
     .maybeSingle();
   return !last?.finished_at || parisDate(last.finished_at) !== date;
+}
+
+/** Identifiant stable de la liste des événements non lus (comparé d'une synchro à l'autre). */
+function unreadSignature(unread: UnreadEvent[]) {
+  return unread.length ? `[non lus: ${unread.map((u) => u.uid).sort().join(",")}]` : "";
+}
+
+/** Résumé enregistré dans sync_runs et affiché dans Bureau > Calendrier. */
+export function syncMessage(s: SyncSummary) {
+  const base = `${s.teams} équipes · ${s.updated} matchs à jour (${s.moved} déplacés) · ${s.created} ajoutés · ${s.standings} classements`;
+  if (!s.unread.length) return base;
+  const details = s.unread.map((u) => `${u.team} : « ${u.summary} »`).join(" ; ");
+  return `${base} · ⚠ ${s.unread.length} événement(s) non lu(s) : ${details} ${unreadSignature(s.unread)}`.slice(0, 2000);
 }

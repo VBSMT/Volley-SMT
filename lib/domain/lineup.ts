@@ -45,6 +45,18 @@ export function planTeams(present: number, courts: number): TeamPlan {
   return plan(2);
 }
 
+/** Nombre d'équipes fixé par le Bureau : tailles réparties (écart max 1), au plus une équipe par joueur. */
+export function forcedPlan(present: number, teams: number): TeamPlan {
+  const n = Math.max(0, Math.min(teams, present));
+  return {
+    n,
+    sizes: Array.from({ length: n }, (_, i) => Math.floor(present / n) + (i < present % n ? 1 : 0)),
+    rotation: n % 2 === 1,
+    overflow: present > 6 * n,
+    tooFew: present < 8,
+  };
+}
+
 // --- Étape 2 : répartition --------------------------------------------------
 
 export const DEFAULT_LEVEL = 3;
@@ -103,8 +115,8 @@ export type Lineup = {
  * Étape 2 : répartition en serpent par niveau décroissant, puis échanges entre équipes
  * tant qu'un échange réduit le coût pondéré. Les contraintes non tenues sont remontées.
  */
-export function buildLineup(players: LineupPlayer[], courts: number): Lineup {
-  const plan = planTeams(players.length, courts);
+export function buildLineup(players: LineupPlayer[], courts: number, forcedTeams?: number | null): Lineup {
+  const plan = forcedTeams ? forcedPlan(players.length, forcedTeams) : planTeams(players.length, courts);
   if (plan.n === 0) {
     return { plan, teams: [], warnings: [courts <= 0 ? "Aucun terrain libre ce soir." : "Aucun présent."] };
   }
@@ -160,7 +172,7 @@ function summarize(teams: LineupPlayer[][], present: number, plan: Pick<TeamPlan
   const players = teams.flat();
   const warnings: string[] = [];
   const girlsTotal = players.filter((p) => p.sex === "F").length;
-  if (plan.tooFew) warnings.push(`Seulement ${present} présents : 2 équipes incomplètes.`);
+  if (plan.tooFew) warnings.push(`Seulement ${present} présents : équipes incomplètes.`);
   if (plan.overflow) warnings.push(`${present} présents : équipes de plus de 6 (débordement).`);
   const missingLevels = players.filter((p) => p.level === null).length;
   if (missingLevels) {

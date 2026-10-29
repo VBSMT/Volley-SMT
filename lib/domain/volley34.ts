@@ -152,3 +152,14 @@ export function volley34EntryUrl(competition: string | null): string {
   const cup = /coupe/i.test(competition ?? "");
   return `https://www.volley34.fr/Pages/SaisieResultat.aspx?C=${cup ? "CO" : "CH"}`;
 }
+
+/**
+ * Événements du flux qui citent l'équipe mais que teamMatches ne sait pas lire
+ * (formulation inconnue) : signalés au Bureau au lieu d'être ignorés sans rien dire.
+ */
+export function unreadEvents(events: IcsEvent[], teamFullName: string): IcsEvent[] {
+  const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+  const read = new Set(teamMatches(events, teamFullName).map((m) => m.uid));
+  const short = norm(teamFullName.replace(/^[^/]*\//, ""));
+  return events.filter((e) => !read.has(e.uid) && (norm(e.summary).includes(norm(teamFullName)) || (short.length > 3 && norm(e.summary).includes(short))));
+}
