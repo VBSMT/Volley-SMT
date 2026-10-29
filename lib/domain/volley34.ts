@@ -115,8 +115,27 @@ export function reconcile(remote: Volley34Match[], existing: ExistingMatch[]) {
   return { updates, inserts };
 }
 
-/** Équipes d'un club dans la réponse XML de l'API volley34 (/v1/equipes). */
-export function parseTeamsXml(xml: string, clubCode: string): Volley34Team[] {
+/**
+ * Équipes d'un club dans la réponse de l'API volley34 (/v1/equipes).
+ * L'API répond en XML ou en JSON selon l'en-tête Accept : les deux sont gérés.
+ */
+export function parseTeams(body: string, clubCode: string): Volley34Team[] {
+  const text = body.trim();
+  if (text.startsWith("[") || text.startsWith("{")) {
+    const data = JSON.parse(text) as unknown;
+    const list = (Array.isArray(data) ? data : [data]) as Record<string, unknown>[];
+    return list
+      .map((t) => ({
+        code: String(t.EquipeCode ?? t.equipeCode ?? ""),
+        name: String(t.NomEquipe ?? t.nomEquipe ?? ""),
+        clubCode: String(t.ClubCode ?? t.clubCode ?? ""),
+      }))
+      .filter((t) => t.code && t.clubCode === clubCode);
+  }
+  return parseTeamsXml(text, clubCode);
+}
+
+function parseTeamsXml(xml: string, clubCode: string): Volley34Team[] {
   const decode = (s: string) =>
     s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'");
   const tag = (block: string, name: string) => decode(new RegExp(`<${name}>([^<]*)</${name}>`).exec(block)?.[1] ?? "");

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseIcs, parseTeamsXml, reconcile, splitLocation, teamMatches, type ExistingMatch } from "./volley34";
+import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, type ExistingMatch } from "./volley34";
 
 const ICS = readFileSync(new URL("./__fixtures__/smdtx1.ics", import.meta.url), "utf8");
 
@@ -60,9 +60,16 @@ describe("reconcile", () => {
   });
 });
 
-describe("parseTeamsXml", () => {
-  it("extrait les équipes du club", () => {
+describe("parseTeams", () => {
+  it("extrait les équipes du club (XML)", () => {
     const xml = `<ArrayOfEquipe><Equipe><EquipeCode>SMDTX1</EquipeCode><ClubCode>SMDT</ClubCode><NomEquipe>SMDT/Les St Loup</NomEquipe></Equipe><Equipe><EquipeCode>VLMX9</EquipeCode><ClubCode>VLM</ClubCode><NomEquipe>VLM/5B Paf &amp; Passe!</NomEquipe></Equipe></ArrayOfEquipe>`;
-    expect(parseTeamsXml(xml, "SMDT")).toEqual([{ code: "SMDTX1", name: "SMDT/Les St Loup", clubCode: "SMDT" }]);
+    expect(parseTeams(xml, "SMDT")).toEqual([{ code: "SMDTX1", name: "SMDT/Les St Loup", clubCode: "SMDT" }]);
+  });
+  it("extrait les équipes du club (JSON)", () => {
+    const json = JSON.stringify([
+      { EquipeCode: "SMDTF1", ClubCode: "SMDT", NomEquipe: "SMDT/Totally Spike", Division: 1 },
+      { EquipeCode: "VLM1", ClubCode: "VLM", NomEquipe: "VLM/1" },
+    ]);
+    expect(parseTeams(json, "SMDT")).toEqual([{ code: "SMDTF1", name: "SMDT/Totally Spike", clubCode: "SMDT" }]);
   });
 });
