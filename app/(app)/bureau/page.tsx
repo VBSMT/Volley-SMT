@@ -9,10 +9,10 @@ export const metadata: Metadata = { title: "Bureau" };
 // [titre, description, lien si la section existe déjà]
 const SECTIONS: [string, string, string?][] = [
   ["Calendrier des matchs", "Import du fichier Excel du club", "/bureau/matchs"],
-  ["Adhérents", "Import CSV, invitations, niveaux, rôles, équipes, demandes bénévoles"],
+  ["Adhérents", "Import Excel/CSV, comptes et invitations, liste des adhérents", "/bureau/adherents"],
   ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
-  ["Compo du soir", "Équipes générées après la clôture du sondage"],
-  ["Reports", "Demandes en attente et historique"],
+  ["Compo du soir", "Équipes générées à 12h à la clôture du sondage", "/bureau/compo"],
+  ["Reports", "Demandes en attente, décisions et historique", "/bureau/reports"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles"],
   ["Saison", "Licences, cotisations, relances, exports"],
   ["Liens utiles", "volley34, FSGT, documents"],

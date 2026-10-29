@@ -40,8 +40,8 @@ export default async function ProfilPage() {
           <dd>{member.email}</dd>
           <dt>Sexe</dt>
           <dd>{member.sex === "F" ? "Femme" : "Homme"}</dd>
-          <dt>Équipe</dt>
-          <dd>{member.team?.name ?? "Aucune"}</dd>
+          <dt>{member.teams.length > 1 ? "Équipes" : "Équipe"}</dt>
+          <dd>{member.teams.map((t) => t.name).join(", ") || "Aucune"}</dd>
           <dt>Rôles</dt>
           <dd>{roles}</dd>
           <dt>Licence FSGT</dt>

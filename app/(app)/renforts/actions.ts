@@ -31,11 +31,15 @@ function notifyNewRequest(requestId: string) {
       .eq("id", requestId)
       .single();
     if (!r) return;
-    const { data: members } = await admin
+    const { data: rows } = await admin
       .from("members")
-      .select("id, email, first_name, sex, team_id, notify_reinforcement")
+      .select("id, email, first_name, sex, notify_reinforcement, member_teams(team_id)")
       .not("user_id", "is", null);
-    const audience = reinforcementAudience(members ?? [], { teamId: r.team_id, sex: r.sex, captainId: r.captain_id });
+    const members = (rows ?? []).map(({ member_teams, ...m }) => ({
+      ...m,
+      team_ids: (member_teams as { team_id: string }[]).map((t) => t.team_id),
+    }));
+    const audience = reinforcementAudience(members, { teamId: r.team_id, sex: r.sex, captainId: r.captain_id });
     const message = reinforcementMessage({
       teamName: (r.team as unknown as { name: string }).name,
       matchStartsAt: (r.match as unknown as { starts_at: string }).starts_at,

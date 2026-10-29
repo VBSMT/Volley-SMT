@@ -221,3 +221,43 @@ textarea {
   background: #fff;
   resize: vertical;
 }
+
+/* --- Adhérents --- */
+.preview-list { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; border: 1px solid var(--gris); border-radius: 8px; }
+.preview-list li { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
+.member-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.member-row p { margin: 0; }
+.member-name { font-weight: 600; }
+
+/* --- Match : détail et sondage --- */
+.match-title { font-size: 1.5rem; }
+.match-title .muted { font-family: var(--font-barlow), sans-serif; font-weight: 400; font-size: 1rem; }
+.match-link { color: inherit; text-decoration: underline; text-decoration-color: var(--gris); text-underline-offset: 3px; }
+.captain-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+.poll-lists { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
+.poll-lists h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+
+/* --- Compo --- */
+.warnings { margin: 0; padding-left: 1.75rem; }
+.lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.lineup h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+.lineup-players { list-style: none; margin: 0; padding: 0; }
+.lineup-players li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid #eee; }
+.lineup-players li:last-child { border-bottom: 0; }
+
+/* --- Gestion des adhérents --- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.9rem;
+  border: 2px solid var(--noir); border-radius: 999px; color: var(--noir); text-decoration: none; font-size: 0.9rem;
+}
+.chip.active { background: var(--noir); color: var(--jaune); }
+.team-picker { list-style: none; margin: 0; padding: 0; }
+.team-picker li { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; border-bottom: 1px solid #eee; }
+.checkbox.disabled { opacity: 0.4; }
+
+/* --- Reports --- */
+.action-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.action-row .poll-btn { flex: 1 1 8rem; }
+.history { list-style: none; margin: 0; padding: 0; }
+.history li { display: grid; gap: 0.1rem; padding: 0.5rem 0; border-bottom: 1px solid #e4e4e1; }

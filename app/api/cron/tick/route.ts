@@ -10,7 +10,9 @@ import {
   reminderMessage,
   type ReminderKind,
 } from "@/lib/domain/notifications";
+import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
+import { runRescheduleMaintenance } from "@/lib/reschedule-server";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessions, type SessionView } from "@/lib/training";
@@ -21,7 +23,7 @@ export const maxDuration = 60;
 
 type Admin = ReturnType<typeof createAdminClient>;
 type Member = Recipient & {
-  team_id: string | null;
+  team_ids: string[];
   notify_training: boolean;
   notify_match: boolean;
   roles: { role: string }[];
@@ -77,7 +79,10 @@ async function closePoll(admin: Admin, session: SessionView, board: Member[]) {
     .eq("id", session.id)
     .is("poll_closed_at", null);
   if (session.freeCourts === 0) return 0;
-  const message = closureMessage(session.present.length, session.freeCourts);
+  // Compo générée une seule fois à la clôture (le Bureau peut la régénérer depuis l'écran).
+  const { data: existing } = await admin.from("lineups").select("session_id").eq("session_id", session.id).maybeSingle();
+  const lineup = existing ? null : await generateLineup(admin, session);
+  const message = closureMessage(session.present.length, session.freeCourts, lineup?.warnings.length ?? 0);
   return send(admin, "closure", { session_id: session.id }, board.map((recipient) => ({ recipient, message })));
 }
 
@@ -100,7 +105,7 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
       venue: m.venue,
       city: m.city,
     });
-    const players = members.filter((p) => p.team_id === m.team_id && p.notify_match);
+    const players = members.filter((p) => p.team_ids.includes(m.team_id) && p.notify_match);
     report.push({
       match: m.starts_at,
       team: team?.name,
@@ -113,9 +118,10 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
 /**
  * Appelé chaque heure par pg_cron. Selon l'heure de Paris :
  * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
- * - clôture du sondage à 12h le jour J et résumé au Bureau ;
+ * - clôture du sondage à 12h le jour J, génération de la compo et notification au Bureau ;
  * - rappel J-2 des matchs aux joueurs de l'équipe ;
- * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite).
+ * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite) ;
+ * - reports : confirmation par la synchro, expiration automatique à J-3.
  * Idempotent : le journal empêche tout double envoi.
  */
 export async function POST(request: NextRequest) {
@@ -129,9 +135,12 @@ export async function POST(request: NextRequest) {
 
   const { data: memberRows } = await admin
     .from("members")
-    .select("id, email, first_name, team_id, notify_training, notify_match, roles:member_roles(role)")
+    .select("id, email, first_name, notify_training, notify_match, roles:member_roles(role), member_teams(team_id)")
     .not("user_id", "is", null);
-  const members = (memberRows ?? []) as Member[];
+  const members: Member[] = (memberRows ?? []).map(({ member_teams, ...m }) => ({
+    ...(m as Omit<Member, "team_ids">),
+    team_ids: (member_teams as { team_id: string }[]).map((t) => t.team_id),
+  }));
   const board = members.filter((m) => m.roles.some((r) => r.role === "board"));
 
   // Séances d'aujourd'hui et de demain.
@@ -142,6 +151,8 @@ export async function POST(request: NextRequest) {
   const report: Record<string, unknown>[] = [];
   // Synchro d'abord : les rappels de match utilisent alors les dates à jour.
   if (await isVolley34SyncDue(admin, now)) report.push({ volley34: await runVolley34Sync(admin, board) });
+  // Reports : confirmation (après la synchro) et expiration à J-3.
+  report.push({ reschedules: await runRescheduleMaintenance(admin, now) });
 
   for (const session of sessions) {
     if (session.freeCourts > 0 && isReminderDue(now, session.startsAt, sendHour)) {

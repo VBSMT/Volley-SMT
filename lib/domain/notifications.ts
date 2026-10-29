@@ -63,11 +63,12 @@ export function reminderMessage(kind: ReminderKind, presentCount: number): Messa
   };
 }
 
-export function closureMessage(presentCount: number, freeCourts: number): Message {
+export function closureMessage(presentCount: number, freeCourts: number, warnings = 0): Message {
+  const alert = warnings ? ` ${warnings} point${warnings > 1 ? "s" : ""} d'attention.` : "";
   return {
-    title: "Sondage clos pour ce soir",
-    body: `${presentCount} présent${presentCount > 1 ? "s" : ""}, ${freeCourts} terrain${freeCourts > 1 ? "s" : ""} libre${freeCourts > 1 ? "s" : ""}.`,
-    url: "/entrainements",
+    title: "Compo prête pour ce soir",
+    body: `${presentCount} présent${presentCount > 1 ? "s" : ""}, ${freeCourts} terrain${freeCourts > 1 ? "s" : ""}.${alert}`,
+    url: "/bureau/compo",
   };
 }
 
@@ -116,12 +117,12 @@ const POSITIONS: Record<Position, string> = { setter: "passeur·se", front: "ava
 
 /** Destinataires d'une demande de renfort : hors équipe, sexe demandé, préférence activée. */
 export function reinforcementAudience<
-  M extends { id: string; sex: Sex; team_id: string | null; notify_reinforcement: boolean },
+  M extends { id: string; sex: Sex; team_ids: string[]; notify_reinforcement: boolean },
 >(members: M[], request: { teamId: string; sex: Sex | null; captainId: string | null }): M[] {
   return members.filter(
     (m) =>
       m.notify_reinforcement &&
-      m.team_id !== request.teamId &&
+      !m.team_ids.includes(request.teamId) &&
       m.id !== request.captainId &&
       (request.sex === null || m.sex === request.sex),
   );
@@ -154,4 +155,61 @@ export function offerMessage(volunteerName: string, teamName: string): Message {
     body: `${volunteerName} propose son aide à ${teamName}.`,
     url: "/accueil",
   };
+}
+
+// --- Sondage de présence d'un match -----------------------------------------
+
+export function matchPollMessage(match: { id: string; startsAt: string; teamName: string; opponent: string }): Message {
+  const when = `${fmt(match.startsAt, { weekday: "long", day: "numeric", month: "long" })} à ${fmt(match.startsAt, { hour: "2-digit", minute: "2-digit" })}`;
+  return {
+    title: `📋 ${match.teamName} : es-tu dispo ?`,
+    body: `Match du ${when} contre ${match.opponent}. Réponds dans l'appli.`,
+    url: `/matchs/${match.id}`,
+  };
+}
+
+// --- Reports de match ----------------------------------------------------------
+
+export type RescheduleInfo = {
+  matchId: string;
+  teamName: string;
+  opponent: string;
+  matchStartsAt: string;
+  slotStartsAt: string;
+};
+
+const day = (iso: string) => fmt(iso, { weekday: "long", day: "numeric", month: "long" });
+
+/** Au Bureau : nouvelle demande de report. */
+export function rescheduleRequestedMessage(r: RescheduleInfo): Message {
+  return {
+    title: `📅 Demande de report · ${r.teamName}`,
+    body: `Match contre ${r.opponent} du ${day(r.matchStartsAt)} → créneau du ${day(r.slotStartsAt)} demandé.`,
+    url: "/bureau/reports",
+  };
+}
+
+/** Aux capitaines : décision du Bureau, expiration ou confirmation. */
+export function rescheduleDecisionMessage(
+  r: RescheduleInfo,
+  status: "approved" | "rejected" | "abandoned" | "confirmed",
+  reason?: "expired",
+): Message {
+  const slot = day(r.slotStartsAt);
+  const body = {
+    approved: `Créneau du ${slot} pré-réservé pour le match contre ${r.opponent}. À faire valider par l'adversaire et volley34.`,
+    rejected: `Le Bureau n'a pas retenu le créneau du ${slot} pour le match contre ${r.opponent}.`,
+    abandoned:
+      reason === "expired"
+        ? `Report non confirmé à J-3 : le créneau du ${slot} est libéré (match contre ${r.opponent}).`
+        : `Report du match contre ${r.opponent} abandonné : le créneau du ${slot} est libéré.`,
+    confirmed: `volley34 confirme le match contre ${r.opponent} le ${slot}.`,
+  }[status];
+  const title = {
+    approved: "✅ Report : créneau pré-réservé",
+    rejected: "❌ Report refusé",
+    abandoned: "Report abandonné",
+    confirmed: "✅ Report confirmé",
+  }[status];
+  return { title: `${title} · ${r.teamName}`, body, url: `/matchs/${r.matchId}` };
 }

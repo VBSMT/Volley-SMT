@@ -38,7 +38,7 @@ export default async function MatchsPage({
       ? new Date(lastSync.finished_at).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", day: "numeric", month: "long" })
       : null;
   // Par défaut : l'équipe de l'adhérent ; sans équipe, tout le club.
-  const myTeamId = teams?.find((t) => t.name === member.team?.name)?.id;
+  const myTeamId = member.teams[0]?.id;
   const selected = params.equipe ?? myTeamId ?? "tout";
   const showPast = params.passes === "1";
 
@@ -96,7 +96,9 @@ export default async function MatchsPage({
                     <span className={m.is_home ? "badge home" : "badge away"}>
                       {m.is_home ? "Dom." : "Ext."}
                     </span>{" "}
-                    {m.opponent}
+                    <Link href={`/matchs/${m.id}`} className="match-link">
+                      {m.opponent}
+                    </Link>
                   </p>
                   <p className="muted small">
                     {m.competition}
@@ -108,9 +110,19 @@ export default async function MatchsPage({
                     </p>
                   )}
                   {!showPast && m.team && myCaptainTeams.includes(m.team.id) && (
-                    <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
-                      Demander un renfort
-                    </Link>
+                    <p className="captain-links">
+                      <Link href={`/matchs/${m.id}`} className="small renfort-link">
+                        Sondage de présence
+                      </Link>
+                      {m.is_home && (
+                        <Link href={`/matchs/${m.id}`} className="small renfort-link">
+                          Report
+                        </Link>
+                      )}
+                      <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
+                        Demander un renfort
+                      </Link>
+                    </p>
                   )}
                 </div>
               </li>

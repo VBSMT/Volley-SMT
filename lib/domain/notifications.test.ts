@@ -4,9 +4,12 @@ import {
   isClosureDue,
   isMatchReminderDue,
   matchMessage,
+  matchPollMessage,
   offerMessage,
   reinforcementAudience,
   reinforcementMessage,
+  rescheduleDecisionMessage,
+  rescheduleRequestedMessage,
   wantedLabel,
   isReminderDue,
   parisClock,
@@ -67,8 +70,13 @@ describe("messages", () => {
     expect(reminderMessage("remind", 1).body).toBe("20h–22h · 1 inscrit pour l'instant.");
     expect(reminderMessage("remind", 14).body).toBe("20h–22h · 14 inscrits pour l'instant.");
   });
-  it("résume la clôture pour le Bureau", () => {
-    expect(closureMessage(13, 2).body).toBe("13 présents, 2 terrains libres.");
+  it("annonce la compo au Bureau", () => {
+    expect(closureMessage(13, 2)).toEqual({
+      title: "Compo prête pour ce soir",
+      body: "13 présents, 2 terrains.",
+      url: "/bureau/compo",
+    });
+    expect(closureMessage(9, 1, 2).body).toBe("9 présents, 1 terrain. 2 points d'attention.");
   });
 });
 
@@ -103,14 +111,15 @@ describe("matchMessage", () => {
 
 describe("reinforcementAudience", () => {
   const members = [
-    { id: "cap", sex: "M" as const, team_id: "t1", notify_reinforcement: true },
-    { id: "coequipiere", sex: "F" as const, team_id: "t1", notify_reinforcement: true },
-    { id: "f-autre", sex: "F" as const, team_id: "t2", notify_reinforcement: true },
-    { id: "f-sans-equipe", sex: "F" as const, team_id: null, notify_reinforcement: true },
-    { id: "f-desactive", sex: "F" as const, team_id: null, notify_reinforcement: false },
-    { id: "m-autre", sex: "M" as const, team_id: "t2", notify_reinforcement: true },
+    { id: "cap", sex: "M" as const, team_ids: ["t1"], notify_reinforcement: true },
+    { id: "coequipiere", sex: "F" as const, team_ids: ["t1"], notify_reinforcement: true },
+    { id: "double-equipe", sex: "F" as const, team_ids: ["t2", "t1"], notify_reinforcement: true },
+    { id: "f-autre", sex: "F" as const, team_ids: ["t2"], notify_reinforcement: true },
+    { id: "f-sans-equipe", sex: "F" as const, team_ids: [], notify_reinforcement: true },
+    { id: "f-desactive", sex: "F" as const, team_ids: [], notify_reinforcement: false },
+    { id: "m-autre", sex: "M" as const, team_ids: ["t2"], notify_reinforcement: true },
   ];
-  it("vise les adhérents hors équipe, du sexe demandé, ayant activé les renforts", () => {
+  it("vise les adhérents hors équipe (même en double équipe), du sexe demandé, ayant activé les renforts", () => {
     const ids = reinforcementAudience(members, { teamId: "t1", sex: "F", captainId: "cap" }).map((m) => m.id);
     expect(ids).toEqual(["f-autre", "f-sans-equipe"]);
   });
@@ -134,5 +143,37 @@ describe("messages de renfort", () => {
     expect(msg.title).toBe("🙋 Renfort recherché · Les St Loup");
     expect(msg.body).toBe("Une joueuse pour le match du mardi 10 novembre à 20:00. Tu peux aider ?");
     expect(offerMessage("Eve Martin", "Les St Loup").body).toBe("Eve Martin propose son aide à Les St Loup.");
+  });
+});
+
+describe("matchPollMessage", () => {
+  it("demande la dispo de l'équipe et ouvre le match", () => {
+    const msg = matchPollMessage({ id: "m1", startsAt: "2026-11-10T19:00:00.000Z", teamName: "Les St Loup", opponent: "CLAPIERS/Spike Tyson" });
+    expect(msg).toEqual({
+      title: "📋 Les St Loup : es-tu dispo ?",
+      body: "Match du mardi 10 novembre à 20:00 contre CLAPIERS/Spike Tyson. Réponds dans l'appli.",
+      url: "/matchs/m1",
+    });
+  });
+});
+
+describe("messages de report", () => {
+  const r = {
+    matchId: "m1", teamName: "Les St Loup", opponent: "MHSC/BEES",
+    matchStartsAt: "2026-11-03T19:00:00.000Z", slotStartsAt: "2026-11-26T19:00:00.000Z",
+  };
+  it("prévient le Bureau d'une demande", () => {
+    expect(rescheduleRequestedMessage(r)).toEqual({
+      title: "📅 Demande de report · Les St Loup",
+      body: "Match contre MHSC/BEES du mardi 3 novembre → créneau du jeudi 26 novembre demandé.",
+      url: "/bureau/reports",
+    });
+  });
+  it("informe les capitaines de la décision", () => {
+    expect(rescheduleDecisionMessage(r, "approved").title).toBe("✅ Report : créneau pré-réservé · Les St Loup");
+    expect(rescheduleDecisionMessage(r, "abandoned", "expired").body).toBe(
+      "Report non confirmé à J-3 : le créneau du jeudi 26 novembre est libéré (match contre MHSC/BEES).",
+    );
+    expect(rescheduleDecisionMessage(r, "confirmed").url).toBe("/matchs/m1");
   });
 });
