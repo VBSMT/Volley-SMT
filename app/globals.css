@@ -236,3 +236,11 @@ textarea {
 .captain-links { display: flex; gap: 1rem; flex-wrap: wrap; }
 .poll-lists { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
 .poll-lists h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+
+/* --- Compo --- */
+.warnings { margin: 0; padding-left: 1.75rem; }
+.lineup { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.75rem; }
+.lineup h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+.lineup-players { list-style: none; margin: 0; padding: 0; }
+.lineup-players li { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0; border-bottom: 1px solid #eee; }
+.lineup-players li:last-child { border-bottom: 0; }

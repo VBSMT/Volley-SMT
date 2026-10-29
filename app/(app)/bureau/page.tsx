@@ -11,7 +11,7 @@ const SECTIONS: [string, string, string?][] = [
   ["Calendrier des matchs", "Import du fichier Excel du club", "/bureau/matchs"],
   ["Adhérents", "Import Excel/CSV, comptes et invitations, liste des adhérents", "/bureau/adherents"],
   ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
-  ["Compo du soir", "Équipes générées après la clôture du sondage"],
+  ["Compo du soir", "Équipes générées à 12h à la clôture du sondage", "/bureau/compo"],
   ["Reports", "Demandes en attente et historique"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles"],
   ["Saison", "Licences, cotisations, relances, exports"],

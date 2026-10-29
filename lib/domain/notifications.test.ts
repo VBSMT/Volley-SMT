@@ -68,8 +68,13 @@ describe("messages", () => {
     expect(reminderMessage("remind", 1).body).toBe("20h–22h · 1 inscrit pour l'instant.");
     expect(reminderMessage("remind", 14).body).toBe("20h–22h · 14 inscrits pour l'instant.");
   });
-  it("résume la clôture pour le Bureau", () => {
-    expect(closureMessage(13, 2).body).toBe("13 présents, 2 terrains libres.");
+  it("annonce la compo au Bureau", () => {
+    expect(closureMessage(13, 2)).toEqual({
+      title: "Compo prête pour ce soir",
+      body: "13 présents, 2 terrains.",
+      url: "/bureau/compo",
+    });
+    expect(closureMessage(9, 1, 2).body).toBe("9 présents, 1 terrain. 2 points d'attention.");
   });
 });
 

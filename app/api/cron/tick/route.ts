@@ -10,6 +10,7 @@ import {
   reminderMessage,
   type ReminderKind,
 } from "@/lib/domain/notifications";
+import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -77,7 +78,10 @@ async function closePoll(admin: Admin, session: SessionView, board: Member[]) {
     .eq("id", session.id)
     .is("poll_closed_at", null);
   if (session.freeCourts === 0) return 0;
-  const message = closureMessage(session.present.length, session.freeCourts);
+  // Compo générée une seule fois à la clôture (le Bureau peut la régénérer depuis l'écran).
+  const { data: existing } = await admin.from("lineups").select("session_id").eq("session_id", session.id).maybeSingle();
+  const lineup = existing ? null : await generateLineup(admin, session);
+  const message = closureMessage(session.present.length, session.freeCourts, lineup?.warnings.length ?? 0);
   return send(admin, "closure", { session_id: session.id }, board.map((recipient) => ({ recipient, message })));
 }
 
@@ -113,7 +117,7 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
 /**
  * Appelé chaque heure par pg_cron. Selon l'heure de Paris :
  * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
- * - clôture du sondage à 12h le jour J et résumé au Bureau ;
+ * - clôture du sondage à 12h le jour J, génération de la compo et notification au Bureau ;
  * - rappel J-2 des matchs aux joueurs de l'équipe ;
  * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite).
  * Idempotent : le journal empêche tout double envoi.

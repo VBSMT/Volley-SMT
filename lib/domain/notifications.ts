@@ -63,11 +63,12 @@ export function reminderMessage(kind: ReminderKind, presentCount: number): Messa
   };
 }
 
-export function closureMessage(presentCount: number, freeCourts: number): Message {
+export function closureMessage(presentCount: number, freeCourts: number, warnings = 0): Message {
+  const alert = warnings ? ` ${warnings} point${warnings > 1 ? "s" : ""} d'attention.` : "";
   return {
-    title: "Sondage clos pour ce soir",
-    body: `${presentCount} présent${presentCount > 1 ? "s" : ""}, ${freeCourts} terrain${freeCourts > 1 ? "s" : ""} libre${freeCourts > 1 ? "s" : ""}.`,
-    url: "/entrainements",
+    title: "Compo prête pour ce soir",
+    body: `${presentCount} présent${presentCount > 1 ? "s" : ""}, ${freeCourts} terrain${freeCourts > 1 ? "s" : ""}.${alert}`,
+    url: "/bureau/compo",
   };
 }
 
