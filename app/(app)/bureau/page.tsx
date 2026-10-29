@@ -16,8 +16,8 @@ const SECTIONS: [string, string, string?][] = [
   ["Événements", "Création, visibilité par rôle, sondages de présence et de bénévolat", "/bureau/evenements"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance", "/bureau/annonces"],
   ["Saison", "Licences, cotisations, relances, exports"],
-  ["Liens utiles", "volley34, FSGT, documents"],
-  ["Paramètres", "Équipes, échelle de niveau, horaires, synchro"],
+  ["Liens utiles", "volley34, FSGT, documents (visibles par tous)", "/bureau/liens"],
+  ["Paramètres", "Horaires de notification et de clôture, expiration des reports, équipes", "/bureau/parametres"],
 ];
 
 export default async function BureauPage() {

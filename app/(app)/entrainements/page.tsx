@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SessionCard } from "@/components/SessionCard";
 import { getCurrentMember } from "@/lib/member";
+import { getSchedule } from "@/lib/settings";
+import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 
 export const metadata: Metadata = { title: "Entraînements" };
@@ -15,6 +17,7 @@ export default async function EntrainementsPage({
 }) {
   const limit = Math.min(Number((await searchParams).n) || PAGE, 100);
   const member = (await getCurrentMember())!;
+  const { closeHour } = await getSchedule(await createClient());
   // Séances du jour encore visibles jusqu'à la fin (22h).
   const sessions = await getSessions({
     from: new Date(Date.now() - 2 * 3600_000),
@@ -26,8 +29,8 @@ export default async function EntrainementsPage({
     <main className="page stack">
       <h1>Entraînements</h1>
       <p className="muted small">
-        Mardi et jeudi, 20h–22h. Répondez pour les séances à venir ; le sondage ferme à 12h le
-        jour même.
+        Mardi et jeudi, 20h–22h. Répondez pour les séances à venir ; le sondage ferme à {closeHour}h
+        le jour même.
       </p>
       {sessions.length === 0 ? (
         <p className="notice">Aucune séance programmée pour l&apos;instant.</p>

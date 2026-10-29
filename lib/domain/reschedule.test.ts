@@ -28,6 +28,10 @@ describe("isExpired (J-3 de la date demandée)", () => {
     expect(isExpired(new Date("2026-11-22T22:59:00Z"), SLOT)).toBe(false); // dim. 23h59 Paris
     expect(isExpired(new Date("2026-11-22T23:00:00Z"), SLOT)).toBe(true); // lun. 0h Paris
   });
+  it("respecte le délai réglé (J-1)", () => {
+    expect(isExpired(new Date("2026-11-24T12:00:00Z"), SLOT, 1)).toBe(false); // mar.
+    expect(isExpired(new Date("2026-11-25T12:00:00Z"), SLOT, 1)).toBe(true); // mer.
+  });
 });
 
 describe("isConfirmedBySync", () => {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { pollDeadline } from "@/lib/domain/training";
 import { getCurrentMember } from "@/lib/member";
+import { getSchedule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
 export async function answerPoll(sessionId: string, present: boolean): Promise<{ error?: string }> {
@@ -15,7 +16,8 @@ export async function answerPoll(sessionId: string, present: boolean): Promise<{
     .select("starts_at, poll_closed_at")
     .eq("id", sessionId)
     .maybeSingle();
-  if (!session || session.poll_closed_at || Date.now() >= pollDeadline(session.starts_at).getTime()) {
+  const { closeHour } = await getSchedule(supabase);
+  if (!session || session.poll_closed_at || Date.now() >= pollDeadline(session.starts_at, closeHour).getTime()) {
     return { error: "Le sondage de cette séance est clos." };
   }
 

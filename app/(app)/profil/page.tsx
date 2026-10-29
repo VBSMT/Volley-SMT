@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { ThemeChooser } from "@/components/ThemeChooser";
@@ -89,6 +90,10 @@ export default async function ProfilPage() {
         <h2>Apparence</h2>
         <ThemeChooser initial={((await cookies()).get(THEME_COOKIE)?.value as ThemeChoice | undefined) ?? "auto"} />
       </section>
+
+      <Link href="/liens" className="btn-secondary center">
+        Liens utiles
+      </Link>
 
       <form action="/auth/deconnexion" method="post">
         <button type="submit" className="btn-secondary full">

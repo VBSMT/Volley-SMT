@@ -1,6 +1,7 @@
 import { closureReason } from "@/lib/domain/calendar";
 import { freeCourts, parisDate, pollDeadline } from "@/lib/domain/training";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSchedule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
 export type SessionView = {
@@ -39,7 +40,7 @@ export async function getSessions(opts: {
   const last = sessions.at(-1)!.starts_at as string;
   const dayMs = 86_400_000;
 
-  const [{ data: matches }, { data: reschedules }, { data: attendance }, { data: directory }] =
+  const [{ data: matches }, { data: reschedules }, { data: attendance }, { data: directory }, schedule] =
     await Promise.all([
       supabase
         .from("matches")
@@ -54,6 +55,7 @@ export async function getSessions(opts: {
         .in("requested_session_id", ids),
       supabase.from("attendance").select("session_id, member_id, present").in("session_id", ids),
       supabase.from("member_directory").select("id, first_name, last_name"),
+      getSchedule(supabase, opts.client ? "table" : "view"),
     ]);
 
   const homeByDate = new Map<string, number>();
@@ -81,7 +83,7 @@ export async function getSessions(opts: {
       approvedReschedules: approved,
       freeCourts: free,
       closedReason: s.open_courts === 0 ? closureReason(date) : null,
-      pollOpen: free > 0 && !s.poll_closed_at && now < pollDeadline(s.starts_at).getTime(),
+      pollOpen: free > 0 && !s.poll_closed_at && now < pollDeadline(s.starts_at, schedule.closeHour).getTime(),
       present: answers
         .filter((a) => a.present)
         .map((a) => ({ id: a.member_id, name: names.get(a.member_id) ?? "Adhérent" }))

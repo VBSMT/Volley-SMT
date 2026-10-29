@@ -13,6 +13,7 @@ import {
 import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
 import { runRescheduleMaintenance } from "@/lib/reschedule-server";
+import { getSchedule } from "@/lib/settings";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessions, type SessionView } from "@/lib/training";
@@ -52,7 +53,7 @@ async function send(
   return claimed.size;
 }
 
-async function sendReminders(admin: Admin, session: SessionView, members: Member[]) {
+async function sendReminders(admin: Admin, session: SessionView, members: Member[], closeHour: number) {
   const { data } = await admin.from("attendance").select("member_id, present").eq("session_id", session.id);
   const answers = new Map((data ?? []).map((a) => [a.member_id as string, a.present as boolean]));
   const wanting = members.filter((m) => m.notify_training);
@@ -61,7 +62,7 @@ async function sendReminders(admin: Admin, session: SessionView, members: Member
 
   const sent: Record<ReminderKind, number> = { ask: 0, remind: 0 };
   for (const kind of ["ask", "remind"] as const) {
-    const message = reminderMessage(kind, session.present.length);
+    const message = reminderMessage(kind, session.present.length, closeHour);
     sent[kind] = await send(
       admin,
       kind,
@@ -130,8 +131,8 @@ export async function POST(request: NextRequest) {
   const admin = createAdminClient();
   const now = new Date();
 
-  const { data: setting } = await admin.from("app_settings").select("value").eq("key", "poll_reminder").maybeSingle();
-  const sendHour = Number(String(setting?.value?.time ?? "20:00").split(":")[0]);
+  const schedule = await getSchedule(admin, "table");
+  const sendHour = schedule.reminderHour;
 
   const { data: memberRows } = await admin
     .from("members")
@@ -152,13 +153,13 @@ export async function POST(request: NextRequest) {
   // Synchro d'abord : les rappels de match utilisent alors les dates à jour.
   if (await isVolley34SyncDue(admin, now)) report.push({ volley34: await runVolley34Sync(admin, board) });
   // Reports : confirmation (après la synchro) et expiration à J-3.
-  report.push({ reschedules: await runRescheduleMaintenance(admin, now) });
+  report.push({ reschedules: await runRescheduleMaintenance(admin, now, schedule.expiryDays) });
 
   for (const session of sessions) {
     if (session.freeCourts > 0 && isReminderDue(now, session.startsAt, sendHour)) {
-      report.push({ session: session.startsAt, reminders: await sendReminders(admin, session, members) });
+      report.push({ session: session.startsAt, reminders: await sendReminders(admin, session, members, schedule.closeHour) });
     }
-    if (isClosureDue(now, session.startsAt) && now.getTime() < new Date(session.startsAt).getTime() + 4 * 3600_000) {
+    if (isClosureDue(now, session.startsAt, schedule.closeHour) && now.getTime() < new Date(session.startsAt).getTime() + 4 * 3600_000) {
       report.push({ session: session.startsAt, closureNotified: await closePoll(admin, session, board) });
     }
   }
