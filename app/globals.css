@@ -221,3 +221,10 @@ textarea {
   background: #fff;
   resize: vertical;
 }
+
+/* --- Adhérents --- */
+.preview-list { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; border: 1px solid var(--gris); border-radius: 8px; }
+.preview-list li { padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; }
+.member-row { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; }
+.member-row p { margin: 0; }
+.member-name { font-weight: 600; }

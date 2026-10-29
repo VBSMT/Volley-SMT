@@ -120,7 +120,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Onglet Bureau
-Historique des reports · Adhérents (import CSV, invitations, niveaux, rôles, équipes, demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
+Historique des reports · Adhérents (import Excel/CSV reconnu par email : fiches, équipes, rôles ajoutés, niveaux, comptes + email d’invitation ; demandes bénévoles) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push + email ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
 
 ## Tâches planifiées (pg_cron / Edge Functions)
 | Tâche | Quand |

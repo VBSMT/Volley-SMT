@@ -95,3 +95,29 @@ export async function notifyMembers(
   if (expired.length) await admin.from("push_subscriptions").delete().in("id", expired);
   return result;
 }
+
+/** Email d'invitation envoyé par le Bureau à l'import des adhérents. */
+export async function sendInvitation(to: Recipient) {
+  const link = `${siteUrl()}/connexion`;
+  await getMailer().sendMail({
+    from: process.env.MAIL_FROM,
+    to: to.email,
+    subject: "Bienvenue sur Volley SMT, l'appli du club",
+    text: `Bonjour ${to.first_name},
+
+Le club Volley-Ball Loisirs Saint-Mathieu-de-Tréviers a son application : entraînements, matchs, renforts…
+
+Pour te connecter : ${link}
+Saisis cette adresse email (${to.email}), tu recevras un code de connexion. Pas de mot de passe.
+
+Astuce : ajoute l'appli à l'écran d'accueil de ton téléphone et active les notifications.
+
+Le Bureau`,
+    html: `<p>Bonjour ${escapeHtml(to.first_name)},</p>
+<p>Le club <strong>Volley-Ball Loisirs Saint-Mathieu-de-Tréviers</strong> a son application : entraînements, matchs, renforts…</p>
+<p><a href="${link}" style="display:inline-block;padding:10px 16px;background:#FFE81A;color:#111111;border:2px solid #111111;border-radius:8px;font-weight:bold;text-decoration:none">Ouvrir Volley SMT</a></p>
+<p>Saisis ton adresse email (<strong>${escapeHtml(to.email)}</strong>) : tu recevras un code de connexion. Pas de mot de passe.</p>
+<p>Astuce : ajoute l'appli à l'écran d'accueil de ton téléphone et active les notifications.</p>
+<p>Le Bureau</p>`,
+  });
+}

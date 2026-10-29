@@ -1,0 +1,4 @@
+﻿nom;prenom;email;sexe;equipe;capitaine;roles;telephone;licence;cotisation;niveau
+Martin;Julie;julie.martin@exemple.fr;F;Les St Loup;oui;;06 00 00 00 00;;oui;3
+Durand;Paul;paul.durand@exemple.fr;M;Les Yoyos;non;bureau;;;oui;
+Bernard;Lea;lea.bernard@exemple.fr;F;;;benevole;;;non;2
