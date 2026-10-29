@@ -8,6 +8,8 @@ import {
   offerMessage,
   reinforcementAudience,
   reinforcementMessage,
+  rescheduleDecisionMessage,
+  rescheduleRequestedMessage,
   wantedLabel,
   isReminderDue,
   parisClock,
@@ -152,5 +154,26 @@ describe("matchPollMessage", () => {
       body: "Match du mardi 10 novembre à 20:00 contre CLAPIERS/Spike Tyson. Réponds dans l'appli.",
       url: "/matchs/m1",
     });
+  });
+});
+
+describe("messages de report", () => {
+  const r = {
+    matchId: "m1", teamName: "Les St Loup", opponent: "MHSC/BEES",
+    matchStartsAt: "2026-11-03T19:00:00.000Z", slotStartsAt: "2026-11-26T19:00:00.000Z",
+  };
+  it("prévient le Bureau d'une demande", () => {
+    expect(rescheduleRequestedMessage(r)).toEqual({
+      title: "📅 Demande de report · Les St Loup",
+      body: "Match contre MHSC/BEES du mardi 3 novembre → créneau du jeudi 26 novembre demandé.",
+      url: "/bureau/reports",
+    });
+  });
+  it("informe les capitaines de la décision", () => {
+    expect(rescheduleDecisionMessage(r, "approved").title).toBe("✅ Report : créneau pré-réservé · Les St Loup");
+    expect(rescheduleDecisionMessage(r, "abandoned", "expired").body).toBe(
+      "Report non confirmé à J-3 : le créneau du jeudi 26 novembre est libéré (match contre MHSC/BEES).",
+    );
+    expect(rescheduleDecisionMessage(r, "confirmed").url).toBe("/matchs/m1");
   });
 });

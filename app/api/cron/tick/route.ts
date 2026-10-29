@@ -12,6 +12,7 @@ import {
 } from "@/lib/domain/notifications";
 import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
+import { runRescheduleMaintenance } from "@/lib/reschedule-server";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessions, type SessionView } from "@/lib/training";
@@ -119,7 +120,8 @@ async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, mem
  * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
  * - clôture du sondage à 12h le jour J, génération de la compo et notification au Bureau ;
  * - rappel J-2 des matchs aux joueurs de l'équipe ;
- * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite).
+ * - synchro quotidienne du calendrier volley34 (à partir de 6h, jusqu'à réussite) ;
+ * - reports : confirmation par la synchro, expiration automatique à J-3.
  * Idempotent : le journal empêche tout double envoi.
  */
 export async function POST(request: NextRequest) {
@@ -149,6 +151,8 @@ export async function POST(request: NextRequest) {
   const report: Record<string, unknown>[] = [];
   // Synchro d'abord : les rappels de match utilisent alors les dates à jour.
   if (await isVolley34SyncDue(admin, now)) report.push({ volley34: await runVolley34Sync(admin, board) });
+  // Reports : confirmation (après la synchro) et expiration à J-3.
+  report.push({ reschedules: await runRescheduleMaintenance(admin, now) });
 
   for (const session of sessions) {
     if (session.freeCourts > 0 && isReminderDue(now, session.startsAt, sendHour)) {

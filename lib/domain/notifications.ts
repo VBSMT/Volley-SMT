@@ -167,3 +167,49 @@ export function matchPollMessage(match: { id: string; startsAt: string; teamName
     url: `/matchs/${match.id}`,
   };
 }
+
+// --- Reports de match ----------------------------------------------------------
+
+export type RescheduleInfo = {
+  matchId: string;
+  teamName: string;
+  opponent: string;
+  matchStartsAt: string;
+  slotStartsAt: string;
+};
+
+const day = (iso: string) => fmt(iso, { weekday: "long", day: "numeric", month: "long" });
+
+/** Au Bureau : nouvelle demande de report. */
+export function rescheduleRequestedMessage(r: RescheduleInfo): Message {
+  return {
+    title: `📅 Demande de report · ${r.teamName}`,
+    body: `Match contre ${r.opponent} du ${day(r.matchStartsAt)} → créneau du ${day(r.slotStartsAt)} demandé.`,
+    url: "/bureau/reports",
+  };
+}
+
+/** Aux capitaines : décision du Bureau, expiration ou confirmation. */
+export function rescheduleDecisionMessage(
+  r: RescheduleInfo,
+  status: "approved" | "rejected" | "abandoned" | "confirmed",
+  reason?: "expired",
+): Message {
+  const slot = day(r.slotStartsAt);
+  const body = {
+    approved: `Créneau du ${slot} pré-réservé pour le match contre ${r.opponent}. À faire valider par l'adversaire et volley34.`,
+    rejected: `Le Bureau n'a pas retenu le créneau du ${slot} pour le match contre ${r.opponent}.`,
+    abandoned:
+      reason === "expired"
+        ? `Report non confirmé à J-3 : le créneau du ${slot} est libéré (match contre ${r.opponent}).`
+        : `Report du match contre ${r.opponent} abandonné : le créneau du ${slot} est libéré.`,
+    confirmed: `volley34 confirme le match contre ${r.opponent} le ${slot}.`,
+  }[status];
+  const title = {
+    approved: "✅ Report : créneau pré-réservé",
+    rejected: "❌ Report refusé",
+    abandoned: "Report abandonné",
+    confirmed: "✅ Report confirmé",
+  }[status];
+  return { title: `${title} · ${r.teamName}`, body, url: `/matchs/${r.matchId}` };
+}

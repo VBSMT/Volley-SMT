@@ -102,7 +102,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Le capitaine clôt la demande : **renfort trouvé** ou **annulée**.
 
 ## Reports
-Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire et la FSGT. Au plus ~1 demande par semaine.
+Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire et la FSGT. Au plus ~1 demande par semaine. Reports **uniquement pour les matchs à domicile** (notre gymnase), **une seule demande active** (`requested`/`approved`) par match, vers un créneau à venir ayant au moins 1 terrain libre.
 
 | État | Déclencheur | Effet terrain |
 |---|---|---|

@@ -12,7 +12,7 @@ const SECTIONS: [string, string, string?][] = [
   ["Adhérents", "Import Excel/CSV, comptes et invitations, liste des adhérents", "/bureau/adherents"],
   ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
   ["Compo du soir", "Équipes générées à 12h à la clôture du sondage", "/bureau/compo"],
-  ["Reports", "Demandes en attente et historique"],
+  ["Reports", "Demandes en attente, décisions et historique", "/bureau/reports"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles"],
   ["Saison", "Licences, cotisations, relances, exports"],
   ["Liens utiles", "volley34, FSGT, documents"],

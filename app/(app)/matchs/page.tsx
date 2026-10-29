@@ -114,6 +114,11 @@ export default async function MatchsPage({
                       <Link href={`/matchs/${m.id}`} className="small renfort-link">
                         Sondage de présence
                       </Link>
+                      {m.is_home && (
+                        <Link href={`/matchs/${m.id}`} className="small renfort-link">
+                          Report
+                        </Link>
+                      )}
                       <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
                         Demander un renfort
                       </Link>

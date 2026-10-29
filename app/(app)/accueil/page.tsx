@@ -48,9 +48,12 @@ export default async function AccueilPage() {
 
   // Bureau : demandes en attente (bénévolat).
   const isBoard = hasRole(member, "board");
-  const { count: pendingVolunteers } = isBoard
-    ? await supabase.from("volunteer_requests").select("id", { count: "exact", head: true }).eq("status", "pending")
-    : { count: 0 };
+  const [{ count: pendingVolunteers }, { count: pendingReschedules }] = isBoard
+    ? await Promise.all([
+        supabase.from("volunteer_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+        supabase.from("reschedule_requests").select("id", { count: "exact", head: true }).eq("status", "requested"),
+      ])
+    : [{ count: 0 }, { count: 0 }];
 
   const reinforcements = await getOpenReinforcements({
     memberId: member.id,
@@ -62,6 +65,11 @@ export default async function AccueilPage() {
     <main className="page stack">
       <h1>Bonjour {member.first_name}</h1>
       <NotificationToggle compact />
+      {!!pendingReschedules && (
+        <Link href="/bureau/reports" className="notice">
+          {pendingReschedules} demande{pendingReschedules > 1 ? "s" : ""} de report en attente →
+        </Link>
+      )}
       {!!pendingVolunteers && (
         <Link href="/bureau/adherents#benevoles" className="notice">
           {pendingVolunteers} demande{pendingVolunteers > 1 ? "s" : ""} « Devenir bénévole » en attente →
