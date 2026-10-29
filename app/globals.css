@@ -261,3 +261,9 @@ textarea {
 .action-row .poll-btn { flex: 1 1 8rem; }
 .history { list-style: none; margin: 0; padding: 0; }
 .history li { display: grid; gap: 0.1rem; padding: 0.5rem 0; border-bottom: 1px solid #e4e4e1; }
+
+/* --- Annonces --- */
+.announcement { border-left: 4px solid var(--noir); }
+.announcement h3 { margin: 0; font-size: 1.2rem; }
+.announcement p { margin: 0; }
+.announcement-body { white-space: pre-line; }

@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MatchPoll } from "@/components/MatchPoll";
 import { NotificationToggle } from "@/components/NotificationToggle";
+import { AnnouncementList } from "@/components/AnnouncementList";
 import { ReinforcementCard } from "@/components/ReinforcementCard";
+import { getAnnouncements } from "@/lib/announcements";
 import { SessionCard } from "@/components/SessionCard";
 import { captainTeamIds, getCurrentMember, hasRole, memberTeamIds } from "@/lib/member";
 import { formatDay, formatTime } from "@/lib/format";
@@ -55,6 +57,9 @@ export default async function AccueilPage() {
       ])
     : [{ count: 0 }, { count: 0 }];
 
+  // Annonces des 14 derniers jours (les 3 plus récentes).
+  const announcements = await getAnnouncements(supabase, { limit: 3, since: new Date(Date.now() - 14 * 86_400_000) });
+
   const reinforcements = await getOpenReinforcements({
     memberId: member.id,
     isBoard,
@@ -75,6 +80,16 @@ export default async function AccueilPage() {
           {pendingVolunteers} demande{pendingVolunteers > 1 ? "s" : ""} « Devenir bénévole » en attente →
         </Link>
       )}
+      {announcements.length > 0 && (
+        <section className="stack">
+          <h2>Annonces</h2>
+          <AnnouncementList items={announcements} />
+          <Link href="/annonces" className="small">
+            Toutes les annonces →
+          </Link>
+        </section>
+      )}
+
       {nextMatches.map(({ team, match, canManage, poll }) => (
         <section key={team.id} className="stack">
           <h2>Prochain match · {team.name}</h2>

@@ -213,3 +213,18 @@ export function rescheduleDecisionMessage(
   }[status];
   return { title: `${title} · ${r.teamName}`, body, url: `/matchs/${r.matchId}` };
 }
+
+// --- Annonces du Bureau ----------------------------------------------------------
+
+const MAX_BODY = 280;
+
+/** Annonce : titre + extrait (le texte complet est dans l'appli). */
+export function announcementMessage(a: { id: string; title: string; body: string; author: string | null }): Message {
+  const text = a.body.replace(/\s+/g, " ").trim();
+  const excerpt = text.length > MAX_BODY ? `${text.slice(0, MAX_BODY - 1).trimEnd()}…` : text;
+  return {
+    title: `📣 ${a.title}`,
+    body: a.author ? `${excerpt} — ${a.author}` : excerpt,
+    url: `/annonces#${a.id}`,
+  };
+}

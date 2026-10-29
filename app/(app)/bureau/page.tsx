@@ -13,7 +13,7 @@ const SECTIONS: [string, string, string?][] = [
   ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
   ["Compo du soir", "Équipes générées à 12h à la clôture du sondage", "/bureau/compo"],
   ["Reports", "Demandes en attente, décisions et historique", "/bureau/reports"],
-  ["Annonces", "Message au club, à une équipe, aux bénévoles"],
+  ["Annonces", "Message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance", "/bureau/annonces"],
   ["Saison", "Licences, cotisations, relances, exports"],
   ["Liens utiles", "volley34, FSGT, documents"],
   ["Paramètres", "Équipes, échelle de niveau, horaires, synchro"],
