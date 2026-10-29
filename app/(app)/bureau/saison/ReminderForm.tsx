@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useConfirm } from "@/components/Feedback";
 import { sendReminder } from "./actions";
 
 const DEFAULT_TEXT = {
@@ -12,18 +13,20 @@ export function ReminderForm({ kind, count }: { kind: "dues" | "license"; count:
   const [text, setText] = useState(DEFAULT_TEXT[kind]);
   const [status, setStatus] = useState<{ ok: boolean; text: string }>();
   const [pending, startTransition] = useTransition();
+  const { confirm, dialog } = useConfirm();
   if (!count) return <p className="success small">Personne à relancer.</p>;
   return (
     <details>
       <summary>Relancer {count} adhérent{count > 1 ? "s" : ""}</summary>
       <div className="stack">
+        {dialog}
         <label htmlFor={`reminder-${kind}`}>Message</label>
         <textarea id={`reminder-${kind}`} rows={3} value={text} onChange={(e) => setText(e.target.value)} />
         <button
           type="button"
           className="btn-primary"
           disabled={pending}
-          onClick={() => confirm(`Envoyer la relance à ${count} adhérent${count > 1 ? "s" : ""} ?`) &&
+          onClick={async () => (await confirm(`Envoyer la relance à ${count} adhérent${count > 1 ? "s" : ""} ?`, { text: "Notification, sinon email. Un envoi ne peut pas être annulé.", confirmLabel: "Envoyer" })) &&
             startTransition(async () => {
               const r = await sendReminder(kind, text);
               setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: `Relance envoyée à ${r.count} adhérent${(r.count ?? 0) > 1 ? "s" : ""} (notification, sinon email).` });

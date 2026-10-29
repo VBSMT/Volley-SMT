@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useConfirm } from "@/components/Feedback";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { createAnnouncement, type AnnouncementState } from "./actions";
 
@@ -15,6 +16,7 @@ export function AnnouncementForm({
 }) {
   const [state, formAction, pending] = useActionState(createAnnouncement, initialState);
   const [target, setTarget] = useState("club");
+  const { confirm, dialog } = useConfirm();
 
   if (state.status === "sent") {
     return (
@@ -26,7 +28,16 @@ export function AnnouncementForm({
   }
 
   return (
-    <form onSubmit={submitWithoutReset(formAction)} className="card stack">
+    <form
+      onSubmit={submitWithoutReset(formAction, (fd) =>
+        confirm(`Envoyer l'annonce « ${fd.get("title")} » ?`, {
+          text: "Push, sinon email, aux destinataires choisis. Un envoi ne peut pas être annulé.",
+          confirmLabel: "Envoyer",
+        }),
+      )}
+      className="card stack"
+    >
+      {dialog}
       <h2>Nouvelle annonce</h2>
       <label htmlFor="target">Destinataires</label>
       <select id="target" name="target" value={target} onChange={(e) => setTarget(e.target.value)}>

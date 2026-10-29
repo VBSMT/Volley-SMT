@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { EVENT_TYPE_LABELS, VISIBILITY_ROLES, type EventType, type Role } from "@/lib/domain/events";
+import { useConfirm } from "@/components/Feedback";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { deleteEvent, saveEvent, type EventFormState } from "./actions";
 
@@ -31,9 +32,20 @@ export function EventForm({ values }: { values: EventFormValues }) {
   const [volunteer, setVolunteer] = useState(values.volunteerPoll);
   const [needs, setNeeds] = useState(values.needs.length ? values.needs : [{ label: "", needed: 1 }]);
   const [deleting, startDelete] = useTransition();
+  const { confirm, dialog } = useConfirm();
 
   return (
-    <form onSubmit={submitWithoutReset(formAction)} className="stack">
+    <form
+      onSubmit={submitWithoutReset(formAction, async (fd) =>
+        fd.get("notify") !== "on" ||
+        confirm(values.id ? "Enregistrer et prévenir les adhérents ?" : "Créer l'événement et prévenir les adhérents ?", {
+          text: "Les adhérents concernés recevront une notification (sinon un email).",
+          confirmLabel: values.id ? "Enregistrer" : "Créer",
+        }),
+      )}
+      className="stack"
+    >
+      {dialog}
       <section className="card stack">
         <label htmlFor="type">Type</label>
         <select id="type" name="type" defaultValue={values.type}>
@@ -150,8 +162,9 @@ export function EventForm({ values }: { values: EventFormValues }) {
           type="button"
           className="btn-secondary"
           disabled={deleting}
-          onClick={() => {
-            if (confirm("Supprimer cet événement et toutes les réponses ?")) startDelete(async () => void (await deleteEvent(values.id!)));
+          onClick={async () => {
+            if (!(await confirm("Supprimer cet événement ?", { text: "Toutes les réponses aux sondages seront effacées.", confirmLabel: "Supprimer" }))) return;
+            startDelete(async () => void (await deleteEvent(values.id!)));
           }}
         >
           Supprimer l&apos;événement
