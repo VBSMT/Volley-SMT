@@ -3,11 +3,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   closureMessage,
   isClosureDue,
+  isMatchReminderDue,
   isReminderDue,
+  matchMessage,
   reminderAudience,
   reminderMessage,
   type ReminderKind,
 } from "@/lib/domain/notifications";
+import { claimNotifications, recordChannels } from "@/lib/notification-log";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getSessions, type SessionView } from "@/lib/training";
@@ -16,6 +19,12 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 type Admin = ReturnType<typeof createAdminClient>;
+type Member = Recipient & {
+  team_id: string | null;
+  notify_training: boolean;
+  notify_match: boolean;
+  roles: { role: string }[];
+};
 
 function authorized(request: NextRequest) {
   const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
@@ -27,72 +36,84 @@ function authorized(request: NextRequest) {
   );
 }
 
-/** Réserve les envois dans le journal : seuls les envois nouvellement réservés sont faits. */
-async function claim(admin: Admin, kind: string, sessionId: string, memberIds: string[]) {
-  if (!memberIds.length) return new Set<string>();
-  const { data, error } = await admin
-    .from("notification_log")
-    .upsert(
-      memberIds.map((member_id) => ({ kind, session_id: sessionId, member_id })),
-      { onConflict: "kind,session_id,member_id", ignoreDuplicates: true },
-    )
-    .select("member_id");
-  if (error) throw new Error(`Journal des notifications : ${error.message}`);
-  return new Set((data ?? []).map((r) => r.member_id as string));
+/** Réserve puis envoie un message à chaque destinataire, et note le canal utilisé. */
+async function send(
+  admin: Admin,
+  kind: string,
+  target: Parameters<typeof claimNotifications>[2],
+  recipients: { recipient: Recipient; message: Parameters<typeof notifyMembers>[0][number]["message"] }[],
+) {
+  const claimed = await claimNotifications(admin, kind, target, recipients.map((r) => r.recipient.id));
+  const channels = await notifyMembers(recipients.filter((r) => claimed.has(r.recipient.id)));
+  await recordChannels(admin, kind, target, channels);
+  return claimed.size;
 }
 
-async function recordChannels(admin: Admin, kind: string, sessionId: string, channels: Map<string, string>) {
-  await Promise.all(
-    [...channels].map(([memberId, channel]) =>
-      admin
-        .from("notification_log")
-        .update({ channel })
-        .match({ kind, session_id: sessionId, member_id: memberId }),
-    ),
-  );
-}
-
-async function sendReminders(admin: Admin, session: SessionView, members: Recipient[]) {
-  const answers = new Map<string, boolean>();
+async function sendReminders(admin: Admin, session: SessionView, members: Member[]) {
   const { data } = await admin.from("attendance").select("member_id, present").eq("session_id", session.id);
-  for (const a of data ?? []) answers.set(a.member_id, a.present);
+  const answers = new Map((data ?? []).map((a) => [a.member_id as string, a.present as boolean]));
+  const wanting = members.filter((m) => m.notify_training);
+  const audience = reminderAudience(wanting.map((m) => m.id), answers);
+  const byId = new Map(wanting.map((m) => [m.id, m]));
 
-  const audience = reminderAudience(members.map((m) => m.id), answers);
-  const byId = new Map(members.map((m) => [m.id, m]));
   const sent: Record<ReminderKind, number> = { ask: 0, remind: 0 };
-
   for (const kind of ["ask", "remind"] as const) {
-    const ids = audience.filter((a) => a.kind === kind).map((a) => a.memberId);
-    const claimed = await claim(admin, kind, session.id, ids);
     const message = reminderMessage(kind, session.present.length);
-    const channels = await notifyMembers([...claimed].map((id) => ({ recipient: byId.get(id)!, message })));
-    await recordChannels(admin, kind, session.id, channels);
-    sent[kind] = claimed.size;
+    sent[kind] = await send(
+      admin,
+      kind,
+      { session_id: session.id },
+      audience.filter((a) => a.kind === kind).map((a) => ({ recipient: byId.get(a.memberId)!, message })),
+    );
   }
   return sent;
 }
 
-async function closePoll(admin: Admin, session: SessionView, board: Recipient[]) {
+async function closePoll(admin: Admin, session: SessionView, board: Member[]) {
   await admin
     .from("training_sessions")
     .update({ poll_closed_at: new Date().toISOString() })
     .eq("id", session.id)
     .is("poll_closed_at", null);
   if (session.freeCourts === 0) return 0;
-
-  const claimed = await claim(admin, "closure", session.id, board.map((m) => m.id));
   const message = closureMessage(session.present.length, session.freeCourts);
-  const channels = await notifyMembers(
-    board.filter((m) => claimed.has(m.id)).map((recipient) => ({ recipient, message })),
-  );
-  await recordChannels(admin, "closure", session.id, channels);
-  return claimed.size;
+  return send(admin, "closure", { session_id: session.id }, board.map((recipient) => ({ recipient, message })));
+}
+
+async function sendMatchReminders(admin: Admin, now: Date, sendHour: number, members: Member[]) {
+  const { data: matches } = await admin
+    .from("matches")
+    .select("id, team_id, starts_at, opponent, is_home, venue, city, team:teams(name)")
+    .gte("starts_at", new Date(now.getTime() + 24 * 3600_000).toISOString())
+    .lte("starts_at", new Date(now.getTime() + 80 * 3600_000).toISOString());
+
+  const report: Record<string, unknown>[] = [];
+  for (const m of matches ?? []) {
+    if (!isMatchReminderDue(now, m.starts_at, sendHour)) continue;
+    const team = m.team as unknown as { name: string } | null;
+    const message = matchMessage({
+      startsAt: m.starts_at,
+      teamName: team?.name ?? "",
+      opponent: m.opponent,
+      isHome: m.is_home,
+      venue: m.venue,
+      city: m.city,
+    });
+    const players = members.filter((p) => p.team_id === m.team_id && p.notify_match);
+    report.push({
+      match: m.starts_at,
+      team: team?.name,
+      sent: await send(admin, "match", { match_id: m.id }, players.map((recipient) => ({ recipient, message }))),
+    });
+  }
+  return report;
 }
 
 /**
  * Appelé chaque heure par pg_cron. Selon l'heure de Paris :
- * - notification J-1 (demande aux non-répondants, rappel aux présents) ;
- * - clôture du sondage à 12h le jour J et résumé au Bureau.
+ * - notification J-1 des entraînements (demande aux non-répondants, rappel aux présents) ;
+ * - clôture du sondage à 12h le jour J et résumé au Bureau ;
+ * - rappel J-2 des matchs aux joueurs de l'équipe.
  * Idempotent : le journal empêche tout double envoi.
  */
 export async function POST(request: NextRequest) {
@@ -104,17 +125,17 @@ export async function POST(request: NextRequest) {
   const { data: setting } = await admin.from("app_settings").select("value").eq("key", "poll_reminder").maybeSingle();
   const sendHour = Number(String(setting?.value?.time ?? "20:00").split(":")[0]);
 
+  const { data: memberRows } = await admin
+    .from("members")
+    .select("id, email, first_name, team_id, notify_training, notify_match, roles:member_roles(role)")
+    .not("user_id", "is", null);
+  const members = (memberRows ?? []) as Member[];
+  const board = members.filter((m) => m.roles.some((r) => r.role === "board"));
+
   // Séances d'aujourd'hui et de demain.
   const sessions = (
     await getSessions({ from: new Date(now.getTime() - 12 * 3600_000), limit: 4, client: admin })
   ).filter((s) => new Date(s.startsAt).getTime() < now.getTime() + 48 * 3600_000);
-
-  const { data: memberRows } = await admin
-    .from("members")
-    .select("id, email, first_name, roles:member_roles(role)")
-    .not("user_id", "is", null);
-  const members = (memberRows ?? []) as (Recipient & { roles: { role: string }[] })[];
-  const board = members.filter((m) => m.roles.some((r) => r.role === "board"));
 
   const report: Record<string, unknown>[] = [];
   for (const session of sessions) {
@@ -125,5 +146,7 @@ export async function POST(request: NextRequest) {
       report.push({ session: session.startsAt, closureNotified: await closePoll(admin, session, board) });
     }
   }
+  report.push(...(await sendMatchReminders(admin, now, sendHour, members)));
+
   return NextResponse.json({ ok: true, at: now.toISOString(), report });
 }

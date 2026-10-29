@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { formatDay, formatMonth, formatTime } from "@/lib/format";
-import { getCurrentMember } from "@/lib/member";
+import { captainTeamIds, getCurrentMember } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { TeamSelect } from "./TeamSelect";
 
@@ -52,6 +52,7 @@ export default async function MatchsPage({
     months.set(key, [...(months.get(key) ?? []), m]);
   }
 
+  const myCaptainTeams = captainTeamIds(member);
   const toggleHref = `/matchs?equipe=${selected}${showPast ? "" : "&passes=1"}`;
 
   return (
@@ -92,6 +93,11 @@ export default async function MatchsPage({
                     <p className="muted small">
                       {[m.venue, m.city].filter(Boolean).join(", ")}
                     </p>
+                  )}
+                  {!showPast && m.team && myCaptainTeams.includes(m.team.id) && (
+                    <Link href={`/renforts/nouveau?match=${m.id}`} className="small renfort-link">
+                      Demander un renfort
+                    </Link>
                   )}
                 </div>
               </li>

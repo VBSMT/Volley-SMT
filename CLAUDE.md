@@ -28,7 +28,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 | Rôle | Onglets |
 |---|---|
 | Adhérent | Accueil, Entraînements, Matchs, Événements (4) |
-| Capitaine | idem + demander un report pour **les matchs de son équipe** |
+| Capitaine | idem + demander un report ou un **renfort** pour **les matchs de son équipe** |
 | Bénévole | idem + sondages de participation bénévole |
 | Bureau | 5 onglets : + onglet **Bureau** ; tout gérer |
 
@@ -39,6 +39,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 - Lecture seule pour lui : nom, prénom, email (sert à la connexion), équipe, rôles, licence FSGT + saison, cotisation réglée, sexe.
 - Invisible pour lui : niveau (table séparée `member_levels`, Bureau seulement).
 - Demande « Devenir bénévole » depuis le profil : confirmation, puis demande envoyée au Bureau qui valide ou refuse.
+- **Notifications choisies dans le profil** (toutes activées par défaut) : entraînements (J-1), matchs de mon équipe (J-2), demandes de renfort. Désactiver un type coupe ce message en push **et** en email. Activation du push par appareil.
 
 ## Séances d'entraînement
 - Gymnase : 3 terrains. Créneaux : **tous les mardis et jeudis 20h–22h** de la saison.
@@ -83,6 +84,13 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
 - Affichage : équipe de l'adhérent par défaut, sélecteur pour les autres ; sans équipe → tout le club. Liens sortants vers volley34 (classement, saisie de score).
 
+## Renforts
+- Un capitaine demande un renfort pour **un match à venir de son équipe** : poste (passe / avant / fond / indifférent), sexe (F / M / indifférent), message optionnel.
+- La demande s'affiche sur l'**accueil de tous les adhérents** tant qu'elle est ouverte et que le match n'est pas passé.
+- Notification push/email à la création, aux adhérents **hors de l'équipe**, du sexe demandé, ayant activé « renforts ».
+- Chacun peut **proposer son aide** (et la retirer). Le capitaine (et le Bureau) voit les volontaires **par ordre chronologique** ; le capitaine est notifié à chaque proposition. Les autres ne voient que leur propre proposition.
+- Le capitaine clôt la demande : **renfort trouvé** ou **annulée**.
+
 ## Reports
 Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire et la FSGT. Au plus ~1 demande par semaine.
 
@@ -113,6 +121,7 @@ Historique des reports · Adhérents (import CSV, invitations, niveaux, rôles, 
 | Tâche | Quand |
 |---|---|
 | Notif J-1 (demande aux non-répondants, rappel aux présents) | lun. et mer. 20h |
+| Notif match J-2 aux joueurs de l'équipe | 20h, 2 jours avant chaque match |
 | Clôture + compo + notif Bureau | mar. et jeu. 12h |
 | Expiration des reports (J-3) | quotidien |
 | Synchro volley34 | quotidien 6h |

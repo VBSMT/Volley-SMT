@@ -15,10 +15,9 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
   const { data } = await supabase
     .from("members")
     .select(
-      `id, first_name, last_name, email, sex, phone, emergency_contact_name,
-       emergency_contact_phone, image_consent, position_1, position_2, fsgt_license, dues_paid,
-       team:teams(name), license_season:seasons(label),
-       roles:member_roles(role, team:teams(name))`,
+      // « * » : sa propre fiche (RLS), robuste aux colonnes ajoutées par une migration pas encore appliquée.
+      `*, team:teams(name), license_season:seasons(label),
+       roles:member_roles(role, team_id, team:teams(name))`,
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -27,4 +26,9 @@ export const getCurrentMember = cache(async (): Promise<CurrentMember | null> =>
 
 export function hasRole(member: CurrentMember | null, role: Role) {
   return !!member?.roles.some((r) => r.role === role);
+}
+
+/** Équipes dont l'adhérent est capitaine. */
+export function captainTeamIds(member: CurrentMember | null): string[] {
+  return (member?.roles ?? []).filter((r) => r.role === "captain" && r.team_id).map((r) => r.team_id!);
 }
