@@ -48,7 +48,11 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 ## Sondage de présence
 - Ouvert en permanence pour toutes les séances à venir ; un adhérent peut répondre plusieurs séances d'avance.
 - **Nominatif** : tout adhérent voit qui vient et le nombre d'inscrits.
-- **Une seule notif**, à J-2 à 20h (dimanche pour mardi, mardi pour jeudi), **uniquement aux non-répondants**. Pas de relance.
+- **Une seule notif par personne, à J-1 à 20h** (lundi pour mardi, mercredi pour jeudi ; heure réglable dans Paramètres), seulement si la séance a au moins 1 terrain libre :
+  - **non-répondants** : la demande (« Entraînement demain 20h–22h — tu viens ? Réponds avant 12h demain. »), ouvre le sondage ;
+  - **inscrits présents** : un rappel (« N'oublie pas : entraînement demain 20h–22h, X inscrits »).
+  - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
+- Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
 - **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
 - La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place.
 
@@ -108,7 +112,7 @@ Historique des reports · Adhérents (import CSV, invitations, niveaux, rôles, 
 ## Tâches planifiées (pg_cron / Edge Functions)
 | Tâche | Quand |
 |---|---|
-| Notif sondage aux non-répondants | dim. et mar. 20h |
+| Notif J-1 (demande aux non-répondants, rappel aux présents) | lun. et mer. 20h |
 | Clôture + compo + notif Bureau | mar. et jeu. 12h |
 | Expiration des reports (J-3) | quotidien |
 | Synchro volley34 | quotidien 6h |
@@ -119,7 +123,7 @@ Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas 
 
 ## Ordre de développement
 1. Migration initiale (tables, rôles, RLS) + connexion lien magique + import adhérents CSV + profil.
-2. Génération des séances de la saison + sondage de présence + notif J-2.
+2. Génération des séances de la saison + sondage de présence + notif J-1 (push + email en secours).
 3. Import Excel du calendrier + onglet Matchs.
 4. Compo automatique (fonction pure + tests) + écran Bureau.
 5. Reports + journal + historique.
