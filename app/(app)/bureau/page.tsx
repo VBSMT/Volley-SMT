@@ -11,13 +11,13 @@ const SECTIONS: [string, string, string?][] = [
   ["Calendrier des matchs", "Import du fichier Excel du club", "/bureau/matchs"],
   ["Adhérents", "Import Excel/CSV, comptes et invitations, liste des adhérents", "/bureau/adherents"],
   ["Gymnase", "Séances de la saison, ouverture des terrains (vacances, fériés)", "/bureau/gymnase"],
-  ["Compo du soir", "Équipes générées à 12h à la clôture du sondage", "/bureau/compo"],
+  ["Compo du soir", "Équipes générées à 12h, ajustement des présents", "/bureau/compo"],
   ["Reports", "Demandes en attente, décisions et historique", "/bureau/reports"],
   ["Événements", "Création, visibilité par rôle, sondages de présence et de bénévolat", "/bureau/evenements"],
   ["Annonces", "Message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance", "/bureau/annonces"],
-  ["Saison", "Licences, cotisations, relances, exports"],
-  ["Liens utiles", "volley34, FSGT, documents"],
-  ["Paramètres", "Équipes, échelle de niveau, horaires, synchro"],
+  ["Saison", "Licences, cotisations, relances, exports CSV", "/bureau/saison"],
+  ["Liens utiles", "volley34, FSGT, documents (visibles par tous)", "/bureau/liens"],
+  ["Paramètres", "Horaires de notification et de clôture, expiration des reports, équipes", "/bureau/parametres"],
 ];
 
 export default async function BureauPage() {

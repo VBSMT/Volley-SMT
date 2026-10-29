@@ -7,6 +7,7 @@ import { parseCsv, parseMemberSheet, type ImportedMember } from "@/lib/domain/me
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { sendInvitation } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { duesFields, getCurrentSeason } from "@/lib/season";
 import { createClient } from "@/lib/supabase/server";
 
 export type PreviewRow = { name: string; email: string; teams: string[]; extra: string; isNew: boolean };
@@ -95,6 +96,8 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
   const teamId = new Map((teams ?? []).map((t) => [t.name, t.id as string]));
   const problems: string[] = [];
 
+  const season = await getCurrentSeason(supabase);
+
   // 1. Fiches : création des nouvelles, mise à jour des existantes (sans écraser le téléphone saisi).
   const toCreate = members.filter((m) => !existing.has(m.email));
   if (toCreate.length) {
@@ -108,7 +111,7 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
           sex: m.sex,
           phone: m.phone,
           fsgt_license: m.license,
-          dues_paid: m.duesPaid ?? false,
+          ...duesFields(m.duesPaid ?? false, season),
         })),
       )
       .select("id, email, user_id, phone");
@@ -124,7 +127,7 @@ export async function importMembers(_prev: MemberImportState, formData: FormData
         last_name: m.lastName,
         sex: m.sex,
         ...(m.license && { fsgt_license: m.license }),
-        ...(m.duesPaid !== null && { dues_paid: m.duesPaid }),
+        ...(m.duesPaid !== null && duesFields(m.duesPaid, season)),
         ...(m.phone && !e.phone && { phone: m.phone }),
       })
       .eq("id", e.id);

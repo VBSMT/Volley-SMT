@@ -4,6 +4,7 @@ import { MatchPoll } from "@/components/MatchPoll";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { AnnouncementList } from "@/components/AnnouncementList";
 import { EventCard } from "@/components/EventCard";
+import { volley34EntryUrl } from "@/lib/domain/volley34";
 import { getEvents } from "@/lib/events";
 import { ReinforcementCard } from "@/components/ReinforcementCard";
 import { getAnnouncements } from "@/lib/announcements";
@@ -123,9 +124,14 @@ export default async function AccueilPage() {
         </section>
       )}
       {myCaptainTeams.length > 0 && (
-        <Link href="/renforts/nouveau" className="btn-secondary center">
-          Demander un renfort pour mon équipe
-        </Link>
+        <section className="stack" aria-label="Actions capitaine">
+          <a href={volley34EntryUrl(null)} target="_blank" rel="noopener noreferrer" className="btn-primary center">
+            Saisir un résultat ↗
+          </a>
+          <Link href="/renforts/nouveau" className="btn-secondary center">
+            Demander un renfort pour mon équipe
+          </Link>
+        </section>
       )}
 
       <section className="stack">

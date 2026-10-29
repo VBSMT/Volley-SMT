@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { FeedbackProvider } from "@/components/Feedback";
 import { TabBar } from "@/components/TabBar";
 import { getCurrentMember, hasRole } from "@/lib/member";
 
@@ -17,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <div className="app-content">
         {member ? (
-          children
+          <FeedbackProvider>{children}</FeedbackProvider>
         ) : (
           <main className="page stack">
             <p className="error" role="alert">

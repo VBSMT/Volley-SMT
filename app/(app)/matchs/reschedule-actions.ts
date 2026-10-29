@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
 
 /** Demande de report d'un match à domicile vers un créneau libre (capitaine de l'équipe ou Bureau). */
-export async function requestReschedule(matchId: string, sessionId: string, note: string): Promise<{ error?: string }> {
+export async function requestReschedule(matchId: string, sessionId: string, note: string): Promise<{ error?: string; id?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
 
@@ -38,7 +38,7 @@ export async function requestReschedule(matchId: string, sessionId: string, note
   }
   after(() => notifyRescheduleChange(created.id, "requested", { exclude: member.id }));
   revalidatePath("/", "layout");
-  return {};
+  return { id: created.id };
 }
 
 /** Changement d'état par le capitaine (abandon) ou le Bureau (validation, refus, modification). */

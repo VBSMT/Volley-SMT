@@ -164,7 +164,7 @@ export async function transitionReschedule(
  * Maintenance (appel horaire) : confirmation quand volley34 montre le match à la nouvelle date,
  * sinon expiration à J-3 de la date demandée (pré-réservation libérée).
  */
-export async function runRescheduleMaintenance(admin: SupabaseClient, now: Date) {
+export async function runRescheduleMaintenance(admin: SupabaseClient, now: Date, expiryDays = 3) {
   const active = await getReschedules(admin, { statuses: ["requested", "approved"] });
   const report = { confirmed: 0, expired: 0 };
   for (const r of active) {
@@ -173,8 +173,8 @@ export async function runRescheduleMaintenance(admin: SupabaseClient, now: Date)
         report.confirmed++;
         await notifyRescheduleChange(r.id, "confirmed");
       }
-    } else if (isExpired(now, r.slot.startsAt)) {
-      if (!(await transitionReschedule(admin, r.id, "abandoned", "system", "Expiration automatique à J-3")).error) {
+    } else if (isExpired(now, r.slot.startsAt, expiryDays)) {
+      if (!(await transitionReschedule(admin, r.id, "abandoned", "system", `Expiration automatique à J-${expiryDays}`)).error) {
         report.expired++;
         await notifyRescheduleChange(r.id, "abandoned", { reason: "expired" });
       }

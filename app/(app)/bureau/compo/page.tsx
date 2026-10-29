@@ -5,6 +5,7 @@ import { formatDay, formatTime } from "@/lib/format";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { getSessions } from "@/lib/training";
+import { AttendanceEditor } from "./AttendanceEditor";
 import { RegenerateButton } from "./RegenerateButton";
 
 export const metadata: Metadata = { title: "Compo du soir" };
@@ -15,17 +16,19 @@ export default async function CompoPage() {
   // Compo et niveaux : Bureau uniquement (RLS en base, et écran masqué).
   if (!hasRole(await getCurrentMember(), "board")) notFound();
 
-  const sessions = (await getSessions({ from: new Date(Date.now() - 2 * 3600_000), limit: 6 }))
+  const sessions = (await getSessions({ from: new Date(Date.now() - 6 * 3600_000), limit: 6 }))
     .filter((s) => s.freeCourts > 0)
     .slice(0, 2);
 
   const supabase = await createClient();
   const ids = sessions.map((s) => s.id);
-  const [{ data: lineups }, { data: members }, { data: levels }] = await Promise.all([
+  const [{ data: lineups }, { data: members }, { data: levels }, { data: answers }] = await Promise.all([
     supabase.from("lineups").select("session_id, generated_at, free_courts, teams, warnings").in("session_id", ids),
     supabase.from("members").select("id, first_name, last_name, sex, position_1, position_2"),
     supabase.from("member_levels").select("member_id, level"),
+    supabase.from("attendance").select("session_id, member_id, present").in("session_id", ids),
   ]);
+  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
   const people = new Map((members ?? []).map((m) => [m.id as string, m]));
   const levelOf = new Map((levels ?? []).map((l) => [l.member_id as string, l.level as number]));
   const pos = (p: Position | null) => (p ? POSITION_LABELS[p] : null);
@@ -92,6 +95,18 @@ export default async function CompoPage() {
             ) : (
               <p className="muted small">Pas encore calculée (elle le sera à 12h le jour même).</p>
             )}
+            <AttendanceEditor
+              sessionId={s.id}
+              present={[...s.present].sort(byName)}
+              others={(members ?? [])
+                .filter((m) => !s.present.some((p) => p.id === m.id))
+                .map((m) => ({
+                  id: m.id as string,
+                  name: `${m.first_name} ${m.last_name}`,
+                  answer: answers?.find((a) => a.session_id === s.id && a.member_id === m.id) ? false : null,
+                }))
+                .sort(byName)}
+            />
             <RegenerateButton sessionId={s.id} exists={!!lineup} />
           </section>
         );

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentMember, hasRole } from "@/lib/member";
+import { duesFields, getCurrentSeason } from "@/lib/season";
 import { createClient } from "@/lib/supabase/server";
 
 export type EditState = { status: "idle" | "saved" | "error"; message?: string };
@@ -46,7 +47,7 @@ export async function updateMember(memberId: string, _prev: EditState, fd: FormD
       last_name: lastName,
       sex,
       fsgt_license: text(fd, "fsgt_license", 30),
-      dues_paid: fd.get("dues_paid") === "on",
+      ...duesFields(fd.get("dues_paid") === "on", await getCurrentSeason(supabase)),
     })
     .eq("id", memberId);
   if (error) return { status: "error", message: "Enregistrement de la fiche impossible." };

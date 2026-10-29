@@ -30,11 +30,11 @@ export function nextStatuses(from: RescheduleStatus, actor: Actor): RescheduleSt
 
 const DAY = 86_400_000;
 
-/** Expiration automatique : à J-3 de la date demandée (heure de Paris), si pas encore confirmé. */
-export function isExpired(now: Date, requestedSessionStartsAt: string): boolean {
+/** Expiration automatique : à J-n (3 par défaut) de la date demandée (heure de Paris), si pas encore confirmé. */
+export function isExpired(now: Date, requestedSessionStartsAt: string, days = 3): boolean {
   const target = new Date(`${parisDate(requestedSessionStartsAt)}T12:00:00Z`).getTime();
   const today = new Date(`${parisDate(now.toISOString())}T12:00:00Z`).getTime();
-  return today >= target - 3 * DAY;
+  return today >= target - days * DAY;
 }
 
 /** Confirmation : la synchro volley34 voit le match à la date demandée. */

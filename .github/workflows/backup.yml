@@ -1,0 +1,54 @@
+# Sauvegarde hebdomadaire de la base (l'offre gratuite Supabase n'a pas de restauration à un instant donné).
+# Secrets GitHub : SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD (comme les migrations)
+#   + BACKUP_PASSPHRASE : phrase secrète de chiffrement (à garder aussi hors de GitHub, ex. gestionnaire du Bureau).
+# Restauration : gpg -d volley-smt-AAAA-MM-JJ.tar.gz.gpg | tar xz, puis psql sur schema.sql, roles.sql et data.sql.
+name: Sauvegarde Supabase
+
+on:
+  schedule:
+    - cron: "17 2 * * 0" # dimanche ~3h-4h (Paris)
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: vkspyzkvxzkbwezdqipr
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+
+      - name: Vérifier la phrase de chiffrement
+        run: test -n "$BACKUP_PASSPHRASE" || { echo "Secret BACKUP_PASSPHRASE manquant"; exit 1; }
+
+      - name: Lier le projet
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Export (schéma, rôles, données)
+        run: |
+          mkdir -p dump
+          supabase db dump --password "$SUPABASE_DB_PASSWORD" -f dump/schema.sql
+          supabase db dump --password "$SUPABASE_DB_PASSWORD" --role-only -f dump/roles.sql
+          supabase db dump --password "$SUPABASE_DB_PASSWORD" --data-only --use-copy -f dump/data.sql
+
+      # Données personnelles : jamais d'artefact en clair.
+      - name: Chiffrer
+        run: |
+          name="volley-smt-$(date -u +%F).tar.gz.gpg"
+          tar czf - dump | gpg --batch --yes --pinentry-mode loopback --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o "$name"
+          rm -rf dump
+          echo "ARCHIVE=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ARCHIVE }}
+          path: ${{ env.ARCHIVE }}
+          retention-days: 30

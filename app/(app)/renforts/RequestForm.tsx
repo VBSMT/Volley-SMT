@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
+import { useConfirm, useToast } from "@/components/Feedback";
 import { POSITION_LABELS } from "@/lib/member-types";
-import { createReinforcement, type RequestState } from "./actions";
-
-const initialState: RequestState = { status: "idle" };
+import { closeReinforcement, createReinforcement } from "./actions";
 
 export function RequestForm({
   matches,
@@ -13,10 +13,36 @@ export function RequestForm({
   matches: { id: string; label: string }[];
   defaultMatchId?: string;
 }) {
-  const [state, formAction, pending] = useActionState(createReinforcement, initialState);
+  const router = useRouter();
+  const toast = useToast();
+  const { confirm, dialog } = useConfirm();
+  const [error, setError] = useState<string>();
+  const [pending, startTransition] = useTransition();
 
   return (
-    <form action={formAction} className="card stack">
+    <form
+      className="card stack"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const label = matches.find((m) => m.id === fd.get("match_id"))?.label;
+        const ok = await confirm("Publier la demande de renfort ?", {
+          text: `${label ?? ""}. Les adhérents concernés seront notifiés.`,
+          confirmLabel: "Publier",
+        });
+        if (!ok) return;
+        startTransition(async () => {
+          const r = await createReinforcement({ status: "idle" }, fd);
+          if (r.status !== "ok") return setError(r.message);
+          toast({
+            message: "Demande de renfort publiée.",
+            undo: () => closeReinforcement(r.id!, "cancelled"),
+          });
+          router.push("/accueil");
+        });
+      }}
+    >
+      {dialog}
       <label htmlFor="match_id">Match concerné</label>
       <select id="match_id" name="match_id" defaultValue={defaultMatchId} required>
         {matches.map((m) => (
@@ -50,7 +76,7 @@ export function RequestForm({
         La demande s&apos;affiche sur l&apos;accueil de tous les adhérents, et une notification est
         envoyée à ceux qui correspondent (hors de votre équipe).
       </p>
-      {state.status === "error" && <p className="error" role="alert">{state.message}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>
         {pending ? "Envoi…" : "Publier la demande"}
       </button>

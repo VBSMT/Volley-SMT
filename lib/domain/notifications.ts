@@ -27,9 +27,9 @@ export function isReminderDue(now: Date, sessionStartsAt: string, sendHour: numb
   return nextDay(date) === parisDate(sessionStartsAt) && hour >= sendHour;
 }
 
-/** Clôture due : 12h (Paris) le jour J est passé. */
-export function isClosureDue(now: Date, sessionStartsAt: string): boolean {
-  return now.getTime() >= pollDeadline(sessionStartsAt).getTime();
+/** Clôture due : l'heure de clôture (Paris) du jour J est passée. */
+export function isClosureDue(now: Date, sessionStartsAt: string, closeHour = 12): boolean {
+  return now.getTime() >= pollDeadline(sessionStartsAt, closeHour).getTime();
 }
 
 /**
@@ -48,11 +48,11 @@ export function reminderAudience(
   });
 }
 
-export function reminderMessage(kind: ReminderKind, presentCount: number): Message {
+export function reminderMessage(kind: ReminderKind, presentCount: number, closeHour = 12): Message {
   if (kind === "ask") {
     return {
       title: "🏐 Entraînement demain 20h–22h",
-      body: "Tu viens ? Réponds avant 12h demain.",
+      body: `Tu viens ? Réponds avant ${closeHour}h demain.`,
       url: "/entrainements",
     };
   }
@@ -201,7 +201,7 @@ export function rescheduleDecisionMessage(
     rejected: `Le Bureau n'a pas retenu le créneau du ${slot} pour le match contre ${r.opponent}.`,
     abandoned:
       reason === "expired"
-        ? `Report non confirmé à J-3 : le créneau du ${slot} est libéré (match contre ${r.opponent}).`
+        ? `Report non confirmé à temps : le créneau du ${slot} est libéré (match contre ${r.opponent}).`
         : `Report du match contre ${r.opponent} abandonné : le créneau du ${slot} est libéré.`,
     confirmed: `volley34 confirme le match contre ${r.opponent} le ${slot}.`,
   }[status];

@@ -2,7 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { requestReschedule, updateReschedule } from "@/app/(app)/matchs/reschedule-actions";
+import { useConfirm, useToast } from "@/components/Feedback";
 import type { RescheduleStatus } from "@/lib/domain/reschedule";
+
+const CONFIRM: Partial<Record<RescheduleStatus, { title: string; text: string; done: string }>> = {
+  approved: { title: "Valider ce report ?", text: "Le créneau sera pré-réservé et le capitaine prévenu.", done: "Report validé." },
+  rejected: { title: "Refuser ce report ?", text: "Le capitaine sera prévenu.", done: "Report refusé." },
+  abandoned: { title: "Abandonner ce report ?", text: "Le créneau sera libéré.", done: "Report abandonné." },
+};
 
 const LABELS: Partial<Record<RescheduleStatus, string>> = {
   approved: "Valider (pré-réserver)",
@@ -13,9 +20,12 @@ const LABELS: Partial<Record<RescheduleStatus, string>> = {
 export function RescheduleButtons({ requestId, next }: { requestId: string; next: RescheduleStatus[] }) {
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { confirm, dialog } = useConfirm();
   if (!next.length) return null;
   return (
     <div className="stack">
+      {dialog}
       <div className="action-row">
         {next.map((to) => (
           <button
@@ -23,9 +33,15 @@ export function RescheduleButtons({ requestId, next }: { requestId: string; next
             type="button"
             className={to === "approved" ? "poll-btn yes" : "poll-btn"}
             disabled={pending}
-            onClick={() => {
-              if (to === "abandoned" && !confirm("Abandonner ce report ? Le créneau sera libéré.")) return;
-              startTransition(async () => setError((await updateReschedule(requestId, to)).error));
+            onClick={async () => {
+              const c = CONFIRM[to]!;
+              if (!(await confirm(c.title, { text: c.text }))) return;
+              startTransition(async () => {
+                const r = await updateReschedule(requestId, to);
+                setError(r.error);
+                // Une décision du Bureau reste modifiable ensuite ; l'abandon est définitif.
+                if (!r.error) toast({ message: to === "abandoned" ? c.done : `${c.done} Modifiable tant que le report n'est pas confirmé.` });
+              });
             }}
           >
             {LABELS[to]}
@@ -42,16 +58,25 @@ export function RescheduleRequestForm({ matchId, slots }: { matchId: string; slo
   const [note, setNote] = useState("");
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { confirm, dialog } = useConfirm();
 
   if (!slots.length) return <p className="muted small">Aucun créneau libre à venir pour l&apos;instant.</p>;
   return (
     <form
       className="stack"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
-        startTransition(async () => setError((await requestReschedule(matchId, slot, note)).error));
+        const label = slots.find((s) => s.id === slot)?.label;
+        if (!(await confirm("Envoyer la demande de report ?", { text: `Créneau : ${label}. Le Bureau sera prévenu.`, confirmLabel: "Envoyer" }))) return;
+        startTransition(async () => {
+          const r = await requestReschedule(matchId, slot, note);
+          setError(r.error);
+          if (r.id) toast({ message: "Demande de report envoyée au Bureau.", undo: () => updateReschedule(r.id!, "abandoned") });
+        });
       }}
     >
+      {dialog}
       <label htmlFor="slot">Créneau souhaité (terrain libre)</label>
       <select id="slot" value={slot} onChange={(e) => setSlot(e.target.value)}>
         {slots.map((s) => (

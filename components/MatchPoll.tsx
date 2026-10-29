@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
-import { answerMatchPoll, launchMatchPoll } from "@/app/(app)/matchs/actions";
+import { answerMatchPoll, cancelMatchPoll, launchMatchPoll } from "@/app/(app)/matchs/actions";
+import { useConfirm, useToast } from "@/components/Feedback";
 import type { MatchPollView } from "@/lib/match-polls";
 
 const plural = (n: number, w: string) => `${n} ${w}${n > 1 ? "s" : ""}`;
@@ -21,22 +22,45 @@ export function MatchPoll({
   const [optimistic, setOptimistic] = useOptimistic(poll.myAnswer);
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
+  const toast = useToast();
+  const { confirm, dialog } = useConfirm();
+
+  const launch = async () => {
+    const ok = await confirm("Lancer le sondage de présence ?", {
+      text: "Les joueurs de l'équipe seront notifiés.",
+      confirmLabel: "Lancer",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const r = await launchMatchPoll(poll.matchId);
+      setError(r.error);
+      if (!r.error) toast({ message: "Sondage lancé : l'équipe est notifiée.", undo: () => cancelMatchPoll(poll.matchId) });
+    });
+  };
+  const cancel = async () => {
+    const ok = await confirm("Supprimer le sondage de présence ?", {
+      text: "Toutes les réponses seront effacées.",
+      confirmLabel: "Supprimer",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const r = await cancelMatchPoll(poll.matchId);
+      setError(r.error);
+      if (!r.error) toast({ message: "Sondage supprimé." });
+    });
+  };
 
   if (!poll.launched) {
     if (!canManage || past) return <p className="muted small">Pas de sondage de présence pour ce match.</p>;
     return (
       <div className="stack">
+        {dialog}
         <p className="muted small">Demandez à votre équipe qui est disponible : chacun est notifié.</p>
         <button
           type="button"
           className="btn-primary"
           disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              const r = await launchMatchPoll(poll.matchId);
-              setError(r.error);
-            })
-          }
+          onClick={launch}
         >
           {pending ? "Envoi…" : "Lancer le sondage de présence"}
         </button>
@@ -110,6 +134,12 @@ export function MatchPoll({
           Il manque du monde ? Demander un renfort
         </Link>
       )}
+      {canManage && !past && (
+        <button type="button" className="btn-secondary" disabled={pending} onClick={cancel}>
+          Supprimer le sondage
+        </button>
+      )}
+      {dialog}
     </div>
   );
 }

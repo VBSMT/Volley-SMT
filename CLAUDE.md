@@ -34,7 +34,7 @@ Une personne a 1..N rôles. `captain` est rattaché à une équipe précise. Cha
 | Bénévole | idem + sondages de participation bénévole |
 | Bureau | 6 onglets : + onglet **Bureau** ; tout gérer |
 
-Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle avec un compte de test.
+Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester chaque rôle : `supabase/tests/rls.test.sql` (pgTAP, `supabase test db`, lancé en CI).
 
 ## Fiche adhérent
 - Modifiable par l'adhérent : téléphone, contact d'urgence, droit à l'image, poste 1 et poste 2 (passe / avant / fond).
@@ -57,7 +57,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
 - Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
 - **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
-- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place.
+- La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée.
 
 ## Algorithme de composition
 Entrées : présents (sexe, niveau, poste 1, poste 2), T = terrains libres.
@@ -85,8 +85,8 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
   - calendrier : flux ICS par équipe `http://calendrier.volley34.fr/?equipe={code}` (UID stable par match, heures UTC) — l'API `…/matchs` renvoyait une erreur 500 à l'essai ;
   - liste des équipes et codes : `https://api.volley34.fr/v1/equipes` (XML, club `SMDT`) ;
   - classements : `https://api.volley34.fr/v1/equipes/{code}/classements` (XML : un `<Classement>` par poule avec Promus/Relegue, puis des `<ClassementCompetition>` : rang, J/G/P/forfaits, total, sets et points pour/contre, répartition des scores 3-0…0-3) ;
-  - résultats match par match : `…/resultats` renvoyait une erreur 500 (novembre 2026) → forme récente déduite des photos quotidiennes du classement.
-  - La saisie des scores depuis l'appli n'a pas reçu de réponse : lien vers volley34 uniquement.
+  - résultats match par match : `https://api.volley34.fr/v1/equipes/{code}/resultats` répond (liste vide en début de saison) pour SMDT1, SMDT6, SMDTX2, SMDTF1 mais renvoie une **erreur 500 pour SMDTX1** ; `…/matchs` renvoie une erreur 500 pour toutes les équipes (signalé à la commission). Format des résultats à observer dès les premiers scores ; en attendant, forme récente déduite des photos quotidiennes du classement.
+  - La saisie des scores depuis l'appli n'a pas reçu de réponse : **lien vers la page de saisie** `https://www.volley34.fr/Pages/SaisieResultat.aspx?C=CH` (`C=CO` pour la coupe), pour les **capitaines et le Bureau** : bouton « Saisir un résultat » sur l'accueil des capitaines, page du match, liste des matchs (à venir et passés), rappel après validation d'un report.
 - **Import du fichier Excel** du club : import initial (championnat, poule, phase, journée) et import de secours. La synchro rattache les matchs volley34 aux matchs Excel (adversaire + domicile/extérieur) puis par UID.
 - **volley34 fait foi pour les dates des matchs ; l'appli fait foi pour l'occupation des terrains.**
 - Si la synchro échoue : planning figé sur la dernière version valide, bandeau « non mis à jour depuis le … », alerte au Bureau.
@@ -145,10 +145,10 @@ Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifi
 | Clôture + compo + notif Bureau | mar. et jeu. 12h |
 | Expiration des reports (J-3) | quotidien |
 | Synchro volley34 | quotidien 6h |
-| Purge RGPD | mensuel |
-| Ping anti-mise en pause | hebdo hors saison |
+| Purge RGPD (niveaux des adhésions terminées, fiches + comptes 2 ans après) | quotidien 3h (idempotent) |
+| Ping anti-mise en pause | couvert par le tick horaire (requêtes Supabase chaque heure) |
 
-Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas de restauration à un instant donné).
+Sauvegarde : `supabase db dump` hebdomadaire via GitHub Action (`backup.yml`), chiffré GPG (`BACKUP_PASSPHRASE`), artefact conservé 30 jours (l'offre gratuite n'a pas de restauration à un instant donné).
 
 ## Ordre de développement
 1. Migration initiale (tables, rôles, RLS) + connexion lien magique + import adhérents CSV + profil.
@@ -161,8 +161,9 @@ Sauvegarde : `pg_dump` hebdomadaire via GitHub Action (l'offre gratuite n'a pas 
 **V1 testable** = étapes 1–2, d'abord avec le Bureau seul.
 
 ## Conventions de travail
+- Toute action qui notifie ou modifie (sondage, report, renfort, présence…) passe par une **confirmation**, puis un message avec **Annuler** (`components/Feedback.tsx`).
 - Petites étapes, une fonctionnalité par branche/PR, migrations réversibles quand c'est possible.
 - Logique métier (compo, nombre d'équipes, calcul des terrains libres, transitions de report) dans des fonctions pures testées.
 - Ne jamais exposer `member_levels` ni la compo à un non-Bureau, même via une vue ou une fonction RPC.
 - Demander avant toute décision qui contredit ce fichier ; mettre ce fichier à jour quand une règle métier change.
-- Points ouverts : échelle de niveau (1–5 proposée), API résultats volley34 en erreur 500, saisie des scores (pas de réponse).
+- Points ouverts : échelle de niveau (1–5 proposée), API volley34 `matchs` (500 pour tous) et `resultats` (500 pour SMDTX1), format des résultats à observer, saisie des scores (pas de réponse).

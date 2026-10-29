@@ -5,7 +5,6 @@ export const COURTS = 3;
 const TRAINING_DAYS = [2, 4]; // mardi, jeudi
 const START_HOUR = 20;
 const END_HOUR = 22;
-const POLL_CLOSE_HOUR = 12;
 
 export type GeneratedSession = {
   date: string; // AAAA-MM-JJ (heure de Paris)
@@ -47,10 +46,10 @@ export function parisDate(iso: string): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(new Date(iso));
 }
 
-/** Clôture du sondage : 12h (heure de Paris) le jour de la séance. */
-export function pollDeadline(sessionStartsAt: string): Date {
+/** Clôture du sondage : à l'heure réglée (12h par défaut, heure de Paris) le jour de la séance. */
+export function pollDeadline(sessionStartsAt: string, closeHour = 12): Date {
   const [y, m, d] = parisDate(sessionStartsAt).split("-").map(Number);
-  return parisWallTimeToUtc(y, m, d, POLL_CLOSE_HOUR, 0);
+  return parisWallTimeToUtc(y, m, d, closeHour, 0);
 }
 
 /** Terrains libres = terrains ouverts − matchs à domicile − pré-réservations de report validées. */

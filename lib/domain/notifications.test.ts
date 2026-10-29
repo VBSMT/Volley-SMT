@@ -50,6 +50,8 @@ describe("isClosureDue", () => {
   it("clôt à 12h heure de Paris le jour J", () => {
     expect(isClosureDue(new Date("2026-11-03T10:59:00Z"), TUESDAY_SESSION)).toBe(false);
     expect(isClosureDue(new Date("2026-11-03T11:00:00Z"), TUESDAY_SESSION)).toBe(true);
+    // Clôture réglée à 10h : due dès 9h UTC (heure d'hiver).
+    expect(isClosureDue(new Date("2026-11-03T09:00:00Z"), TUESDAY_SESSION, 10)).toBe(true);
   });
 });
 
@@ -69,6 +71,7 @@ describe("reminderAudience", () => {
 describe("messages", () => {
   it("formule la demande et le rappel", () => {
     expect(reminderMessage("ask", 0).body).toBe("Tu viens ? Réponds avant 12h demain.");
+    expect(reminderMessage("ask", 0, 10).body).toBe("Tu viens ? Réponds avant 10h demain.");
     expect(reminderMessage("remind", 1).body).toBe("20h–22h · 1 inscrit pour l'instant.");
     expect(reminderMessage("remind", 14).body).toBe("20h–22h · 14 inscrits pour l'instant.");
   });
@@ -174,7 +177,7 @@ describe("messages de report", () => {
   it("informe les capitaines de la décision", () => {
     expect(rescheduleDecisionMessage(r, "approved").title).toBe("✅ Report : créneau pré-réservé · Les St Loup");
     expect(rescheduleDecisionMessage(r, "abandoned", "expired").body).toBe(
-      "Report non confirmé à J-3 : le créneau du jeudi 26 novembre est libéré (match contre MHSC/BEES).",
+      "Report non confirmé à temps : le créneau du jeudi 26 novembre est libéré (match contre MHSC/BEES).",
     );
     expect(rescheduleDecisionMessage(r, "confirmed").url).toBe("/matchs/m1");
   });
