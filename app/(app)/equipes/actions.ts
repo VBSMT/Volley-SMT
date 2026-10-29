@@ -5,7 +5,7 @@ import type { Position } from "@/lib/member-types";
 import { getCurrentMember } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 
-const POSITIONS: Position[] = ["setter", "front", "back"];
+const POSITIONS: Position[] = ["setter", "front", "front_right", "front_left", "back"];
 const valid = (p: string | null) => (p && POSITIONS.includes(p as Position) ? (p as Position) : null);
 
 /** Capitaine (joueurs de son équipe) ou Bureau (tous) : modifie les postes 1 et 2 d'un joueur. Droits vérifiés en base. */

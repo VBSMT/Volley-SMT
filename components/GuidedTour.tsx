@@ -11,7 +11,7 @@ const STEPS: Step[] = [
   { path: "/accueil", target: "install", group: 0, optional: true, title: "1. Installe l'appli", text: "Touche « Installer » : Volley SMT s'ajoute à ton écran d'accueil comme une vraie appli. Sur iPhone : Partager, puis « Sur l'écran d'accueil »." },
   { path: "/accueil", target: "notifications", group: 1, optional: true, title: "2. Active les notifications", text: "La veille de chaque entraînement, une question ou un rappel. Tu choisiras quoi recevoir dans ton profil." },
   { path: "/accueil", target: "profile", group: 2, title: "3. Complète ton profil", text: "Touche tes initiales pour ouvrir ton profil." },
-  { path: "/profil", target: "positions", group: 2, title: "Tes postes", text: "Passe, avant ou fond : ils servent à faire des équipes équilibrées à l'entraînement." },
+  { path: "/profil", target: "positions", group: 2, title: "Tes postes", text: "Passe, Avant (2) à droite au filet, Avant (4) à gauche, ou Fond : ils servent à faire des équipes équilibrées à l'entraînement." },
   { path: "/profil", target: "contact", group: 2, title: "Téléphone et contact d'urgence", text: "Utiles au club en cas de besoin." },
   { path: "/profil", target: "image", group: 2, title: "Droit à l'image", text: "Coche si tu acceptes que le club publie des photos où tu apparais." },
   { path: "/profil", target: "save", group: 2, title: "Enregistre", text: "Touche « Enregistrer » pour garder tes postes, ton téléphone, ton contact d'urgence et ton choix pour les photos." },

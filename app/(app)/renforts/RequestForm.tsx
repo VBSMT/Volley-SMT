@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
-import { POSITION_LABELS } from "@/lib/member-types";
+import { POSITION_LABELS, REINFORCEMENT_POSITIONS } from "@/lib/member-types";
 import { closeReinforcement, createReinforcement } from "./actions";
 
 export function RequestForm({
@@ -55,7 +55,7 @@ export function RequestForm({
       <label htmlFor="position">Poste</label>
       <select id="position" name="position" defaultValue="">
         <option value="">Indifférent</option>
-        {Object.entries(POSITION_LABELS).map(([key, label]) => (
+        {REINFORCEMENT_POSITIONS.map((key) => [key, POSITION_LABELS[key]] as const).map(([key, label]) => (
           <option key={key} value={key}>
             {label}
           </option>

@@ -16,3 +16,16 @@ describe("placement sur le terrain", () => {
     expect(Object.values(c).flat()).toHaveLength(3);
   });
 });
+
+describe("avants (2) et (4)", () => {
+  it("place Avant (2) à droite et Avant (4) à gauche", () => {
+    const c = placeOnCourt([
+      { id: "d", position1: "front_right" as const },
+      { id: "g", position1: "front_left" as const },
+      { id: "x", position1: "front" as const },
+    ]);
+    expect(c.avantD[0].id).toBe("d");
+    expect(c.avantG[0].id).toBe("g");
+    expect([...c.avantG, ...c.avantD].map((p) => p.id).sort()).toEqual(["d", "g", "x"]);
+  });
+});

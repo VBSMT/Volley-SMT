@@ -42,7 +42,7 @@ export default function AidePage() {
         <summary><h2>3. Compléter son profil</h2></summary>
         <p>Touchez vos initiales en haut à droite :</p>
         <ul>
-          <li><strong>Postes</strong> (passe, avant, fond) : poste 1 et poste 2, utilisés pour faire des équipes équilibrées à l&apos;entraînement.</li>
+          <li><strong>Postes</strong> (passe, avant (2) à droite au filet, avant (4) à gauche, fond) : poste 1 et poste 2, utilisés pour faire des équipes équilibrées à l&apos;entraînement.</li>
           <li><strong>Téléphone</strong> et <strong>contact d&apos;urgence</strong>.</li>
           <li><strong>Droit à l&apos;image</strong> (photos du club).</li>
           <li>Vérifiez nom, équipe(s), licence et cotisation : en cas d&apos;erreur, prévenez le Bureau.</li>
