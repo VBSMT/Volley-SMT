@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { POSITION_LABELS, type CurrentMember, type Position } from "@/lib/member-types";
 import { submitWithoutReset } from "@/lib/use-form-submit";
 import { updateProfile, type ProfileState } from "./actions";
@@ -23,8 +23,68 @@ function PositionSelect({ name, label, value }: { name: string; label: string; v
   );
 }
 
+/**
+ * Contact d'urgence : une fois renseigné, affiché en clair avec un bouton « Modifier »
+ * (les valeurs restent envoyées avec le formulaire via des champs cachés).
+ */
+function EmergencyContact({ name, phone, saved }: { name: string; phone: string; saved: number }) {
+  const [values, setValues] = useState({ name, phone });
+  const [editing, setEditing] = useState(!name && !phone);
+  // Après « Enregistrer », on revient à l'affichage si le contact est renseigné.
+  useEffect(() => {
+    if (saved) setEditing((e) => (e && (values.name || values.phone) ? false : e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saved]);
+
+  if (!editing) {
+    return (
+      <fieldset className="stack">
+        <legend>Contact d&apos;urgence</legend>
+        <div className="contact-view">
+          <p>
+            <strong>{values.name || "Nom non renseigné"}</strong>
+            <br />
+            {values.phone ? <a href={`tel:${values.phone.replace(/\s/g, "")}`}>{values.phone}</a> : <span className="muted">Téléphone non renseigné</span>}
+          </p>
+          <button type="button" className="btn-secondary" onClick={() => setEditing(true)}>
+            Modifier
+          </button>
+        </div>
+        <input type="hidden" name="emergency_contact_name" value={values.name} />
+        <input type="hidden" name="emergency_contact_phone" value={values.phone} />
+      </fieldset>
+    );
+  }
+  return (
+    <fieldset className="stack">
+      <legend>Contact d&apos;urgence</legend>
+      <label htmlFor="emergency_contact_name">Nom</label>
+      <input
+        id="emergency_contact_name"
+        name="emergency_contact_name"
+        value={values.name}
+        onChange={(e) => setValues({ ...values, name: e.target.value })}
+      />
+      <label htmlFor="emergency_contact_phone">Téléphone</label>
+      <input
+        id="emergency_contact_phone"
+        name="emergency_contact_phone"
+        type="tel"
+        value={values.phone}
+        onChange={(e) => setValues({ ...values, phone: e.target.value })}
+      />
+      <p className="muted small">Pensez à « Enregistrer » en bas du bloc.</p>
+    </fieldset>
+  );
+}
+
 export function ProfileForm({ member }: { member: CurrentMember }) {
   const [state, formAction, pending] = useActionState(updateProfile, initialState);
+  // Compteur d'enregistrements réussis (chaque envoi renvoie un nouvel objet d'état).
+  const [savedCount, setSavedCount] = useState(0);
+  useEffect(() => {
+    if (state.status === "saved") setSavedCount((n) => n + 1);
+  }, [state]);
 
   return (
     <form onSubmit={submitWithoutReset(formAction)} className="card stack">
@@ -34,22 +94,11 @@ export function ProfileForm({ member }: { member: CurrentMember }) {
       <label htmlFor="phone">Téléphone</label>
       <input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={member.phone ?? ""} />
 
-      <fieldset className="stack">
-        <legend>Contact d&apos;urgence</legend>
-        <label htmlFor="emergency_contact_name">Nom</label>
-        <input
-          id="emergency_contact_name"
-          name="emergency_contact_name"
-          defaultValue={member.emergency_contact_name ?? ""}
-        />
-        <label htmlFor="emergency_contact_phone">Téléphone</label>
-        <input
-          id="emergency_contact_phone"
-          name="emergency_contact_phone"
-          type="tel"
-          defaultValue={member.emergency_contact_phone ?? ""}
-        />
-      </fieldset>
+      <EmergencyContact
+        name={member.emergency_contact_name ?? ""}
+        phone={member.emergency_contact_phone ?? ""}
+        saved={savedCount}
+      />
       </div>
 
       <div className="stack" data-tour="positions">
