@@ -14,6 +14,8 @@ const barlowCondensed = Barlow_Condensed({
 export const metadata: Metadata = {
   title: { default: "Volley SMT", template: "%s · Volley SMT" },
   description: "Application du club Volley-Ball Loisirs Saint-Mathieu-de-Tréviers",
+  // iPhone : nom sous l'icône et barre d'état noire une fois ajoutée à l'écran d'accueil.
+  appleWebApp: { capable: true, title: "Volley SMT", statusBarStyle: "black" },
 };
 
 export const viewport: Viewport = {

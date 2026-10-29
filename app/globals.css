@@ -545,3 +545,6 @@ a.btn-primary { color: var(--noir); }
   text-decoration: underline;
   white-space: nowrap;
 }
+
+.install-prompt h2 { margin: 0; font-size: 1.1rem; }
+.install-prompt ol { margin: 0; padding-left: 1.25rem; display: grid; gap: 0.25rem; }
