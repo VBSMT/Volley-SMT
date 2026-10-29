@@ -62,7 +62,7 @@ export default function AidePage() {
         <summary><h2>5. Entraînements</h2></summary>
         <ul>
           <li>Mardi et jeudi 20h–22h. Répondez <strong>Je viens / Je ne viens pas</strong>, autant de séances à l&apos;avance que vous voulez.</li>
-          <li>Le sondage ferme à <strong>12h le jour même</strong> ; les équipes sont faites par le Bureau à partir des présents.</li>
+          <li>Le sondage ferme <strong>le jour même</strong> à l&apos;heure indiquée sur la page Entraînements (12h par défaut) ; les équipes sont faites par le Bureau à partir des présents.</li>
           <li>La veille, une seule notification : une question si vous n&apos;avez pas répondu, un rappel si vous venez.</li>
         </ul>
       </details>

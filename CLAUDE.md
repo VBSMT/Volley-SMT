@@ -56,7 +56,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - **inscrits présents** : un rappel (« N'oublie pas : entraînement demain 20h–22h, X inscrits »).
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
 - Envoi en **push** (Web Push) ; **email** (Brevo) en secours pour ceux qui n'ont pas activé les notifications.
-- **Clôture à 12h le jour J**, puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
+- **Clôture à 12h le jour J** (réglable dans Paramètres, de 6h à 20h ; textes de l'appli alignés sur ce réglage), puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
 - La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération. Il peut aussi **ajouter ou supprimer une équipe** : le nombre d'équipes est alors fixé à la main (`lineups.forced_teams`) et la compo recalculée avec ce nombre (retour possible au nombre automatique).
 
 ## Algorithme de composition

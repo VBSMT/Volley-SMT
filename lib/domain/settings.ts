@@ -11,7 +11,7 @@ export const DEFAULT_SCHEDULE: Schedule = { reminderHour: 20, closeHour: 12, exp
 
 export const LIMITS = {
   reminderHour: { min: 16, max: 22 },
-  closeHour: { min: 6, max: 18 },
+  closeHour: { min: 6, max: 20 }, // 20h = début de la séance
   expiryDays: { min: 1, max: 7 },
 } as const;
 
