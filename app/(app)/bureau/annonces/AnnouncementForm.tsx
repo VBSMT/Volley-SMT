@@ -31,7 +31,7 @@ export function AnnouncementForm({
     <form
       onSubmit={submitWithoutReset(formAction, (fd) =>
         confirm(`Envoyer l'annonce « ${fd.get("title")} » ?`, {
-          text: "Push, sinon email, aux destinataires choisis. Un envoi ne peut pas être annulé.",
+          text: "Notification aux destinataires choisis (s'ils les ont activées). Un envoi ne peut pas être annulé.",
           confirmLabel: "Envoyer",
         }),
       )}
@@ -72,7 +72,7 @@ export function AnnouncementForm({
       <textarea id="body" name="body" rows={5} maxLength={4000} required />
       <label className="checkbox">
         <input type="checkbox" name="notify" defaultChecked />
-        Envoyer une notification (sinon email) aux destinataires
+        Envoyer une notification aux destinataires
       </label>
       {state.status === "error" && <p className="error" role="alert">{state.message}</p>}
       <button type="submit" className="btn-primary" disabled={pending}>

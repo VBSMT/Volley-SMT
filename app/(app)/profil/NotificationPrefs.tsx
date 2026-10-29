@@ -32,7 +32,7 @@ export function NotificationPrefs({ initial }: { initial: Record<NotificationPre
           {label}
         </label>
       ))}
-      <p className="muted small">Un type décoché n&apos;est envoyé ni en notification ni par email.</p>
+      <p className="muted small">Un type décoché n&apos;est plus envoyé.</p>
       {error && <p className="error small" role="alert">{error}</p>}
     </fieldset>
   );

@@ -26,23 +26,11 @@ function getMailer() {
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-async function sendEmail(to: Recipient, msg: Message) {
-  const link = `${siteUrl()}${msg.url}`;
-  await getMailer().sendMail({
-    from: process.env.MAIL_FROM,
-    to: to.email,
-    subject: msg.title.replace(/^\p{Extended_Pictographic}\s*/u, ""),
-    text: `Bonjour ${to.first_name},\n\n${msg.body}\n\n${link}\n\nVolley SMT`,
-    html: `<p>Bonjour ${escapeHtml(to.first_name)},</p>
-<p><strong>${escapeHtml(msg.title)}</strong><br>${escapeHtml(msg.body)}</p>
-<p><a href="${link}" style="display:inline-block;padding:10px 16px;background:#FFE81A;color:#111111;border:2px solid #111111;border-radius:8px;font-weight:bold;text-decoration:none">Ouvrir Volley SMT</a></p>
-<p style="color:#555555;font-size:13px">Pour recevoir ces messages en notification, activez-les depuis votre profil dans l'appli.</p>`,
-  });
-}
 
 /**
- * Envoie un message à chaque destinataire : push sur ses appareils abonnés,
- * sinon email (secours). Les abonnements expirés sont supprimés.
+ * Envoie un message à chaque destinataire : notification de l'appli (push) sur ses appareils abonnés.
+ * Pas d'email de secours (choix du club) : sans notifications activées, rien n'est envoyé.
+ * Les abonnements expirés sont supprimés.
  */
 export async function notifyMembers(
   recipients: { recipient: Recipient; message: Message }[],
@@ -84,14 +72,7 @@ export async function notifyMembers(
           else console.error("Push en échec", status);
         }
       }
-      if (delivered) return result.set(recipient.id, "push");
-      try {
-        await sendEmail(recipient, message);
-        result.set(recipient.id, "email");
-      } catch (e) {
-        console.error("Email en échec", (e as Error).message);
-        result.set(recipient.id, "none");
-      }
+      result.set(recipient.id, delivered ? "push" : "none");
     }),
   );
 

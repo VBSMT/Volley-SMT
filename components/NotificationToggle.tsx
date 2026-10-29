@@ -84,7 +84,7 @@ export function NotificationToggle({ compact = false }: { compact?: boolean }) {
       {status === "off" && (
         <p className={compact ? "" : "muted small"}>
           Recevez la veille de chaque entraînement la demande ou le rappel directement sur ce
-          téléphone (sinon, par email).
+          téléphone. Sans notifications, tu ne reçois aucun rappel.
         </p>
       )}
       {status === "ios-install" && (
@@ -96,11 +96,11 @@ export function NotificationToggle({ compact = false }: { compact?: boolean }) {
       {status === "denied" && (
         <p className="small">
           Notifications bloquées pour Volley SMT : autorisez-les dans les réglages du téléphone.
-          Vous recevrez les messages par email en attendant.
+          Sans elles, vous ne recevez aucun rappel.
         </p>
       )}
       {status === "unsupported" && (
-        <p className="muted small">Notifications non disponibles sur cet appareil : vous les recevrez par email.</p>
+        <p className="muted small">Notifications non disponibles sur ce navigateur : installez l&apos;appli sur votre téléphone pour recevoir les rappels.</p>
       )}
       {status === "off" && (
         <button type="button" className="btn-primary" onClick={enable} disabled={busy}>
