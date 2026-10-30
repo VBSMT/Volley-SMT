@@ -1256,3 +1256,21 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .buy-preview { display: grid; place-items: center; }
 @media (prefers-reduced-motion: reduce) { .album-buy.is-affordable { animation: none; } }
 .rules-soon { text-align: center; }
+/* Booster du jour */
+.daily-card { display: grid; gap: 0.6rem; }
+.daily-card.is-bonus { border: 2px solid var(--jaune); }
+.daily-head { display: flex; gap: 0.75rem; align-items: center; }
+.daily-title { margin: 0; font-size: 1.2rem; }
+.daily-pack {
+  width: 44px; height: 60px; border-radius: 6px; flex: none; display: grid; place-items: end center; padding-bottom: 6px; box-sizing: border-box;
+  background: linear-gradient(160deg, var(--jaune) 0 30%, var(--noir) 31%); color: var(--jaune); font: 700 13px "Barlow Condensed", sans-serif;
+}
+.daily-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.35rem; justify-content: space-between; }
+.daily-dots li {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem;
+  border: 2px solid var(--trait); color: var(--texte);
+}
+.daily-dots li.is-done { background: var(--jaune); border-color: var(--jaune); color: #111; }
+.daily-dots li.is-today { border-color: var(--jaune); animation: daily-pulse 1.6s ease-in-out infinite; }
+@keyframes daily-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--jaune) 35%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .daily-dots li.is-today { animation: none; } }

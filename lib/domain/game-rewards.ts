@@ -26,7 +26,41 @@ export const rewardReason = {
   top3: (week: string) => `top3:${week}`,
   training: (n: number) => `training:${n}`,
   event: (id: string) => `event:${id}`,
+  daily: (day: string) => `daily:${day}`,
+  streak: (day: string) => `streak:${day}`,
 };
+
+/** Série de jours consécutifs (booster du jour) : bonus au 7ᵉ jour, puis la série repart. */
+export const STREAK_DAYS = 7;
+
+export type DailyState = {
+  claimedToday: boolean;
+  /** Jours de suite déjà comptés (aujourd'hui compris s'il est récupéré). */
+  streak: number;
+  /** Place d'aujourd'hui dans le cycle de 7 (1 à 7). */
+  dayInCycle: number;
+  /** Le booster bonus tombe aujourd'hui (7ᵉ jour). */
+  bonusToday: boolean;
+};
+
+/**
+ * État du booster du jour d'après les jours déjà récupérés (dates AAAA-MM-JJ, heure de Paris).
+ * Un jour manqué remet la série à zéro.
+ */
+export function dailyState(claimed: string[], today: string): DailyState {
+  const set = new Set(claimed);
+  const claimedToday = set.has(today);
+  let run = 0;
+  let day = claimedToday ? today : addDay(today, -1);
+  while (set.has(day)) {
+    run++;
+    day = addDay(day, -1);
+  }
+  const dayInCycle = claimedToday ? ((run - 1) % STREAK_DAYS) + 1 : (run % STREAK_DAYS) + 1;
+  return { claimedToday, streak: run, dayInCycle, bonusToday: dayInCycle === STREAK_DAYS };
+}
+
+const addDay = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 /** Numéros des séries d'entraînements à récompenser (ex. 7 réponses, 1 déjà reçu → [2]). */
 export function trainingRewardsDue(answered: number, alreadyAwarded: number): number[] {
