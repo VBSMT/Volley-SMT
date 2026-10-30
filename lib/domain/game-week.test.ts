@@ -57,7 +57,13 @@ describe("points d'une carte", () => {
   const w = { scores: ["s31" as const], setsWon: 3, setsLost: 1, pointsWon: 100, pointsLost: 78 };
   it("passe : +1 par set gagné", () => expect(cardScore("setter", w)).toEqual({ base: 8, bonus: 3 }));
   it("avant : +1 par 10 points d'écart", () => expect(cardScore("front_left", w)).toEqual({ base: 8, bonus: 2 }));
-  it("fond : ≤ 20 points encaissés par set", () => expect(cardScore("back", w)).toEqual({ base: 8, bonus: 2 }));
+  it("avant : bonus plafonné à +4", () => expect(cardScore("front_right", { ...w, pointsWon: 100, pointsLost: 40 }).bonus).toBe(4));
+  it("fond : +1 par set à moins de 20 points encaissés", () => {
+    expect(cardScore("back", { ...w, setsConceded: [15, 19, 20, 24] }).bonus).toBe(2);
+    // Sans le détail par set : moyenne 19,5 < 20 → +1 par set joué (4 sets).
+    expect(cardScore("back", w)).toEqual({ base: 8, bonus: 4 });
+    expect(cardScore("back", { ...w, pointsLost: 80 }).bonus).toBe(0);
+  });
   it("replis sans les points", () => {
     expect(cardScore("front_right", { ...w, pointsWon: 0, pointsLost: 0 }).bonus).toBe(2);
     expect(cardScore("back", { scores: ["s23"], setsWon: 2, setsLost: 3, pointsWon: 0, pointsLost: 0 }).bonus).toBe(2);

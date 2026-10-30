@@ -126,7 +126,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
           <li>Sur le terrain : glisse ta main pour la faire tourner, touche la carte du centre pour la poser à son poste, ou glisse-la vers le haut jusqu&apos;à une place. Touche une place vide pour ne voir que les cartes de ce poste ; touche une carte posée pour la remettre en main. La case « Remplaçant » dans le coin compte à 50 %.</li>
           <li>Une carte se verrouille au début du match de son équipe.</li>
           <li>Points selon le résultat de l&apos;équipe : 3-0 → 10, 3-1 → 8, 3-2 → 6, 2-3 → 3, 1-3 → 1, 0-3 → 0.</li>
-          <li>Bonus : passe +1 par set gagné ; avant +1 par tranche de 10 points d&apos;écart ; fond +2 si l&apos;équipe encaisse 20 points ou moins par set.</li>
+          <li>Bonus : passe +1 par set gagné ; avant +1 par tranche de 10 points d&apos;écart (au plus +4) ; fond +1 par set où l&apos;équipe encaisse moins de 20 points.</li>
           <li>Le remplaçant compte à 50 %, ou à 100 % s&apos;il remplace un titulaire dont l&apos;équipe n&apos;a pas joué.</li>
           <li>La note (40–99) est la forme de l&apos;équipe sur ses 5 derniers matchs (60 au départ) ; bandeau or ≥ 80, argent 65–79, bronze en dessous.</li>
           <li>Classement : points, puis bonus, puis équipe validée le plus tôt.</li>
