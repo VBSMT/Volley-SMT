@@ -7,6 +7,7 @@ import { SETUP_LABELS, setupStatus, type SetupStatus } from "@/lib/domain/setup-
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ImportMembersForm } from "./ImportMembersForm";
+import { RemindButton } from "./RemindButton";
 import { TeamFilter } from "./TeamFilter";
 import { VolunteerRequests } from "./VolunteerRequests";
 
@@ -82,6 +83,7 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
             </li>
           ))}
         </ul>
+        <RemindButton count={(counts.never ?? 0) + (counts.no_account ?? 0)} />
         <TeamFilter teams={(teams ?? []).map((t) => t.name)} value={filter} />
         <ul className="list">
           {members.map((m) => (
