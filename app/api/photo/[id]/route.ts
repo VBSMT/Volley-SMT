@@ -19,6 +19,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { data: file } = await createAdminClient().storage.from("photos").download(`${id}.webp`);
   if (!file) return new Response(null, { status: 404 });
   return new Response(file, {
-    headers: { "Content-Type": "image/webp", "Cache-Control": "private, max-age=2592000, immutable" },
+    headers: { "Content-Type": file.type || "image/webp", "Cache-Control": "private, max-age=2592000, immutable" },
   });
 }

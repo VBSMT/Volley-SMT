@@ -7,14 +7,19 @@ import { deletePhoto, uploadPhoto } from "./photo-actions";
 
 const SIZE = 320;
 
-/** Recadre au centre en carré de 320 px et compresse en WebP (≈ 20 à 30 Ko) dans le navigateur. */
-async function toSquareWebp(file: File): Promise<Blob> {
+/** Recadre au centre en carré de 320 px et compresse (WebP, sinon JPEG ; ≈ 20 à 40 Ko) dans le navigateur. */
+async function toSquareImage(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const side = Math.min(bitmap.width, bitmap.height);
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = SIZE;
   canvas.getContext("2d")!.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, SIZE, SIZE);
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("webp"))), "image/webp", 0.8));
+  const encode = (type: string, quality: number) => new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, quality));
+  // Safari (iPhone) ne sait pas produire de WebP et renvoie du PNG : JPEG à la place, bien plus léger.
+  const webp = await encode("image/webp", 0.8);
+  const blob = webp?.type === "image/webp" ? webp : await encode("image/jpeg", 0.85);
+  if (!blob) throw new Error("encodage");
+  return blob;
 }
 
 /** Photo des cartes du jeu : ajout, remplacement, suppression (droit à l'image requis). */
@@ -35,7 +40,7 @@ export function PhotoEditor({ memberId, consent, version }: { memberId: string; 
     setError(undefined);
     if (!file) return;
     try {
-      const blob = await toSquareWebp(file);
+      const blob = await toSquareImage(file);
       setPreview({ url: URL.createObjectURL(blob), blob });
     } catch {
       setError("Cette image ne peut pas être lue. Essaie une autre photo.");
@@ -45,7 +50,7 @@ export function PhotoEditor({ memberId, consent, version }: { memberId: string; 
   const save = () =>
     startTransition(async () => {
       const fd = new FormData();
-      fd.set("photo", preview!.blob, "photo.webp");
+      fd.set("photo", preview!.blob, "photo");
       const r = await uploadPhoto(fd);
       if (r.error) return setError(r.error);
       setPreview(null);
