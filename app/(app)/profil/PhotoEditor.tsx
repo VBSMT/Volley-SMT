@@ -206,7 +206,7 @@ export function PhotoEditor({ memberId, consent, version, card }: { memberId: st
           </div>
         </>
       )}
-      <p className="small muted">Pour recentrer une photo déjà envoyée, choisis-la à nouveau. Visible uniquement dans VUT, par les adhérents connectés.</p>
+      <p className="small muted">Pour recentrer une photo déjà envoyée, choisis-la à nouveau. Visible uniquement dans VUT et sur la fiche de ton équipe, par les adhérents connectés.</p>
       {error && <p className="error" role="alert">{error}</p>}
       {dialog}
     </div>

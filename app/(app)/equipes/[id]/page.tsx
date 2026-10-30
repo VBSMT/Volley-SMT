@@ -17,7 +17,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
   const supabase = await createClient();
   const [{ data: team }, { data: roster }, { data: next }, latest] = await Promise.all([
     supabase.from("teams").select("id, name").eq("id", id).maybeSingle(),
-    supabase.from("team_roster").select("member_id, first_name, last_name, position_1, position_2, is_captain").eq("team_id", id),
+    supabase.from("team_roster").select("member_id, first_name, last_name, position_1, position_2, is_captain, photo_updated_at").eq("team_id", id),
     supabase
       .from("matches")
       .select("id, starts_at, opponent, is_home")
@@ -39,6 +39,7 @@ export default async function EquipePage({ params }: { params: Promise<{ id: str
     id: p.member_id,
     firstName: p.first_name,
     initials: `${p.first_name[0] ?? ""}${p.last_name[0] ?? ""}`.toUpperCase(),
+    photoVersion: p.photo_updated_at ? String(Date.parse(p.photo_updated_at as string)) : null,
     position1: p.position_1,
   }));
   const captains = players.filter((p) => p.is_captain).map((p) => shortName(p.first_name, p.last_name));
