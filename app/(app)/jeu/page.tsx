@@ -163,20 +163,9 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
         ))}
       </nav>
       {content}
-      <details className="card">
-        <summary>Comment ça marche ?</summary>
-        <ul>
-          <li>Chaque semaine (lundi–dimanche), aligne 4 titulaires (passe, Avant (4), Avant (2), fond) et un remplaçant de n&apos;importe quel poste, avec au moins une fille parmi les titulaires et au plus 2 joueurs d&apos;une même équipe.</li>
-          <li>Sur le terrain : glisse ta main pour la faire tourner, touche la carte du centre pour la poser à son poste, ou glisse-la vers le haut jusqu&apos;à une place. Touche une place vide pour ne voir que les cartes de ce poste ; touche une carte posée pour la remettre en main. La case « Remplaçant » dans le coin compte à 50 %.</li>
-          <li>Une carte se verrouille au début du match de son équipe.</li>
-          <li>Points selon le résultat de l&apos;équipe : 3-0 → 10, 3-1 → 8, 3-2 → 6, 2-3 → 3, 1-3 → 1, 0-3 → 0.</li>
-          <li>Bonus : passe +1 par set gagné ; avant +1 par tranche de 10 points d&apos;écart (au plus +4) ; fond +1 par set où l&apos;équipe encaisse moins de 20 points.</li>
-          <li>Le remplaçant compte à 50 %, ou à 100 % s&apos;il remplace un titulaire dont l&apos;équipe n&apos;a pas joué.</li>
-          <li>La note (40–99) est la forme de l&apos;équipe sur ses 5 derniers matchs (60 au départ) ; bandeau or ≥ 80, argent 65–79, bronze en dessous.</li>
-          <li>Classement : points, puis bonus, puis équipe validée le plus tôt.</li>
-          <li>Un résultat publié en retard sur volley34 compte dans la semaine du match : la semaine reste provisoire tant qu&apos;un résultat manque, et se fige au plus tard 14 jours après sa fin. Le booster du top 3 est donné quand la semaine est définitive.</li>
-        </ul>
-      </details>
+      <Link href="/jeu/regles" className="card card-link rules-link">
+        📖 <strong>Règles du jeu</strong> <span className="small muted">cartes, raretés, points, bonus, boosters</span>
+      </Link>
       {tools}
     </main>
   );

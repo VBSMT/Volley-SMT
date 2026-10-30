@@ -1175,3 +1175,17 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .matchday-nav .lineup-title { text-align: center; font-size: 1.05rem; }
 .matchday-nav .chip { min-height: 44px; display: grid; place-items: center; padding: 0; font-size: 1.4rem; text-decoration: none; }
 .chip.is-disabled { opacity: 0.35; }
+/* VUT : page des règles */
+.rules h2 { font-size: 1.25rem; }
+.rules h3 { margin: 0.5rem 0 0; font-size: 1.05rem; }
+.rules-steps { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.25rem; }
+.rules-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem 0.5rem; justify-items: center; text-align: center; }
+.rules-cards li { display: grid; gap: 0.2rem; justify-items: center; }
+.rules-cards .pcard-slot { width: 112px; height: 163px; }
+.rules-tiers { grid-template-columns: repeat(3, 1fr); }
+.rules-box { background: var(--fond); border-radius: 10px; padding: 0.6rem 0.8rem; }
+.rules-box p { margin: 0.25rem 0 0; }
+.rules .ranking caption { text-align: left; padding-bottom: 0.25rem; }
+.rules-tiers .pcard-slot { width: 99px; height: 144px; }
+.rules-tiers .pcard-slot > .pcard { transform: scale(0.55); }
+.rules-play { display: grid; place-items: center; text-decoration: none; }
