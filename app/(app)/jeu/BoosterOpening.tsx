@@ -124,9 +124,16 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
         </button>
       )}
       {phase === "done" && (
-        <button type="button" className="btn-primary" onClick={() => router.refresh()}>
-          Voir ma collection
-        </button>
+        <div className="action-row">
+          <button type="button" className="btn-primary" onClick={() => router.push("/jeu?vue=collection")}>
+            Ma collection
+          </button>
+          {!starter && (
+            <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
+              Mes boosters
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

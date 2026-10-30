@@ -39,7 +39,7 @@ export function useWheel(count: number, step: number, opts: { onTap?: (i: number
     setDragging(false);
     if (!s) return;
     if (s.mode === "spin") setCenter(Math.round(center));
-    else if (s.mode === "lift") opts.onLift?.(e, "move");
+    else if (s.mode === "lift") opts.onLift?.(e, "end");
     else opts.onTap?.(s.index);
   };
   return {
