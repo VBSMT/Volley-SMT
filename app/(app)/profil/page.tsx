@@ -64,16 +64,14 @@ export default async function ProfilPage() {
 
       <ProfileForm member={member} />
 
-      {hasRole(member, "board") && (
-        <section className="card stack">
-          <h2>Ma photo (VUT)</h2>
-          <PhotoEditor
-            memberId={member.id}
-            consent={member.image_consent}
-            version={member.photo_updated_at ? String(Date.parse(member.photo_updated_at)) : null}
-          />
-        </section>
-      )}
+      <section className="card stack">
+        <h2>Ma photo (cartes VUT)</h2>
+        <PhotoEditor
+          memberId={member.id}
+          consent={member.image_consent}
+          version={member.photo_updated_at ? String(Date.parse(member.photo_updated_at)) : null}
+        />
+      </section>
 
       <section className="card stack" data-tour="notif-prefs">
         <h2>Notifications</h2>
