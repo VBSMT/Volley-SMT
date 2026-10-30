@@ -10,7 +10,7 @@ import { notifyMembers } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const ROOM_LABELS: Record<string, string> = { club: "Tout le club", board: "Bureau", captains: "Capitaines" };
+const ROOM_LABELS: Record<string, string> = { club: "Tout le club", board: "Bureau", captains: "Capitaines", volunteers: "Bénévoles" };
 
 /** Envoie un message (droits vérifiés en base) puis notifie : abonnés du salon, et personnes citées qui l'ont choisi. */
 export async function sendMessage(room: string, body: string): Promise<{ error?: string }> {
