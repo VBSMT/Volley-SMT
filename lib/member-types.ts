@@ -47,6 +47,8 @@ export type CurrentMember = {
   notify_match?: boolean;
   notify_reinforcement?: boolean;
   notify_mentions?: boolean;
+  // Version de la photo du jeu de cartes (null : pas de photo).
+  photo_updated_at?: string | null;
 };
 
 export type NotificationPref = "notify_training" | "notify_match" | "notify_reinforcement" | "notify_mentions";

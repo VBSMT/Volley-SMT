@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(44);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -47,6 +47,13 @@ insert into public.chat_messages (room, author_id, body) values
   ('club', '00000000-0000-0000-0000-000000000004', 'Bonjour le club'),
   ('board', '00000000-0000-0000-0000-000000000004', 'Entre nous'),
   ('team:00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-000000000004', 'Équipe B');
+
+-- Jeu de cartes : Ada a un poste (une carte) et un booster ; Cap n'a pas de poste.
+update public.members set position_1 = 'setter', image_consent = true, photo_updated_at = now()
+  where id = '00000000-0000-0000-0000-000000000001';
+insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000001', 'starter');
+insert into public.game_collection (owner_id, member_id, team_id) values
+  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1');
 
 -- Se connecter en tant que l'utilisateur n (1 adhérent, 2 capitaine, 3 bénévole, 4 Bureau).
 create function pg_temp.login(n int) returns void language plpgsql as $$
@@ -116,6 +123,18 @@ select lives_ok($$ insert into public.attendance (session_id, member_id, present
 select lives_ok($$ delete from public.attendance where member_id = '00000000-0000-0000-0000-000000000001' $$, 'Bureau : retire un présent');
 select pg_temp.logout();
 select is((select count(*) from public.attendance)::int, 1, 'Bureau : ajout et retrait appliqués');
+
+-- Jeu de cartes
+select pg_temp.login(2);
+select is((select count(*) from public.game_cards)::int, 1, 'jeu : seuls les joueurs avec un poste ont une carte');
+select is((select count(*) from public.game_boosters)::int, 0, 'jeu : boosters des autres invisibles');
+select is((select count(*) from public.game_collection)::int, 0, 'jeu : collections des autres invisibles');
+select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
+select pg_temp.login(1);
+select is((select count(*) from public.game_collection)::int, 1, 'jeu : voit sa collection');
+update public.members set image_consent = false where id = '00000000-0000-0000-0000-000000000001';
+select pg_temp.logout();
+select is((select photo_updated_at from public.members where id = '00000000-0000-0000-0000-000000000001'), null, 'jeu : retirer le droit à l''image efface la photo');
 
 -- Non connecté
 set local role anon;

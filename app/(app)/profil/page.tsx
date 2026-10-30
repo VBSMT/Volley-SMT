@@ -10,6 +10,7 @@ import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { NotificationPrefs } from "./NotificationPrefs";
+import { PhotoEditor } from "./PhotoEditor";
 import { ProfileForm } from "./ProfileForm";
 import { VolunteerRequest } from "./VolunteerRequest";
 
@@ -62,6 +63,15 @@ export default async function ProfilPage() {
       </section>
 
       <ProfileForm member={member} />
+
+      <section className="card stack">
+        <h2>Ma photo (jeu de cartes)</h2>
+        <PhotoEditor
+          memberId={member.id}
+          consent={member.image_consent}
+          version={member.photo_updated_at ? String(Date.parse(member.photo_updated_at)) : null}
+        />
+      </section>
 
       <section className="card stack" data-tour="notif-prefs">
         <h2>Notifications</h2>

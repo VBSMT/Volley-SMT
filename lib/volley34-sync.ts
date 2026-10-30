@@ -5,6 +5,7 @@ import { parseGyms } from "@/lib/domain/gyms";
 import { poolOf, parseStandings } from "@/lib/domain/standings";
 import { parseIcs, parseTeams, reconcile, teamMatches, unreadEvents } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
+import { updateTeamForm } from "@/lib/game";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -136,6 +137,8 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
           { onConflict: "team_id,taken_on" },
         );
         summary.standings++;
+        // Jeu de cartes : note de forme de l'équipe (5 derniers matchs).
+        await updateTeamForm(admin, team.id, mine.scores);
       }
     } catch (e) {
       console.error("Classement non lu", remoteTeam.code, (e as Error).message);

@@ -40,7 +40,9 @@ export async function runPurge(admin: Admin, now: Date) {
     .delete({ count: "exact" })
     .lt("created_at", new Date(now.getTime() - CHAT_RETENTION_DAYS * 86_400_000).toISOString());
 
-  return { levels, messages: messages ?? 0, members: (old ?? []).length - errors.length, errors };
+  const photos = await purgePhotos(admin);
+
+  return { levels, messages: messages ?? 0, photos, members: (old ?? []).length - errors.length, errors };
 }
 
 /** Supprime une fiche (et tout ce qui en dépend) puis son compte de connexion. Renvoie l'erreur éventuelle. */
@@ -50,5 +52,16 @@ export async function deleteMemberAndAccount(admin: Admin, memberId: string, use
     if (error && error.status !== 404) return error.message;
   }
   const { error } = await admin.from("members").delete().eq("id", memberId);
+  if (!error) await admin.storage.from("photos").remove([`${memberId}.webp`]);
   return error?.message ?? null;
+}
+
+/** Photos du jeu sans fiche ou sans droit à l'image (fiche supprimée, consentement retiré) : effacées. */
+async function purgePhotos(admin: Admin): Promise<number> {
+  const { data: files } = await admin.storage.from("photos").list("", { limit: 1000 });
+  const { data: kept } = await admin.from("members").select("id").not("photo_updated_at", "is", null);
+  const keep = new Set((kept ?? []).map((m) => `${m.id}.webp`));
+  const orphans = (files ?? []).map((f) => f.name).filter((n) => !keep.has(n));
+  if (orphans.length) await admin.storage.from("photos").remove(orphans);
+  return orphans.length;
 }
