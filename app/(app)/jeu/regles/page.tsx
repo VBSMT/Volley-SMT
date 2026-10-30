@@ -193,7 +193,7 @@ export default async function ReglesPage() {
         </Link>
       ) : (
         <p className="card rules-soon">
-          🚧 <strong>Bientôt disponible</strong> : le jeu est en test avec le Bureau. En attendant, découvre les règles !
+          🚧 <strong>Bientôt disponible</strong> : le jeu est en test avec le Bureau. En attendant, découvre les règles et ajoute ta photo dans ton profil pour tes futures cartes !
         </p>
       )}
     </main>
