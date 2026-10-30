@@ -58,7 +58,7 @@ export function CollectionCarousel({ entries, total }: { entries: Entry[]; total
             onClick={() => {
               setFilter(p);
               setFlipped(null);
-              wheel.setCenter(0);
+              wheel.setCenter(Infinity);
             }}
           >
             {SHORT[p]}

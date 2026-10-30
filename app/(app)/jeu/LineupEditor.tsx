@@ -98,7 +98,7 @@ export function LineupEditor({
     }
     setTarget(slot);
     setFilter(slot === "sub" ? "all" : slot);
-    wheel.setCenter(0);
+    wheel.setCenter(Infinity);
   }
 
   const save = async () => {
@@ -219,7 +219,7 @@ export function LineupEditor({
               onClick={() => {
                 setFilter(p);
                 setTarget(null);
-                wheel.setCenter(0);
+                wheel.setCenter(Infinity);
               }}
             >
               {SHORT[p]}

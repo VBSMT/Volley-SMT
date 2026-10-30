@@ -17,7 +17,7 @@ import { TestTools } from "./TestTools";
 export const metadata: Metadata = { title: "VUT" };
 
 const TABS = [
-  ["equipe", "Mon équipe"],
+  ["equipe", "Équipe"],
   ["boosters", "Boosters"],
   ["collection", "Collection"],
   ["classement", "Classement"],

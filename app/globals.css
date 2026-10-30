@@ -905,7 +905,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 /* Ouverture du booster : le paquet tremble, s'ouvre (rabat), puis les cartes sortent une à une,
    face cachée ; toucher retourne la carte, toucher encore la range et fait sortir la suivante. */
 .booster-stage { display: grid; justify-items: center; gap: 0.75rem; padding-top: 0.5rem; }
-.booster-scene { position: relative; width: 220px; height: 430px; }
+.booster-scene { position: relative; width: 220px; height: 410px; }
 .booster-pack {
   position: absolute; left: 15px; bottom: 0; width: 190px; height: 250px; border: 0; padding: 0; cursor: pointer; z-index: 3;
   background: none; perspective: 600px; animation: booster-float 3s ease-in-out infinite;
@@ -1063,7 +1063,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .ranking th, .ranking td { text-align: left; padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--trait); }
 .ranking td:nth-child(n + 3), .ranking th:nth-child(n + 3) { text-align: right; }
 .ranking tr.is-mine td { font-weight: 700; }
-.game-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.game-tabs a { min-height: 44px; display: inline-grid; place-items: center; padding: 0 0.9rem; border-radius: 22px; border: 2px solid var(--trait); text-decoration: none; color: var(--texte); font-weight: 600; }
+.game-tabs { display: flex; gap: 0.3rem; overflow-x: auto; }
+.game-tabs a { flex: none; min-height: 44px; display: inline-flex; align-items: center; padding: 0 0.6rem; font-size: 0.9rem; border-radius: 22px; border: 2px solid var(--trait); text-decoration: none; color: var(--texte); font-weight: 600; }
 .game-tabs a[aria-current="page"] { background: var(--accent-fond); color: var(--accent-texte); border-color: var(--accent-fond); }
 .header-game { font: 700 1.1rem "Barlow Condensed", sans-serif; letter-spacing: 0.04em; }
