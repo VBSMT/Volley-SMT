@@ -1302,3 +1302,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .gift-kind label { display: flex; align-items: center; gap: 0.35rem; min-height: 44px; }
 .gift-history td { font-size: 0.85rem; vertical-align: middle; }
 .gift-cancel { width: auto; min-height: 44px; padding: 0 0.6rem; }
+/* Entraînement le jour d'un match de son équipe */
+.match-clash { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.6rem 0.75rem; border-radius: 10px; border-left: 4px solid var(--jaune); background: color-mix(in srgb, var(--jaune) 14%, var(--surface)); }
+.match-clash p { margin: 0.1rem 0 0; }
+.match-clash-icon { font-size: 1.3rem; line-height: 1; }

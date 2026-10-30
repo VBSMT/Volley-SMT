@@ -48,17 +48,19 @@ export function reminderAudience(
   });
 }
 
-export function reminderMessage(kind: ReminderKind, presentCount: number, closeHour = 12): Message {
+export function reminderMessage(kind: ReminderKind, presentCount: number, closeHour = 12, hasMatch = false): Message {
+  // Match d'une de ses équipes le même jour : signalé dans le message, sans notif de plus.
+  const match = hasMatch ? " (tu as match ce jour-là)" : "";
   if (kind === "ask") {
     return {
       title: "🏐 Entraînement demain 20h–22h",
-      body: `Tu viens ? Réponds avant ${closeHour}h demain.`,
+      body: `Tu viens ? Réponds avant ${closeHour}h demain.${match}`,
       url: "/entrainements",
     };
   }
   return {
     title: "🏐 N'oublie pas : entraînement demain",
-    body: `20h–22h · ${presentCount} inscrit${presentCount > 1 ? "s" : ""} pour l'instant.`,
+    body: `20h–22h · ${presentCount} inscrit${presentCount > 1 ? "s" : ""} pour l'instant.${match}`,
     url: "/entrainements",
   };
 }

@@ -1,8 +1,29 @@
 import { PollButtons } from "@/components/PollButtons";
-import { formatDay } from "@/lib/format";
-import type { SessionView } from "@/lib/training";
+import { formatDay, formatTime } from "@/lib/format";
+import type { MyMatch, SessionView } from "@/lib/training";
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+
+/** Match d'une équipe de l'adhérent le jour de la séance. */
+function MatchClash({ matches, comingAnyway }: { matches: MyMatch[]; comingAnyway: boolean }) {
+  if (!matches.length) return null;
+  return (
+    <>
+      {matches.map((m) => (
+        <div key={m.startsAt + m.teamName} className="match-clash" role="note">
+          <span className="match-clash-icon" aria-hidden="true">🏐</span>
+          <div>
+            <strong>Attention, tu as match !</strong>
+            <p className="small">
+              {m.isHome ? `${m.teamName} reçoit ${m.opponent} · ${formatTime(m.startsAt)}, ici` : `${m.teamName} chez ${m.opponent}${m.venue ? ` (${m.venue})` : ""} · ${formatTime(m.startsAt)}`}
+            </p>
+          </div>
+        </div>
+      ))}
+      {comingAnyway && <p className="small">Tu as répondu « je viens » : pense à modifier ta réponse si tu joues le match.</p>}
+    </>
+  );
+}
 
 export function SessionCard({ session: s }: { session: SessionView }) {
   const title = `${formatDay(s.startsAt)} · 20h–22h`;
@@ -20,6 +41,7 @@ export function SessionCard({ session: s }: { session: SessionView }) {
     return (
       <li className="card session closed">
         <h2>{title}</h2>
+        <MatchClash matches={s.myMatches} comingAnyway={false} />
         <p className="muted">
           Aucun terrain libre : {plural(s.homeMatches, "match")} à domicile
           {s.approvedReschedules > 0 && ` et ${plural(s.approvedReschedules, "report")}`}.
@@ -34,6 +56,7 @@ export function SessionCard({ session: s }: { session: SessionView }) {
         <h2>{title}</h2>
         <span className="courts">{plural(s.freeCourts, "terrain")}</span>
       </div>
+      <MatchClash matches={s.myMatches} comingAnyway={s.myAnswer === true} />
       {s.homeMatches > 0 && (
         <p className="muted small">
           {plural(s.homeMatches, "terrain")} pris par {s.homeMatches > 1 ? "des matchs" : "un match"} à domicile.
