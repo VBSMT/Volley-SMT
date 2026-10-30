@@ -3,11 +3,11 @@
 import { useState } from "react";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { useWheel } from "@/components/game/useWheel";
-import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, cardKey } from "@/lib/domain/game";
+import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, LEGEND_BONUS_LABELS, cardKey, isSpecial } from "@/lib/domain/game";
 import { shortName } from "@/lib/format";
 
 type Entry = { card: GameCard; copies: number };
-const SHORT: Record<string, string> = { setter: "Passe", front_left: "Av. (4)", front_right: "Av. (2)", back: "Fond", all: "Tous" };
+const SHORT: Record<string, string> = { setter: "Passe", front_left: "Av. (4)", front_right: "Av. (2)", back: "Fond", all: "Tous", rare: "★ Rares", special: "Capitaines & Légendes" };
 const STEP = 90;
 
 /**
@@ -16,11 +16,11 @@ const STEP = 90;
  * du centre pour la retourner (équipe, record, exemplaires).
  */
 export function CollectionCarousel({ entries, total }: { entries: Entry[]; total: number }) {
-  const [filter, setFilter] = useState<GamePosition | "all">("all");
+  const [filter, setFilter] = useState<GamePosition | "all" | "rare" | "special">("all");
   const [sort, setSort] = useState<"rating" | "team">("rating");
   const [flipped, setFlipped] = useState<string | null>(null);
   const list = entries
-    .filter((e) => filter === "all" || e.card.position === filter)
+    .filter((e) => filter === "all" || (filter === "rare" ? e.card.kind === "rare" : filter === "special" ? isSpecial(e.card) : !isSpecial(e.card) && e.card.position === filter))
     .sort((a, b) => (sort === "rating" ? b.card.rating - a.card.rating : a.card.teamName.localeCompare(b.card.teamName, "fr")));
   const wheel = useWheel(list.length, STEP, {
     onTap: (i) => {
@@ -49,7 +49,7 @@ export function CollectionCarousel({ entries, total }: { entries: Entry[]; total
         </label>
       </div>
       <div className="chip-row" role="group" aria-label="Filtrer par poste">
-        {(["all", ...GAME_POSITIONS] as const).map((p) => (
+        {(["all", ...GAME_POSITIONS, "rare", "special"] as const).map((p) => (
           <button
             key={p}
             type="button"
@@ -94,7 +94,10 @@ export function CollectionCarousel({ entries, total }: { entries: Entry[]; total
                 <span className="flip-face flip-front">
                   <span className="card-back-info">
                     <strong>{shortName(e.card.firstName, e.card.lastName)}</strong>
-                    <span>{GAME_POSITION_LABELS[e.card.position]}</span>
+                    <span>{e.card.kind === "captain" ? "Capitaine" : e.card.kind === "legend" ? "Légende" : GAME_POSITION_LABELS[e.card.position]}</span>
+                    {e.card.kind === "rare" && <span>★ Rare (2ᵉ poste)</span>}
+                    {e.card.kind === "captain" && <span>+5 % du total, +10 % si son équipe gagne</span>}
+                    {e.card.legendBonus && <span>{LEGEND_BONUS_LABELS[e.card.legendBonus]}</span>}
                     <span>{e.card.teamName}</span>
                     <span>Note : {e.card.rating}</span>
                     <span>Record : {e.card.bestRating}</span>

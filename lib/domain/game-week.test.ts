@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { GameCard } from "./game";
-import { simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type GameCard, cardKey } from "./game";
+import { type TeamWeek, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -72,7 +72,7 @@ describe("points d'une carte", () => {
 
 describe("points de l'équipe", () => {
   const s = card("1", "setter", "F"), l = card("2", "front_left"), r = card("3", "front_right"), b = card("4", "back"), x = card("5", "back");
-  const positions = new Map([s, l, r, b, x].map((c) => [`${c.memberId}:${c.teamId}`, c.position]));
+  const positions = new Map([s, l, r, b, x].map((c) => [cardKey(c), { position: c.position, sex: c.sex, kind: "common" as const }]));
   const won = { scores: ["s30" as const], setsWon: 3, setsLost: 0, pointsWon: 0, pointsLost: 0 };
   const lineup = { setter: pick(s), front_left: pick(l), front_right: pick(r), back: pick(b), sub: pick(x) };
   it("remplaçant à 50 %", () => {
@@ -111,5 +111,46 @@ describe("résultats simulés", () => {
   it("sets déduits des scores", () => {
     expect(simulatedWeek(["s31", "s23"])).toEqual({ scores: ["s31", "s23"], setsWon: 5, setsLost: 4, pointsWon: 0, pointsLost: 0 });
     expect(simulatedWeek([])).toBeNull();
+  });
+});
+
+describe("case Bonus : Capitaine et Légendes", () => {
+  const s = card("1", "setter", "F"), l = card("2", "front_left", "F"), r = card("3", "front_right", "F"), b = card("4", "back", "F"), x = card("5", "back", "F");
+  const cap: GameCard = { ...card("9", "setter", "M", "t1"), kind: "captain" };
+  const leg: GameCard = { ...card("8", "setter", "M", ""), kind: "legend", legendBonus: "per_win" };
+  const owned = [s, l, r, b, x, cap, leg];
+  const pk = (c: GameCard) => ({ memberId: c.memberId, teamId: c.teamId, kind: c.kind ?? "common" });
+  const base = { setter: pk(s), front_left: pk(l), front_right: pk(r), back: pk(b), sub: pk(x) };
+  const info = (c: GameCard, legendBonus: GameCard["legendBonus"] = null) => [cardKey(c), { position: c.position, sex: c.sex, kind: c.kind ?? "common", legendBonus }] as const;
+  const won3 = { scores: ["s30" as const], setsWon: 3, setsLost: 0, pointsWon: 75, pointsLost: 45 };
+  const lost = { scores: ["s03" as const], setsWon: 0, setsLost: 3, pointsWon: 45, pointsLost: 75 };
+  // passe 10+3, avants 10+3 chacun, fond 10+0 (15 encaissés/set < 20 → +3), remplaçant (fond) 13 × 50 %.
+  const weeks = new Map<string, TeamWeek | null>([s, l, r, b, x, cap].map((c) => [c.teamId, won3]));
+
+  it("règles de la case Bonus", () => {
+    expect(lineupErrors({ ...base, bonus: pk(cap) }, owned)).toEqual([]);
+    expect(lineupErrors({ ...base, bonus: pk(x) }, owned)).toContain("La case Bonus accueille un Capitaine ou une Légende.");
+    expect(lineupErrors({ ...base, sub: pk(cap) }, owned)).toContain("Capitaines et Légendes vont dans la case Bonus.");
+  });
+
+  it("Capitaine : +5 %, +10 % si son équipe gagne", () => {
+    const cards = new Map([...[s, l, r, b, x].map((c) => info(c)), info(cap)]);
+    const plain = lineupScore(base, cards, weeks).total;
+    expect(lineupScore({ ...base, bonus: pk(cap) }, cards, weeks).total).toBeCloseTo(plain * 1.1, 0);
+    const capLost = new Map(weeks).set(cap.teamId, lost);
+    expect(lineupScore({ ...base, bonus: pk(cap) }, cards, capLost).extra).toBeCloseTo(lineupScore(base, cards, capLost).total * 0.05, 0);
+  });
+
+  it("Légendes", () => {
+    const withLegend = (bonus: GameCard["legendBonus"]) => new Map([...[s, l, r, b, x].map((c) => info(c)), info(leg, bonus)]);
+    const plain = lineupScore(base, withLegend(null), weeks);
+    const run = (bonus: GameCard["legendBonus"]) => lineupScore({ ...base, bonus: pk(leg) }, withLegend(bonus), weeks);
+    expect(run("per_win").extra).toBe(8);
+    expect(run("five_girls").extra).toBe(8);
+    expect(run("setter_x4").total - plain.total).toBe(9); // bonus passe 3 → 12
+    expect(run("back_x5").total - plain.total).toBe(12); // bonus fond 3 → 15
+    expect(run("front_x2_5").total - plain.total).toBe(9); // 2 avants : 3 → 7,5
+    expect(run("bench_x2").total - plain.total).toBe(6.5); // remplaçant 50 % → 100 %
+    expect(run("all_win_30").extra).toBeCloseTo(0.3 * (13 * 4), 1);
   });
 });

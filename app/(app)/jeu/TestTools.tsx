@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
-import { clearSimulations, giveBoosters, recomputeNow, resetAll, simulateResult } from "./test-actions";
+import { clearSimulations, giveBoosters, giveSpecials, recomputeNow, resetAll, simulateResult } from "./test-actions";
 
 const SCORES = [
   ["s30", "Victoire 3-0"],
@@ -43,6 +43,9 @@ export function TestTools({ teams }: { teams: { id: string; name: string }[] }) 
         </button>
         <button type="button" className="btn-secondary" disabled={pending} onClick={() => run("Recalculer les points ?", "Points provisoires de la semaine en cours.", recomputeNow)}>
           Recalculer les points
+        </button>
+        <button type="button" className="btn-secondary" disabled={pending} onClick={() => run("Donner un Capitaine et une Légende à chacun ?", "Pour tester la case Bonus.", giveSpecials)}>
+          + Capitaine et Légende
         </button>
       </div>
       <fieldset className="stack">

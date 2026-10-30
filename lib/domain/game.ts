@@ -15,9 +15,26 @@ export const GAME_POSITION_LABELS: Record<GamePosition, string> = {
   back: "Fond",
 };
 
+/** Rareté : commune (poste 1), rare (poste 2), ultra rare (capitaine), légende (Bureau). */
+export type CardKind = "common" | "rare" | "captain" | "legend";
+
+/** Bonus des Légendes (un par membre du Bureau, table `game_legends`). */
+export type LegendBonus = "per_win" | "back_x5" | "setter_x4" | "front_x2_5" | "bench_x2" | "five_girls" | "all_win_30";
+export const LEGEND_BONUS_LABELS: Record<LegendBonus, string> = {
+  per_win: "+2 par titulaire gagnant",
+  back_x5: "×5 bonus du fond",
+  setter_x4: "×4 bonus du passeur",
+  front_x2_5: "×2,5 bonus des avants",
+  bench_x2: "Remplaçant à 100 %",
+  five_girls: "+8 si 5 filles",
+  all_win_30: "+30 % si les 4 titulaires gagnent",
+};
+
 export type GameCard = {
   memberId: string;
+  /** Équipe de la carte ("" pour une Légende, carte du Bureau). */
   teamId: string;
+  kind?: CardKind;
   teamName: string;
   firstName: string;
   lastName: string;
@@ -25,11 +42,20 @@ export type GameCard = {
   position: GamePosition;
   rating: number;
   bestRating: number;
-  /** Version de la photo (null : pas de photo, ou droit à l'image retiré). */
+  /** Version de la photo (null : pas de photo, ou droit à l'image retiré ; jamais sur Capitaine/Légende). */
   photoVersion: string | null;
+  legendBonus?: LegendBonus | null;
+  /** Carte unique du développeur de l'appli (Légende, style « LE DEV »). */
+  isDev?: boolean;
 };
 
-export const cardKey = (c: { memberId: string; teamId: string }) => `${c.memberId}:${c.teamId}`;
+export const cardKey = (c: { memberId: string; teamId: string; kind?: CardKind }) => `${c.kind ?? "common"}:${c.memberId}:${c.teamId}`;
+export const isSpecial = (c: { kind?: CardKind }) => c.kind === "captain" || c.kind === "legend";
+
+/** Chances de tirage, par carte qui sort d'un booster gagné. */
+export const LEGEND_RATE = 0.005;
+export const CAPTAIN_RATE = 0.03;
+export const RARE_RATE = 0.1;
 
 /** L'ancien « avant » sans côté devient Avant (4). */
 export function gamePosition(p: string | null): GamePosition | null {
@@ -116,7 +142,9 @@ export function isValidStarter(cards: GameCard[]): boolean {
  * successifs ; si les cartes du club ne permettent pas toutes les règles, le meilleur tirage
  * possible (les règles assouplies dans l'ordre inverse) est renvoyé.
  */
-export function drawStarter(pool: GameCard[], rng: Rng = Math.random): GameCard[] {
+export function drawStarter(all: GameCard[], rng: Rng = Math.random): GameCard[] {
+  // Que des cartes communes dans le booster de départ.
+  const pool = all.filter((c) => (c.kind ?? "common") === "common");
   let best: GameCard[] = [];
   let bestScore = -1;
   for (let attempt = 0; attempt < 300; attempt++) {
@@ -155,9 +183,25 @@ export function drawStarter(pool: GameCard[], rng: Rng = Math.random): GameCard[
   return shuffle(best, rng);
 }
 
-/** Booster gagné : 2 ou 3 cartes (une chance sur deux), totalement au hasard (doublons possibles). */
+/**
+ * Booster gagné : 2 ou 3 cartes (une chance sur deux), totalement au hasard (doublons possibles).
+ * Pour chaque carte : 0,5 % Légende, sinon 3 % Capitaine, sinon un joueur au hasard (commune),
+ * remplacée par sa version rare (2ᵉ poste) dans 10 % des cas s'il en a une.
+ */
 export function drawEarned(pool: GameCard[], rng: Rng = Math.random): GameCard[] {
-  if (!pool.length) return [];
+  const commons = pool.filter((c) => (c.kind ?? "common") === "common");
+  const captains = pool.filter((c) => c.kind === "captain");
+  const legends = pool.filter((c) => c.kind === "legend");
+  const rares = new Map(pool.filter((c) => c.kind === "rare").map((c) => [`${c.memberId}:${c.teamId}`, c]));
+  if (!commons.length && !captains.length && !legends.length) return [];
+  const pick = <T,>(list: T[]) => list[Math.floor(rng() * list.length)];
   const size = rng() < 0.5 ? 2 : 3;
-  return Array.from({ length: size }, () => pool[Math.floor(rng() * pool.length)]);
+  return Array.from({ length: size }, () => {
+    const r = rng();
+    if (legends.length && r < LEGEND_RATE) return pick(legends);
+    if (captains.length && r < LEGEND_RATE + CAPTAIN_RATE) return pick(captains);
+    const card = pick(commons.length ? commons : captains.length ? captains : legends);
+    const rare = rares.get(`${card.memberId}:${card.teamId}`);
+    return rare && rng() < RARE_RATE ? rare : card;
+  });
 }

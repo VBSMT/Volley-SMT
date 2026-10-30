@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type GameCard, type FormState, cardKey, gamePosition, nextForm } from "@/lib/domain/game";
+import { type CardKind, type GameCard, type FormState, type LegendBonus, cardKey, gamePosition, nextForm } from "@/lib/domain/game";
 import type { StandingRow } from "@/lib/domain/standings";
 
 const toCard = (r: Record<string, unknown>): GameCard | null => {
@@ -7,7 +7,10 @@ const toCard = (r: Record<string, unknown>): GameCard | null => {
   if (!position) return null;
   return {
     memberId: r.member_id as string,
-    teamId: r.team_id as string,
+    teamId: (r.team_id as string | null) ?? "",
+    kind: (r.kind as CardKind) ?? "common",
+    legendBonus: (r.legend_bonus as LegendBonus | null) ?? null,
+    isDev: !!r.is_dev,
     teamName: r.team_name as string,
     firstName: r.first_name as string,
     lastName: r.last_name as string,
@@ -29,10 +32,10 @@ export type CollectionEntry = { card: GameCard; copies: number };
 
 /** Collection de l'adhérent connecté (cartes à jour : note, poste, photo). */
 export async function getCollection(client: SupabaseClient, cards: GameCard[]): Promise<CollectionEntry[]> {
-  const { data } = await client.from("game_collection").select("member_id, team_id, copies");
+  const { data } = await client.from("game_collection").select("member_id, team_id, kind, copies");
   const byKey = new Map(cards.map((c) => [cardKey(c), c]));
   return (data ?? []).flatMap((r) => {
-    const card = byKey.get(cardKey({ memberId: r.member_id as string, teamId: r.team_id as string }));
+    const card = byKey.get(cardKey({ memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind: r.kind as CardKind }));
     return card ? [{ card, copies: r.copies as number }] : [];
   });
 }

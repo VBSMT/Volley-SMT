@@ -2,11 +2,12 @@
  * VUT : équipe de la journée (semaine du lundi au dimanche), points et classements. Fonctions pures.
  */
 
-import { type GameCard, type GamePosition, MAX_PER_TEAM, cardKey, scorePoints } from "./game";
+import { type CardKind, type GameCard, type GamePosition, type LegendBonus, MAX_PER_TEAM, cardKey, isSpecial, scorePoints } from "./game";
 import type { StandingRow } from "./standings";
 
-export type Slot = GamePosition | "sub";
-export const SLOTS: Slot[] = ["setter", "front_left", "front_right", "back", "sub"];
+export type Slot = GamePosition | "sub" | "bonus";
+/** Places : 4 titulaires, le remplaçant, et la case Bonus (Capitaine ou Légende). */
+export const SLOTS: Slot[] = ["setter", "front_left", "front_right", "back", "sub", "bonus"];
 export const STARTERS: GamePosition[] = ["setter", "front_left", "front_right", "back"];
 export const SUB_FACTOR = 0.5;
 
@@ -21,7 +22,8 @@ export function weekStart(date: string): string {
 
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 
-export type Lineup = Partial<Record<Slot, { memberId: string; teamId: string }>>;
+export type CardPick = { memberId: string; teamId: string; kind?: CardKind };
+export type Lineup = Partial<Record<Slot, CardPick>>;
 
 /**
  * Règles de l'équipe : 4 titulaires à leur poste, un remplaçant (facultatif) de n'importe quel
@@ -31,11 +33,11 @@ export type Lineup = Partial<Record<Slot, { memberId: string; teamId: string }>>
 export function lineupErrors(lineup: Lineup, owned: GameCard[]): string[] {
   const byKey = new Map(owned.map((c) => [cardKey(c), c]));
   const errors: string[] = [];
-  const cards: GameCard[] = [];
+  const cards: GameCard[] = []; // cartes sur le terrain (titulaires + remplaçant)
   for (const slot of SLOTS) {
     const pick = lineup[slot];
     if (!pick) {
-      if (slot !== "sub") errors.push("Il faut un joueur à chaque poste.");
+      if (slot !== "sub" && slot !== "bonus") errors.push("Il faut un joueur à chaque poste.");
       continue;
     }
     const card = byKey.get(cardKey(pick));
@@ -43,7 +45,12 @@ export function lineupErrors(lineup: Lineup, owned: GameCard[]): string[] {
       errors.push("Carte absente de ta collection.");
       continue;
     }
-    if (slot !== "sub" && card.position !== slot) errors.push("Un joueur n'est pas à son poste.");
+    if (slot === "bonus") {
+      if (!isSpecial(card)) errors.push("La case Bonus accueille un Capitaine ou une Légende.");
+      continue;
+    }
+    if (isSpecial(card)) errors.push("Capitaines et Légendes vont dans la case Bonus.");
+    else if (slot !== "sub" && card.position !== slot) errors.push("Un joueur n'est pas à son poste.");
     cards.push(card);
   }
   const starters = STARTERS.map((s) => lineup[s] && byKey.get(cardKey(lineup[s]!))).filter(Boolean) as GameCard[];
@@ -138,32 +145,65 @@ export function cardScore(position: GamePosition, week: TeamWeek): CardScore {
 
 export type SlotScore = { slot: Slot; memberId: string; teamId: string; played: boolean; factor: number; base: number; bonus: number; total: number };
 
+/** Ce que le calcul des points doit savoir d'une carte alignée. */
+export type CardInfo = { position: GamePosition; sex: "F" | "M"; kind: CardKind; legendBonus?: LegendBonus | null };
+
+const WINS = new Set(["s30", "s31", "s32", "fWon"]);
+const won = (week: TeamWeek | null | undefined) => !!week?.scores.some((k) => WINS.has(k));
+
 /**
  * Points de l'équipe de la journée. Le remplaçant compte à 50 % ; si un titulaire n'a pas joué
  * (son équipe sans match), le remplaçant prend sa place et compte à 100 % (une seule fois),
- * au barème de son propre poste.
+ * au barème de son propre poste. Case Bonus :
+ * - Capitaine : +5 % du total, +10 % si son équipe gagne son match ;
+ * - Légende : son bonus (multiplicateur d'un bonus de poste, remplaçant à 100 %, +2 par titulaire
+ *   gagnant, +8 si 5 filles, +30 % du total des titulaires si les 4 gagnent).
  */
 export function lineupScore(
   lineup: Lineup,
-  positions: Map<string, GamePosition>,
+  cards: Map<string, CardInfo>,
   weeks: Map<string, TeamWeek | null>,
-): { total: number; bonus: number; slots: SlotScore[] } {
+): { total: number; bonus: number; extra: number; slots: SlotScore[] } {
+  const special = lineup.bonus ? cards.get(cardKey(lineup.bonus)) : undefined;
+  const legend = special?.kind === "legend" ? special.legendBonus : null;
+  const multiplier = (position: GamePosition, slot: Slot) => {
+    if (slot === "sub") return 1;
+    if (legend === "back_x5" && position === "back") return 5;
+    if (legend === "setter_x4" && position === "setter") return 4;
+    if (legend === "front_x2_5" && (position === "front_left" || position === "front_right")) return 2.5;
+    return 1;
+  };
   const score = (slot: Slot, factor: number): SlotScore | null => {
     const pick = lineup[slot];
     if (!pick) return null;
     const week = weeks.get(pick.teamId) ?? null;
-    const position = positions.get(cardKey(pick));
-    const s = week && position ? cardScore(position, week) : { base: 0, bonus: 0 };
-    return { slot, ...pick, played: !!week, factor, base: s.base, bonus: s.bonus, total: (s.base + s.bonus) * factor };
+    const info = cards.get(cardKey(pick));
+    const s = week && info ? cardScore(info.position, week) : { base: 0, bonus: 0 };
+    const bonus = info ? s.bonus * multiplier(info.position, slot) : 0;
+    return { slot, memberId: pick.memberId, teamId: pick.teamId, played: !!week, factor, base: s.base, bonus, total: (s.base + bonus) * factor };
   };
-  const slots = STARTERS.map((s) => score(s, 1)).filter((s): s is SlotScore => !!s);
-  const absent = slots.some((s) => !s.played);
-  const sub = score("sub", absent ? 1 : SUB_FACTOR);
-  if (sub) slots.push(sub);
+  const starters = STARTERS.map((s) => score(s, 1)).filter((s): s is SlotScore => !!s);
+  const absent = starters.some((s) => !s.played);
+  // Légende « banc » : le remplaçant compte toujours à 100 % (jamais plus).
+  const sub = score("sub", absent || legend === "bench_x2" ? 1 : SUB_FACTOR);
+  const slots = sub ? [...starters, sub] : starters;
   const round = (n: number) => Math.round(n * 10) / 10;
+  const base = slots.reduce((a, s) => a + s.total, 0);
+  const startersTotal = starters.reduce((a, s) => a + s.total, 0);
+  const winners = STARTERS.filter((s) => lineup[s] && won(weeks.get(lineup[s]!.teamId))).length;
+
+  let extra = 0;
+  if (special?.kind === "captain") extra = base * (won(weeks.get(lineup.bonus!.teamId)) ? 0.1 : 0.05);
+  else if (legend === "per_win") extra = 2 * winners;
+  else if (legend === "five_girls") {
+    const five = ([...STARTERS, "sub"] as Slot[]).map((s) => lineup[s] && cards.get(cardKey(lineup[s]!)));
+    extra = five.every((c) => c?.sex === "F") ? 8 : 0;
+  } else if (legend === "all_win_30") extra = winners === 4 ? startersTotal * 0.3 : 0;
+
   return {
-    total: round(slots.reduce((a, s) => a + s.total, 0)),
-    bonus: round(slots.reduce((a, s) => a + s.bonus * s.factor, 0)),
+    total: round(base + extra),
+    bonus: round(slots.reduce((a, s) => a + s.bonus * s.factor, 0) + extra),
+    extra: round(extra),
     slots,
   };
 }

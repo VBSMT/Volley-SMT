@@ -113,3 +113,24 @@ describe("booster gagné", () => {
     expect([...sizes].sort()).toEqual([2, 3]);
   });
 });
+
+describe("raretés au tirage", () => {
+  const base = club(2, 4);
+  const rare: GameCard = { ...base[0], kind: "rare", position: "back" };
+  const cap: GameCard = { ...base[1], kind: "captain" };
+  const leg: GameCard = { ...base[2], teamId: "", kind: "legend" };
+  it("booster de départ : que des communes", () => {
+    for (let s = 1; s <= 20; s++) expect(drawStarter([...base, rare, cap, leg], seeded(s)).every((c) => (c.kind ?? "common") === "common")).toBe(true);
+  });
+  it("environ 0,5 % Légende, 3 % Capitaine, rares à 10 % de leur joueur", () => {
+    const counts = { common: 0, rare: 0, captain: 0, legend: 0 };
+    const rng = seeded(42);
+    for (let i = 0; i < 20000; i++) for (const c of drawEarned([...base, rare, cap, leg], rng)) counts[c.kind ?? "common"]++;
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    expect(counts.legend / total).toBeGreaterThan(0.002);
+    expect(counts.legend / total).toBeLessThan(0.009);
+    expect(counts.captain / total).toBeGreaterThan(0.022);
+    expect(counts.captain / total).toBeLessThan(0.04);
+    expect(counts.rare).toBeGreaterThan(0);
+  });
+});
