@@ -1255,3 +1255,4 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .album-price { font: 700 13px "Barlow Condensed", sans-serif; padding: 1px 6px; border-radius: 8px; background: var(--noir); color: var(--jaune); }
 .buy-preview { display: grid; place-items: center; }
 @media (prefers-reduced-motion: reduce) { .album-buy.is-affordable { animation: none; } }
+.rules-soon { text-align: center; }

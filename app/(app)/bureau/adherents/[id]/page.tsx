@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib/member";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { DeleteMemberButton } from "./DeleteMemberButton";
 import { MemberForm } from "./MemberForm";
@@ -30,6 +31,8 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
     supabase.from("member_levels").select("level").eq("member_id", id).maybeSingle(),
   ]);
   if (!m) notFound();
+  // Email modifiable tant que l'adhérent ne s'est jamais connecté (compte absent ou jamais utilisé).
+  const emailEditable = !m.user_id || !(await createAdminClient().auth.admin.getUserById(m.user_id)).data?.user?.last_sign_in_at;
   const roles = m.roles as { role: string; team_id: string | null }[];
   const pos = (p: Position | null) => (p ? POSITION_LABELS[p] : "—");
 
@@ -66,11 +69,14 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       </section>
 
       <MemberForm
+        key={m.email}
         teams={teams ?? []}
         member={{
           id: m.id,
           first_name: m.first_name,
           last_name: m.last_name,
+          email: m.email,
+          emailEditable,
           sex: m.sex,
           fsgt_license: m.fsgt_license,
           dues_paid: m.dues_paid,

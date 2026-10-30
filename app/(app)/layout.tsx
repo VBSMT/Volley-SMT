@@ -22,9 +22,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="app-header">
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
-        {member && hasRole(member, "board") && (
+        {/* VUT : tout le monde voit l'icône ; le jeu est réservé au Bureau, les autres arrivent sur les règles. */}
+        {member && (
           <Link
-            href={boosters ? "/jeu?vue=boosters" : "/jeu"}
+            href={!hasRole(member, "board") ? "/jeu/regles" : boosters ? "/jeu?vue=boosters" : "/jeu"}
             className="header-game"
             aria-label={boosters ? `VUT, ${boosters} booster${boosters > 1 ? "s" : ""} à ouvrir` : "VUT, Volley Ultimate Team"}
           >
