@@ -1295,3 +1295,10 @@ a { color: var(--lien); text-underline-offset: 3px; }
   86% { transform: rotate(3deg); }
 }
 @media (prefers-reduced-motion: reduce) { .home-daily-pack { animation: none; } .home-daily-pack::after { display: none; } }
+/* VUT : cadeaux */
+.gift-message { margin: 0; padding: 0.5rem 0.75rem; border-radius: 10px; background: var(--jaune); color: #111; font-weight: 600; text-align: center; }
+.gift-mention { font-weight: 700; }
+.gift-kind { border: 0; padding: 0; margin: 0; }
+.gift-kind label { display: flex; align-items: center; gap: 0.35rem; min-height: 44px; }
+.gift-history td { font-size: 0.85rem; vertical-align: middle; }
+.gift-cancel { width: auto; min-height: 44px; padding: 0 0.6rem; }

@@ -173,6 +173,7 @@ export default async function ReglesPage() {
             <tr><th scope="row">Top 3 de la journée</th><td>1 de plus</td></tr>
             <tr><th scope="row">Sondage d&apos;entraînement</th><td>1 tous les {TRAININGS_PER_BOOSTER} entraînements répondus</td></tr>
             <tr><th scope="row">Événement du club</th><td>1 si tu es venu·e</td></tr>
+            <tr><th scope="row">Cadeau du club</th><td>De temps en temps, un booster ou une carte offerte (mention « 🎁 Cadeau » dans l&apos;album)</td></tr>
           </tbody>
         </table>
         <p>

@@ -35,7 +35,7 @@ export function TestTools({ teams }: { teams: { id: string; name: string }[] }) 
   return (
     <details className="card stack">
       {dialog}
-      <summary>🛠 Outils de test (Bureau)</summary>
+      <summary>🛠 Outils de test (maître du jeu)</summary>
       <p className="small muted">Chaque action s&apos;applique à tous les joueurs qui ont accès au jeu.</p>
       <div className="action-row">
         <button type="button" className="btn-secondary" disabled={pending} onClick={() => run("Donner un booster à chacun ?", "2 ou 3 cartes au hasard, à ouvrir dans Mon équipe.", () => giveBoosters(1))}>

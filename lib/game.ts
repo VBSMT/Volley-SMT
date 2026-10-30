@@ -29,15 +29,15 @@ export async function getGameCards(client: SupabaseClient): Promise<GameCard[]> 
   return (data ?? []).map(toCard).filter((c): c is GameCard => !!c);
 }
 
-export type CollectionEntry = { card: GameCard; copies: number };
+export type CollectionEntry = { card: GameCard; copies: number; gifted?: boolean };
 
 /** Collection de l'adhérent connecté (cartes à jour : note, poste, photo). */
 export async function getCollection(client: SupabaseClient, cards: GameCard[]): Promise<CollectionEntry[]> {
-  const { data } = await client.from("game_collection").select("member_id, team_id, kind, copies");
+  const { data } = await client.from("game_collection").select("member_id, team_id, kind, copies, gifted");
   const byKey = new Map(cards.map((c) => [cardKey(c), c]));
   return (data ?? []).flatMap((r) => {
     const card = byKey.get(cardKey({ memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind: r.kind as CardKind }));
-    return card ? [{ card, copies: r.copies as number }] : [];
+    return card ? [{ card, copies: r.copies as number, gifted: !!r.gifted }] : [];
   });
 }
 

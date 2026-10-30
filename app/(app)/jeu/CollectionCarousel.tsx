@@ -6,7 +6,7 @@ import { useWheel } from "@/components/game/useWheel";
 import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, LEGEND_BONUS_LABELS, cardKey, isSpecial } from "@/lib/domain/game";
 import { shortName } from "@/lib/format";
 
-type Entry = { card: GameCard; copies: number };
+type Entry = { card: GameCard; copies: number; gifted?: boolean };
 const SHORT: Record<string, string> = { setter: "Passe", front_left: "Av. (4)", front_right: "Av. (2)", back: "Fond", all: "Tous", rare: "★ Rares", captain: "C Capitaines", legend: "♛ Légendes" };
 const STEP = 90;
 
@@ -127,6 +127,7 @@ export function CollectionCarousel({
                     <span>
                       {e.copies} exemplaire{e.copies > 1 ? "s" : ""}
                     </span>
+                    {e.gifted && <span className="gift-mention">🎁 Cadeau</span>}
                   </span>
                 </span>
               </span>

@@ -41,8 +41,10 @@ export async function openStarter(): Promise<{ cards?: GameCard[]; error?: strin
 type Admin = ReturnType<typeof createAdminClient>;
 
 /** Ajoute des cartes à une collection (un doublon augmente le nombre d'exemplaires). */
-async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[]): Promise<string | null> {
-  const { data } = await admin.from("game_collection").select("member_id, team_id, kind, copies").eq("owner_id", ownerId);
+async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[], gifted = false): Promise<string | null> {
+  const { data } = await admin.from("game_collection").select("member_id, team_id, kind, copies, gifted").eq("owner_id", ownerId);
+  // Mention « Cadeau » : seulement pour une carte obtenue d'abord par un cadeau.
+  const wasGifted = new Map((data ?? []).map((r) => [cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }), r.gifted as boolean]));
   const copies = new Map((data ?? []).map((r) => [cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }), r.copies as number]));
   for (const c of cards) copies.set(cardKey(c), (copies.get(cardKey(c)) ?? 0) + 1);
   const unique = new Map(cards.map((c) => [cardKey(c), c]));
@@ -52,37 +54,53 @@ async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[])
     team_id: c.teamId || null,
     kind: c.kind ?? "common",
     copies: copies.get(key)!,
+    gifted: wasGifted.get(key) ?? gifted,
   }));
   const { error } = await admin.from("game_collection").upsert(rows, { onConflict: "owner_id,member_id,team_id,kind" });
   return error?.message ?? null;
 }
 
-/** Ouvre un booster gagné (2 ou 3 cartes au hasard, doublons possibles). */
-export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[]; shards?: number; error?: string }> {
+/**
+ * Ouvre un booster gagné : 2 ou 3 cartes au hasard (doublons possibles), ou les cartes choisies
+ * d'avance s'il s'agit d'un cadeau du maître du jeu (marquées « Cadeau » dans la collection).
+ */
+export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[]; shards?: number; message?: string; error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
   if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
-  const cards = drawEarned(await getGameCards(await createClient()));
-  if (!cards.length) return { error: "Aucune carte disponible." };
   const admin = createAdminClient();
+  const { data: booster } = await admin
+    .from("game_boosters")
+    .select("gift_cards, message")
+    .eq("id", boosterId)
+    .eq("owner_id", member.id)
+    .eq("kind", "earned")
+    .is("opened_at", null)
+    .maybeSingle();
+  if (!booster) return { error: "Booster introuvable ou déjà ouvert." };
+  const all = await getGameCards(await createClient());
+  const gift = booster.gift_cards as GameCard[] | null;
+  // Cadeau : cartes à jour (note, photo) si elles existent encore, sinon telles qu'offertes.
+  const byKey = new Map(all.map((c) => [cardKey(c), c]));
+  const cards = gift?.length ? gift.map((c) => byKey.get(cardKey(c)) ?? c) : drawEarned(all);
+  if (!cards.length) return { error: "Aucune carte disponible." };
   // Condition « pas encore ouvert » dans la mise à jour : un double clic n'ouvre pas deux fois.
   const { data } = await admin
     .from("game_boosters")
     .update({ cards, opened_at: new Date().toISOString() })
     .eq("id", boosterId)
     .eq("owner_id", member.id)
-    .eq("kind", "earned")
     .is("opened_at", null)
     .select("id");
   if (!data?.length) return { error: "Booster introuvable ou déjà ouvert." };
   // Éclats : 1 par carte déjà possédée (ou sortie deux fois dans ce booster).
   const { data: owned } = await admin.from("game_collection").select("member_id, team_id, kind").eq("owner_id", member.id);
   const shards = shardsFromOpening(new Set((owned ?? []).map((r) => cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }))), cards);
-  const error = await addToCollection(admin, member.id, cards);
+  const error = await addToCollection(admin, member.id, cards, !!gift?.length);
   if (error) return { error: "Ouverture impossible. Réessayez." };
   if (shards) await addShards(admin, member.id, shards);
   // Pas de revalidatePath : la page changerait pendant l'animation (« Voir ma collection » rafraîchit).
-  return { cards, shards };
+  return { cards, shards, message: (booster.message as string | null) ?? undefined };
 }
 
 /**
