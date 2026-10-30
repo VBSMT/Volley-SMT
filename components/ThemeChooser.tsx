@@ -23,7 +23,7 @@ export function ThemeChooser({ initial }: { initial: ThemeChoice }) {
 
   return (
     <fieldset className="stack">
-      <legend>Thème</legend>
+      <legend>Mode clair / sombre</legend>
       {OPTIONS.map((o) => (
         <label key={o.value} className="checkbox">
           <input type="radio" name="theme" value={o.value} checked={choice === o.value} onChange={() => apply(o.value)} />

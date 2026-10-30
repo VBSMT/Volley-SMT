@@ -2,7 +2,7 @@ import { ServiceWorker } from "@/components/ServiceWorker";
 import type { Metadata, Viewport } from "next";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import { cookies } from "next/headers";
-import { THEME_COOKIE, themeAttribute } from "@/lib/theme";
+import { PALETTE_COOKIE, PALETTES, THEME_COOKIE, paletteAttribute, themeAttribute } from "@/lib/theme";
 import "./globals.css";
 
 const barlow = Barlow({ variable: "--font-barlow", subsets: ["latin"], weight: ["400", "600"] });
@@ -19,16 +19,19 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Volley SMT", statusBarStyle: "black" },
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#111111" },
-    { media: "(prefers-color-scheme: dark)", color: "#111111" },
-  ],
-};
+/** Barre du téléphone : couleur foncée du thème choisi. */
+export async function generateViewport(): Promise<Viewport> {
+  const palette = paletteAttribute((await cookies()).get(PALETTE_COOKIE)?.value) ?? "club";
+  return { themeColor: PALETTES.find((p) => p.value === palette)!.dark };
+}
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" data-theme={themeAttribute((await cookies()).get(THEME_COOKIE)?.value)}>
+    <html
+      lang="fr"
+      data-theme={themeAttribute((await cookies()).get(THEME_COOKIE)?.value)}
+      data-palette={paletteAttribute((await cookies()).get(PALETTE_COOKIE)?.value)}
+    >
       <body className={`${barlow.variable} ${barlowCondensed.variable}`}>
         <ServiceWorker />
         {children}

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { ThemeChooser } from "@/components/ThemeChooser";
-import { THEME_COOKIE, type ThemeChoice } from "@/lib/theme";
+import { PALETTE_COOKIE, THEME_COOKIE, type PaletteChoice, type ThemeChoice } from "@/lib/theme";
+import { PaletteChooser } from "@/components/PaletteChooser";
 import { RestartTourButton } from "@/components/GuidedTour";
 import { ZelsyncFooter } from "@/components/ZelsyncFooter";
 import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
@@ -91,6 +92,7 @@ export default async function ProfilPage() {
       <section className="card stack">
         <h2>Apparence</h2>
         <ThemeChooser initial={((await cookies()).get(THEME_COOKIE)?.value as ThemeChoice | undefined) ?? "auto"} />
+        <PaletteChooser initial={((await cookies()).get(PALETTE_COOKIE)?.value as PaletteChoice | undefined) ?? "club"} />
       </section>
 
       <Link href="/liens" className="btn-secondary center">
