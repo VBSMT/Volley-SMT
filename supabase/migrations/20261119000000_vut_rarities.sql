@@ -24,7 +24,7 @@ from (values
   ('jerome', 'per_win', false),
   ('xavier', 'back_x5', false),
   ('owen', 'setter_x4', false),
-  ('ratsou', 'front_x2_5', false),
+  ('ratsiam', 'front_x2_5', false),
   ('lydie', 'bench_x2', false),
   ('guylaine', 'five_girls', false),
   ('benjamin', 'all_win_30', true)

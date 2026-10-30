@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STARTER_SIZE } from "@/lib/domain/game";
-import { isLocked } from "@/lib/domain/game-week";
+import { isLocked, matchdayTitle } from "@/lib/domain/game-week";
+import { getCurrentSeason } from "@/lib/season";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -64,15 +65,17 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
 
   let content: React.ReactNode;
   if (tab === "equipe") {
-    const [lineup, matches, { data: entry }] = await Promise.all([
+    const [lineup, matches, { data: entry }, season] = await Promise.all([
       getLineup(supabase, member.id, week),
       getWeekMatches(supabase, week),
       supabase.from("game_weeks").select("total, bonus, computed_at").eq("owner_id", member.id).eq("week_start", week).maybeSingle(),
+      getCurrentSeason(supabase),
     ]);
     const now = new Date();
     const teamIds = [...new Set(cards.map((c) => c.teamId))];
     content = (
       <>
+        <h2 className="lineup-title">{matchdayTitle(week, season?.startsOn ?? null)}</h2>
         <LineupEditor
           points={entry ? Number(entry.total) : null}
           owned={collection.map((e) => e.card)}

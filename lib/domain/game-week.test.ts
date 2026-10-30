@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, matchdayTitle, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -19,6 +19,10 @@ const zero = { s30: 0, s31: 0, s32: 0, s23: 0, s13: 0, s03: 0, fWon: 0, fLost: 0
 const totals = (scores: Partial<typeof zero>, sw = 0, sl = 0, pw = 0, pl = 0) => ({ scores: { ...zero, ...scores }, setsWon: sw, setsLost: sl, pointsWon: pw, pointsLost: pl });
 
 describe("semaine", () => {
+  it("titre de la journée", () => {
+    expect(matchdayTitle("2026-11-02", "2026-09-01")).toBe("Compo Journée 10 — du 02/11 au 08/11");
+    expect(matchdayTitle("2026-11-02", null)).toBe("Compo Journée 1 — du 02/11 au 08/11");
+  });
   it("lundi de la semaine", () => {
     expect(weekStart("2026-11-02")).toBe("2026-11-02");
     expect(weekStart("2026-11-08")).toBe("2026-11-02");

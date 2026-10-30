@@ -20,6 +20,18 @@ export function weekStart(date: string): string {
   return new Date(d.getTime() - shift * DAY).toISOString().slice(0, 10);
 }
 
+/** Numéro de la journée VUT : semaines écoulées depuis le début de saison (1 = première semaine). */
+export function matchday(week: string, seasonStart: string | null): number {
+  if (!seasonStart) return 1;
+  return Math.max(1, Math.round((Date.parse(`${week}T12:00:00Z`) - Date.parse(`${weekStart(seasonStart)}T12:00:00Z`)) / (7 * DAY)) + 1);
+}
+
+/** « Compo Journée 3 — du 03/11 au 09/11 ». */
+export function matchdayTitle(week: string, seasonStart: string | null): string {
+  const fr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+  return `Compo Journée ${matchday(week, seasonStart)} — du ${fr(week)} au ${fr(addDays(week, 6))}`;
+}
+
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 
 export type CardPick = { memberId: string; teamId: string; kind?: CardKind };

@@ -1156,3 +1156,4 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .booster-current.is-legend .is-flipped .flip-front { filter: drop-shadow(0 0 24px #fff) drop-shadow(0 0 30px #ffb300); animation: legend-burst 1.2s ease-out; }
 @keyframes legend-burst { 0% { transform: rotateY(180deg) scale(1.25); } 100% { transform: rotateY(180deg) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .booster-current.is-legend .is-flipped .flip-front { animation: none; } }
+.lineup-title { margin: 0; font-size: 1.15rem; }
