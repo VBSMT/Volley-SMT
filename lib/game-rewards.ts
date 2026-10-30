@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { rank } from "@/lib/domain/game-week";
+import { rank, weekStart } from "@/lib/domain/game-week";
 import { TOP_REWARDED, dailyState, rewardReason, trainingRewardsDue } from "@/lib/domain/game-rewards";
 import { parisClock } from "@/lib/domain/notifications";
 import { notifyMembers } from "@/lib/notify";
@@ -71,6 +71,14 @@ export async function runGameRewards(admin: SupabaseClient, now: Date) {
     }
   }
 
+  // Compos validées à l'avance : leur booster arrive pendant la semaine concernée.
+  const week = weekStart(parisClock(now).date);
+  const { data: validated } = await admin.from("game_weeks").select("owner_id").eq("week_start", week).in("owner_id", players);
+  let weeks = 0;
+  for (const v of validated ?? []) {
+    if (await awardBooster(admin, v.owner_id as string, rewardReason.week(week), "Équipe de la semaine validée : un booster pour toi !")) weeks++;
+  }
+
   const { data: events } = await admin
     .from("event_attendance")
     .select("member_id, event_id, events!inner(title, starts_at)")
@@ -82,7 +90,7 @@ export async function runGameRewards(admin: SupabaseClient, now: Date) {
     const title = (e.events as unknown as { title: string }).title;
     if (await awardBooster(admin, e.member_id as string, rewardReason.event(e.event_id as string), `Merci d'être venu·e : ${title}`)) evts++;
   }
-  return { trainings, events: evts };
+  return { trainings, events: evts, weeks };
 }
 
 /**

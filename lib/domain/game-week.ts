@@ -79,6 +79,11 @@ export function lineupErrors(lineup: Lineup, owned: GameCard[]): string[] {
   const starters = STARTERS.map((s) => lineup[s] && byKey.get(cardKey(lineup[s]!))).filter(Boolean) as GameCard[];
   if (starters.length === 4 && !starters.some((c) => c.sex === "F")) errors.push("Il faut au moins une fille parmi les titulaires.");
   if (new Set(cards.map((c) => c.memberId)).size < cards.length) errors.push("Un même joueur ne peut être aligné qu'une fois.");
+  // Le Capitaine (case Bonus) ne compte pas dans la limite par équipe, mais ne peut pas aussi jouer.
+  const bonus = lineup.bonus && byKey.get(cardKey(lineup.bonus));
+  if (bonus?.kind === "captain" && cards.some((c) => c.memberId === bonus.memberId)) {
+    errors.push("Un capitaine ne peut pas être à la fois en case Bonus et sur le terrain.");
+  }
   const perTeam = new Map<string, number>();
   for (const c of cards) perTeam.set(c.teamId, (perTeam.get(c.teamId) ?? 0) + 1);
   if ([...perTeam.values()].some((n) => n > MAX_PER_TEAM)) errors.push(`Au plus ${MAX_PER_TEAM} joueurs d'une même équipe.`);
