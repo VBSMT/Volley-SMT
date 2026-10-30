@@ -1257,20 +1257,41 @@ a { color: var(--lien); text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .album-buy.is-affordable { animation: none; } }
 .rules-soon { text-align: center; }
 /* Booster du jour */
-.daily-card { display: grid; gap: 0.6rem; }
+.daily-card { display: grid; gap: 0.5rem; padding-block: 0.75rem; }
+.daily-text { flex: 1; min-width: 0; }
+.daily-text p { margin: 0; }
+.daily-button { width: auto; flex: none; min-height: 44px; padding: 0 0.8rem; }
 .daily-card.is-bonus { border: 2px solid var(--jaune); }
 .daily-head { display: flex; gap: 0.75rem; align-items: center; }
-.daily-title { margin: 0; font-size: 1.2rem; }
+.daily-title { margin: 0; font-size: 1.1rem; }
 .daily-pack {
-  width: 44px; height: 60px; border-radius: 6px; flex: none; display: grid; place-items: end center; padding-bottom: 6px; box-sizing: border-box;
+  width: 34px; height: 46px; border-radius: 5px; flex: none; display: grid; place-items: end center; padding-bottom: 6px; box-sizing: border-box;
   background: linear-gradient(160deg, var(--jaune) 0 30%, var(--noir) 31%); color: var(--jaune); font: 700 13px "Barlow Condensed", sans-serif;
 }
 .daily-dots { list-style: none; margin: 0; padding: 0; display: flex; gap: 0.35rem; justify-content: space-between; }
 .daily-dots li {
-  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem;
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem;
   border: 2px solid var(--trait); color: var(--texte);
 }
 .daily-dots li.is-done { background: var(--jaune); border-color: var(--jaune); color: #111; }
 .daily-dots li.is-today { border-color: var(--jaune); animation: daily-pulse 1.6s ease-in-out infinite; }
 @keyframes daily-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--jaune) 35%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .daily-dots li.is-today { animation: none; } }
+/* Accueil : booster du jour à récupérer */
+.home-title { display: flex; align-items: center; gap: 0.6rem; }
+.home-daily { position: relative; display: grid; place-items: center; min-width: 44px; min-height: 44px; text-decoration: none; }
+.home-daily-pack {
+  width: 28px; height: 38px; border-radius: 4px; display: grid; place-items: end center; padding-bottom: 4px; box-sizing: border-box; position: relative; overflow: hidden;
+  background: linear-gradient(160deg, var(--jaune) 0 30%, var(--noir) 31%); color: var(--jaune); font: 700 10px "Barlow Condensed", sans-serif;
+  animation: home-daily-wiggle 3s ease-in-out infinite; border: 1px solid var(--jaune);
+}
+.home-daily-pack::after { content: ""; position: absolute; inset: -50%; background: linear-gradient(115deg, transparent 45%, rgba(255, 255, 255, 0.5) 50%, transparent 55%); animation: shine 2.6s infinite; }
+.home-daily-bonus { position: absolute; top: -2px; right: -6px; background: var(--jaune); color: #111; border-radius: 999px; font: 700 11px "Barlow", sans-serif; padding: 1px 5px; }
+@keyframes home-daily-wiggle {
+  0%, 70%, 100% { transform: rotate(0); }
+  74% { transform: rotate(-10deg) scale(1.08); }
+  78% { transform: rotate(9deg) scale(1.08); }
+  82% { transform: rotate(-6deg); }
+  86% { transform: rotate(3deg); }
+}
+@media (prefers-reduced-motion: reduce) { .home-daily-pack { animation: none; } .home-daily-pack::after { display: none; } }
