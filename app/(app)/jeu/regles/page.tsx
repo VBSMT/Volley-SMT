@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { type GameCard, CAPTAIN_RATE, LEGEND_BONUS_LABELS, LEGEND_RATE, RARE_RATE, STARTER_SIZE } from "@/lib/domain/game";
 import { SHARDS_PER_CARD, SHARDS_PER_RARE, TRAININGS_PER_BOOSTER } from "@/lib/domain/game-rewards";
@@ -45,12 +44,17 @@ const LEGENDS: [string, keyof typeof LEGEND_BONUS_LABELS][] = [
 
 /** Règles de VUT : principe, raretés (avec exemples), équipe, points, bonus, boosters, classement. */
 export default async function ReglesPage() {
-  if (!hasRole(await getCurrentMember(), "board")) notFound();
+  // Règles visibles par tous les adhérents ; le jeu lui-même est encore réservé au Bureau.
+  const canPlay = hasRole(await getCurrentMember(), "board");
   return (
     <main className="page stack rules">
       <div className="stats-head">
         <h1>Règles de VUT</h1>
-        <Link href="/jeu" className="small">← Retour au jeu</Link>
+        {canPlay && (
+          <Link href="/jeu" className="small">
+            ← Retour au jeu
+          </Link>
+        )}
       </div>
 
       <section className="card stack">
@@ -182,7 +186,15 @@ export default async function ReglesPage() {
         </ul>
       </section>
 
-      <Link href="/jeu" className="btn-primary rules-play">Jouer</Link>
+      {canPlay ? (
+        <Link href="/jeu" className="btn-primary rules-play">
+          Jouer
+        </Link>
+      ) : (
+        <p className="card rules-soon">
+          🚧 <strong>Bientôt disponible</strong> : le jeu est en test avec le Bureau. En attendant, découvre les règles !
+        </p>
+      )}
     </main>
   );
 }
