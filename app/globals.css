@@ -993,7 +993,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .court-spot-sub .court-spot-empty { font-size: 34px; background: rgba(0, 0, 0, 0.35); }
 .court-spot.is-target .court-spot-empty { border-style: solid; border-color: var(--jaune); animation: spot-pulse 1.2s ease-in-out infinite; }
 @keyframes spot-pulse { 50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--jaune) 55%, transparent); } }
-.court-flag { position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 13px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); z-index: 2; }
+.court-flag { position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: #fff; color: #111; font-weight: 700; display: grid; place-items: center; font-size: 13px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); z-index: 2; }
 .court-validate {
   position: absolute; left: 8px; bottom: 8px; min-height: 44px; padding: 0 1.1rem; border-radius: 22px; z-index: 2;
   background: var(--jaune); color: var(--noir); border: 2px solid var(--noir); font: 700 1.05rem "Barlow Condensed", sans-serif; letter-spacing: 0.04em;

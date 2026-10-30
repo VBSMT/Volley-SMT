@@ -86,6 +86,20 @@ export function LineupEditor({
   });
   const centerCard = hand[Math.round(wheel.center)];
 
+  // Filet de sécurité : la carte fantôme disparaît à tout relâché (doigt sorti, défilement…).
+  useEffect(() => {
+    if (!ghost) return;
+    const clear = () => setGhost(null);
+    window.addEventListener("pointerup", clear);
+    window.addEventListener("pointercancel", clear);
+    window.addEventListener("scroll", clear, { passive: true });
+    return () => {
+      window.removeEventListener("pointerup", clear);
+      window.removeEventListener("pointercancel", clear);
+      window.removeEventListener("scroll", clear);
+    };
+  }, [ghost]);
+
   function tapSlot(slot: Slot) {
     if (slotLocked(slot)) return;
     if (lineup[slot]) {
@@ -189,9 +203,11 @@ export function LineupEditor({
         {errors.map((e) => (
           <span key={e} className="pill pill-warn">⚠ {e}</span>
         ))}
-        {absent.map((t) => (
-          <span key={t} className="pill">⚠ {t} ne joue pas</span>
-        ))}
+        {absent.length > 0 && (
+          <span className="pill">
+            ⚠ Sans match cette semaine : {absent.join(", ")}
+          </span>
+        )}
         {error && <span className="pill pill-warn" role="alert">{error}</span>}
       </div>
 

@@ -24,8 +24,9 @@ export function useWheel(count: number, step: number, opts: { onTap?: (i: number
     if (!s) return;
     const dx = e.clientX - s.x;
     const dy = e.clientY - s.y;
-    if (s.mode === "none" && Math.hypot(dx, dy) > 8) {
-      s.mode = opts.onLift && dy < -Math.abs(dx) && s.index === Math.round(center) ? "lift" : "spin";
+    if (s.mode === "none" && Math.hypot(dx, dy) > 12) {
+      // Glisser vers le haut franchement (et pas un défilement de page en biais) = déposer.
+      s.mode = opts.onLift && dy < -20 && -dy > 2 * Math.abs(dx) && s.index === Math.round(center) ? "lift" : "spin";
       (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
       if (s.mode === "spin") setDragging(true);
     }
