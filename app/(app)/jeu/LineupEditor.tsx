@@ -30,6 +30,9 @@ export function LineupEditor({
   playingTeams,
   validated,
   points,
+  week,
+  readOnly = false,
+  previous,
 }: {
   owned: GameCard[];
   initial: Lineup;
@@ -37,6 +40,11 @@ export function LineupEditor({
   playingTeams: string[];
   validated: boolean;
   points: number | null;
+  week: string;
+  /** Journée passée : consultation seulement. */
+  readOnly?: boolean;
+  /** Compo de la journée précédente (bouton « Reprendre la compo précédente »). */
+  previous?: Lineup;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -65,6 +73,7 @@ export function LineupEditor({
   const slotLocked = (slot: Slot) => (slot === "bonus" ? bonusIsLocked : !!lineup[slot] && locked.has(lineup[slot]!.teamId));
 
   function place(card: GameCard, slot: Slot) {
+    if (readOnly) return;
     if (slotLocked(slot) || locked.has(card.teamId)) return setError("Carte verrouillée : le match de son équipe a commencé.");
     if (!fits(card, slot)) return setError(isSpecial(card) ? "Capitaines et Légendes vont dans la case Bonus." : slot === "bonus" ? "La case Bonus accueille un Capitaine ou une Légende." : `Cette carte joue ${GAME_POSITION_LABELS[card.position]}.`);
     setError(undefined);
@@ -106,7 +115,7 @@ export function LineupEditor({
   }, [ghost]);
 
   function tapSlot(slot: Slot) {
-    if (slotLocked(slot)) return;
+    if (readOnly || slotLocked(slot)) return;
     if (lineup[slot]) {
       setLineup((l) => {
         const next = { ...l };
@@ -120,6 +129,20 @@ export function LineupEditor({
     wheel.setCenter(Infinity);
   }
 
+  // Reprend la compo de la journée précédente : seulement les cartes encore possédées et libres.
+  function copyPrevious() {
+    if (!previous) return;
+    const next: Lineup = {};
+    for (const slot of SLOTS) {
+      const pick = previous[slot];
+      const card = pick && byKey.get(cardKey(pick));
+      if (pick && card && !locked.has(card.teamId) && !slotLocked(slot)) next[slot] = pick;
+      else if (lineup[slot] && slotLocked(slot)) next[slot] = lineup[slot];
+    }
+    setLineup(next);
+    setError(undefined);
+  }
+
   const save = async () => {
     const ok = await confirm(validated ? "Enregistrer les changements ?" : "Valider mon équipe de la semaine ?", {
       text: "Chaque carte se verrouille au début du match de son équipe.",
@@ -127,7 +150,7 @@ export function LineupEditor({
     });
     if (!ok) return;
     startTransition(async () => {
-      const r = await saveLineup(lineup);
+      const r = await saveLineup(lineup, week);
       if (r.error) return setError(r.error);
       setError(undefined);
       setCelebrate((n) => n + 1);
@@ -137,7 +160,7 @@ export function LineupEditor({
         undo: lineupErrors(before, owned).length
           ? undefined
           : async () => {
-              const u = await saveLineup(before);
+              const u = await saveLineup(before, week);
               if (!u.error) {
                 setLineup(before);
                 router.refresh();
@@ -202,14 +225,21 @@ export function LineupEditor({
     <div className="lineup-screen">
       {dialog}
       <div className="lineup-status" aria-live="polite">
-        <button
-          type="button"
-          className="court-validate"
-          disabled={pending || !complete || errors.length > 0 || (validated && !changed)}
-          onClick={save}
-        >
-          {pending ? "…" : validated ? (changed ? "Enregistrer" : "✓ Validée") : "Valider"}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            className="court-validate"
+            disabled={pending || !complete || errors.length > 0 || (validated && !changed)}
+            onClick={save}
+          >
+            {pending ? "…" : validated ? (changed ? "Enregistrer" : "✓ Validée") : "Valider"}
+          </button>
+        )}
+        {!readOnly && previous && Object.keys(previous).length > 0 && (
+          <button type="button" className="chip" onClick={copyPrevious} disabled={pending}>
+            ↺ Reprendre la compo précédente
+          </button>
+        )}
 
         {points !== null && (
           <span className="pill pill-score">
@@ -232,6 +262,7 @@ export function LineupEditor({
         {(["front_left", "setter", "front_right", "back", "sub", "bonus"] as Slot[]).map((s, i) => spot(s, i))}
       </div>
 
+      {!readOnly && (
       <div className="hand-zone">
         <div className="chip-row" role="group" aria-label="Filtrer la main par poste">
           {(["all", ...GAME_POSITIONS, "bonus"] as const).map((p) => (
@@ -279,6 +310,7 @@ export function LineupEditor({
           })}
         </div>
       </div>
+      )}
       {ghost && centerCard && (
         <div className="vut-ghost" style={{ left: ghost.x, top: ghost.y }} aria-hidden="true">
           <span className="mini-card">

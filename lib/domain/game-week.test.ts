@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, attributeResults, bonusLocked, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, attributeResults, bonusLocked, defaultMatchday, editableWeek, matchdays, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -19,9 +19,17 @@ const zero = { s30: 0, s31: 0, s32: 0, s23: 0, s13: 0, s03: 0, fWon: 0, fLost: 0
 const totals = (scores: Partial<typeof zero>, sw = 0, sl = 0, pw = 0, pl = 0) => ({ scores: { ...zero, ...scores }, setsWon: sw, setsLost: sl, pointsWon: pw, pointsLost: pl });
 
 describe("semaine", () => {
-  it("titre de la journée", () => {
-    expect(matchdayTitle("2026-11-02", "2026-09-01")).toBe("Compo Journée 10 — du 02/11 au 08/11");
-    expect(matchdayTitle("2026-11-02", null)).toBe("Compo Journée 1 — du 02/11 au 08/11");
+  it("journées calées sur le calendrier", () => {
+    // Mardi 3/11 et jeudi 5/11 : même journée ; rien la semaine du 9 ; samedi 21/11 23h30 UTC = dimanche à Paris.
+    const days = matchdays(["2026-11-05T19:00:00Z", "2026-11-03T19:00:00Z", "2026-11-17T19:00:00Z", "2026-11-21T23:30:00Z"]);
+    expect(days).toEqual(["2026-11-02", "2026-11-16"]);
+    expect(defaultMatchday(days, "2026-11-09")).toBe("2026-11-16");
+    expect(defaultMatchday(days, "2026-11-02")).toBe("2026-11-02");
+    expect(defaultMatchday(days, "2026-12-07")).toBe("2026-11-16");
+    expect(matchdayTitle(2, "2026-11-16")).toBe("Compo Journée 2 — du 16/11 au 22/11");
+    expect(editableWeek("2026-11-02", "2026-11-09")).toBe(false);
+    expect(editableWeek("2026-11-30", "2026-11-09")).toBe(true);
+    expect(editableWeek("2026-12-14", "2026-11-09")).toBe(false);
   });
   it("lundi de la semaine", () => {
     expect(weekStart("2026-11-02")).toBe("2026-11-02");

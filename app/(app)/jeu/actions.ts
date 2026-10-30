@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
-import { type Lineup, SLOTS, bonusLocked, isLocked, lineupErrors } from "@/lib/domain/game-week";
+import { type Lineup, SLOTS, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
 import { exchangeable, rewardReason, SHARDS_PER_CARD, shardsFromOpening } from "@/lib/domain/game-rewards";
 import { getCollection, getGameCards } from "@/lib/game";
 import { awardBooster } from "@/lib/game-rewards";
@@ -88,7 +88,7 @@ export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[
  * Enregistre l'équipe de la semaine : règles vérifiées, cartes verrouillées (match commencé)
  * inchangées. La première validation fixe l'heure de départage.
  */
-export async function saveLineup(lineup: Lineup): Promise<{ error?: string }> {
+export async function saveLineup(lineup: Lineup, week: string): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
   if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
@@ -99,7 +99,10 @@ export async function saveLineup(lineup: Lineup): Promise<{ error?: string }> {
   const errors = lineupErrors(lineup, owned);
   if (errors.length) return { error: errors.join(" ") };
 
-  const week = currentWeek();
+  // Journée en cours ou à venir (jusqu'à 4 semaines) ; les journées passées sont en lecture seule.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || weekStart(week) !== week || !editableWeek(week, currentWeek())) {
+    return { error: "Cette journée n'est plus modifiable." };
+  }
   const [previous, matches] = await Promise.all([getLineup(supabase, member.id, week), getWeekMatches(supabase, week)]);
   const now = new Date();
   for (const slot of SLOTS) {
