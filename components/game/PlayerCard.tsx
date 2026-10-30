@@ -10,7 +10,9 @@ const KIND_LABELS = { common: "", rare: "rare, 2ᵉ poste", captain: "ultra rare
  * - Capitaine (ultra rare) et Légende (Bureau) : « full art », photo si droit à l'image (Légende : dorée sur toute la carte ; Capitaine : portrait détouré), sinon grande silhouette,
  *   fanion à la place du poste, logo C ou couronne en haut ; la carte du développeur a sa touche « LE DEV ».
  */
-export function PlayerCard({ card, copies }: { card: GameCard; copies?: number }) {
+/** `photoSrc` : image locale (aperçu du recadrage dans le profil) à la place de la photo enregistrée. */
+export function PlayerCard({ card, copies, photoSrc }: { card: GameCard; copies?: number; photoSrc?: string }) {
+  const photo = photoSrc ?? (card.photoVersion ? `/api/photo/${card.memberId}?v=${card.photoVersion}` : null);
   const name = shortName(card.firstName, card.lastName);
   const kind = card.kind ?? "common";
   const full = kind === "captain" || kind === "legend";
@@ -21,16 +23,16 @@ export function PlayerCard({ card, copies }: { card: GameCard; copies?: number }
       <div className={`pcard pcard-full pcard-${kind}${card.isDev ? " pcard-dev" : ""}`} role="img" aria-label={label}>
         {kind === "legend" && <div className="pcard-rays" />}
         {/* Photo (droit à l'image) : dorée sur toute la carte pour une Légende, portrait détouré pour un Capitaine. */}
-        {card.photoVersion && (
+        {photo && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img className="pcard-full-photo" src={`/api/photo/${card.memberId}?v=${card.photoVersion}`} alt="" loading="lazy" />
+          <img className="pcard-full-photo" src={photo} alt="" loading="lazy" />
         )}
         <div className="pcard-foil" />
         <div className="pcard-top-badge">{kind === "captain" ? "C" : "♛"}</div>
         <div className="pcard-rate">{card.rating}</div>
         <div className="pcard-fanion">{kind === "captain" ? "CAPITAINE" : "LÉGENDE"}</div>
         <div className="pcard-sex" aria-hidden="true">{card.sex}</div>
-        {!card.photoVersion && <svg className="pcard-bigsil" viewBox="0 0 100 120" aria-hidden="true">
+        {!photo && <svg className="pcard-bigsil" viewBox="0 0 100 120" aria-hidden="true">
           <circle cx="50" cy="30" r="17" />
           <path d="M8 125 C10 80 30 56 50 56 C70 56 90 80 92 125" />
         </svg>}
@@ -60,10 +62,10 @@ export function PlayerCard({ card, copies }: { card: GameCard; copies?: number }
       <div className="pcard-pos">{GAME_POSITION_LABELS[card.position].toUpperCase()}</div>
       {kind === "rare" && <div className="pcard-raretag">★ 2ᵉ POSTE</div>}
       <div className="pcard-sex" aria-hidden="true">{card.sex}</div>
-      {card.photoVersion ? (
+      {photo ? (
         // Photo servie par l'appli aux adhérents connectés (droit à l'image vérifié côté serveur).
         // eslint-disable-next-line @next/next/no-img-element
-        <img className="pcard-photo" src={`/api/photo/${card.memberId}?v=${card.photoVersion}`} alt="" loading="lazy" />
+        <img className="pcard-photo" src={photo} alt="" loading="lazy" />
       ) : (
         <svg className="pcard-sil" viewBox="0 0 100 120" aria-hidden="true">
           <circle cx="50" cy="34" r="15" />
