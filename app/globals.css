@@ -1019,7 +1019,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chip-row { display: flex; gap: 0.35rem; overflow-x: auto; }
 .chip { flex: none; min-height: 36px; padding: 0 0.8rem; border-radius: 18px; border: 2px solid var(--trait); background: var(--surface); color: var(--texte); font-weight: 600; }
 .chip.is-on { background: var(--accent-fond); color: var(--accent-texte); border-color: var(--accent-fond); }
-.hand-wheel { position: relative; height: 150px; overflow: hidden; touch-action: pan-y; }
+.hand-wheel { position: relative; height: 150px; overflow: hidden; touch-action: pan-y; z-index: 0; } /* z-index des cartes contenus : jamais au-dessus de l'en-tête ni de la barre d'onglets */
 .wheel-card {
   all: unset; position: absolute; left: calc(50% - 40px); top: 22px; width: 81px; height: 118px; cursor: grab;
   transform-origin: 50% 130%; transition: transform 0.28s cubic-bezier(0.2, 1, 0.4, 1); touch-action: none;
@@ -1034,7 +1034,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 /* Collection en carrousel 3D */
 .collection-head { display: flex; justify-content: space-between; align-items: baseline; }
 .collection-count { font: 700 1.6rem "Barlow Condensed", sans-serif; }
-.carousel { position: relative; height: 300px; perspective: 900px; overflow: hidden; touch-action: pan-y; }
+.carousel { position: relative; height: 300px; perspective: 900px; overflow: hidden; touch-action: pan-y; z-index: 0; }
 .carousel-card {
   all: unset; position: absolute; left: calc(50% - 90px); top: 16px; width: 180px; height: 262px; cursor: grab;
   transform-style: preserve-3d; transition: transform 0.35s cubic-bezier(0.2, 1, 0.4, 1), opacity 0.35s; touch-action: none;
