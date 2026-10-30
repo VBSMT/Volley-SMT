@@ -10,6 +10,9 @@ export type MemberFormData = {
   id: string;
   first_name: string;
   last_name: string;
+  email: string;
+  /** Modifiable tant que l'adhérent ne s'est jamais connecté. */
+  emailEditable: boolean;
   sex: "F" | "M";
   fsgt_license: string | null;
   dues_paid: boolean;
@@ -31,6 +34,15 @@ export function MemberForm({ member, teams }: { member: MemberFormData; teams: {
         <input id="last_name" name="last_name" defaultValue={member.last_name} required />
         <label htmlFor="first_name">Prénom</label>
         <input id="first_name" name="first_name" defaultValue={member.first_name} required />
+        <label htmlFor="email">Email (connexion)</label>
+        {member.emailEditable ? (
+          <input id="email" name="email" type="email" defaultValue={member.email} autoComplete="off" required />
+        ) : (
+          <>
+            <input id="email" value={member.email} readOnly aria-describedby="email-help" />
+            <p id="email-help" className="small muted">Non modifiable : l&apos;adhérent s&apos;est déjà connecté avec cet email.</p>
+          </>
+        )}
         <label htmlFor="sex">Sexe</label>
         <select id="sex" name="sex" defaultValue={member.sex}>
           <option value="F">Femme</option>
