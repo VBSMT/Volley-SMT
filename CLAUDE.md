@@ -22,6 +22,7 @@ Développeur unique : Benjamin (Windows + VS Code). Langue de l'interface, du co
 ## Charte
 Noir `#111111`, jaune `#FFE81A`, gris `#BDBDBD`, fond `#F4F4F2`. Titres Barlow Condensed 700, texte Barlow. Logo du club en en-tête. Barre d'onglets en bas.
 - **Thème** clair / sombre / automatique (selon le téléphone), choisi dans le profil, mémorisé par appareil (cookie lu côté serveur : pas de flash). Couleurs en variables CSS (`--fond`, `--surface`, `--texte`…) redéfinies pour le sombre ; en-tête, barre d'onglets et jaune identiques dans les deux thèmes.
+- **Thèmes de couleurs** (choix personnel dans le profil, mémorisé par appareil, cookie `palette`) : **Club** noir `#111111` / jaune `#FFE81A` (par défaut, charte du club), **Océan** `#0B2545` / `#3DDCD3`, **Bordeaux & or** `#4A0E1F` / `#F2C14E`, **Volcan** `#1E1E24` / `#FF8A2A`. Seules `--noir` (couleur foncée) et `--jaune` (accent) changent ; ne jamais écrire ces couleurs en dur dans les styles. Contrastes vérifiés en clair et en sombre.
 - Victoire / défaite : paires validées (contraste ≥ 3:1 et distinctes pour les daltoniens) — clair `#0ca30c` / `#b91c1c`, sombre `#0ca30c` / `#ff5c7a` ; toujours avec libellé ou lettre.
 
 ## Rôles (cumulables)
