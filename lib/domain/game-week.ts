@@ -64,7 +64,12 @@ export type TeamWeek = {
   setsLost: number;
   pointsWon: number;
   pointsLost: number;
+  /** Points encaissés set par set, quand volley34 les publie (sinon calcul sur la moyenne). */
+  setsConceded?: number[];
 };
+
+/** Bonus des avants plafonné. */
+export const FRONT_BONUS_MAX = 4;
 
 type Totals = Pick<StandingRow, "scores" | "setsWon" | "setsLost" | "pointsWon" | "pointsLost">;
 
@@ -107,8 +112,9 @@ export type CardScore = { base: number; bonus: number };
 /**
  * Points d'une carte pour la semaine : barème du score de chaque match + bonus du poste.
  * - passe : +1 par set gagné ;
- * - avant : +1 par tranche de 10 points d'écart (points connus) ; sinon +2 par victoire 3-0 ou 3-1 ;
- * - fond : +2 si l'équipe encaisse 20 points ou moins par set en moyenne ; sinon +2 par défaite 2-3.
+ * - avant : +1 par tranche de 10 points d'écart, au plus +4 (points connus) ; sinon +2 par victoire 3-0 ou 3-1 ;
+ * - fond : +1 par set où l'équipe encaisse moins de 20 points (sans le détail par set : +1 par set
+ *   joué si la moyenne encaissée est sous 20) ; sans les points, +2 par défaite 2-3.
  * Les points par set viennent des totaux du classement ; sans eux (0), la règle de repli s'applique.
  */
 export function cardScore(position: GamePosition, week: TeamWeek): CardScore {
@@ -118,9 +124,14 @@ export function cardScore(position: GamePosition, week: TeamWeek): CardScore {
   let bonus = 0;
   if (position === "setter") bonus = week.setsWon;
   else if (position === "front_left" || position === "front_right") {
-    bonus = havePoints ? Math.floor(Math.max(0, week.pointsWon - week.pointsLost) / 10) : 2 * week.scores.filter((k) => k === "s30" || k === "s31").length;
+    bonus = havePoints
+      ? Math.min(FRONT_BONUS_MAX, Math.floor(Math.max(0, week.pointsWon - week.pointsLost) / 10))
+      : 2 * week.scores.filter((k) => k === "s30" || k === "s31").length;
+  } else if (week.setsConceded?.length) {
+    bonus = week.setsConceded.filter((p) => p < 20).length;
   } else {
-    bonus = havePoints ? (sets > 0 && week.pointsLost / sets <= 20 ? 2 : 0) : 2 * week.scores.filter((k) => k === "s23").length;
+    // Points par set inconnus (seuls les totaux du classement) : moyenne encaissée < 20 → +1 par set joué.
+    bonus = havePoints ? (sets > 0 && week.pointsLost / sets < 20 ? sets : 0) : 2 * week.scores.filter((k) => k === "s23").length;
   }
   return { base, bonus };
 }
