@@ -17,6 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="app-header">
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
+        {member && hasRole(member, "board") && (
+          <Link href="/jeu" className="header-game" aria-label="VUT, jeu de cartes">
+            <span aria-hidden="true">🃏</span>
+          </Link>
+        )}
         {member && (
           <Link href="/chat" className="header-chat" aria-label={unread ? `Messages, ${unread} non lu${unread > 1 ? "s" : ""}` : "Messages"}>
             <span aria-hidden="true">💬</span>

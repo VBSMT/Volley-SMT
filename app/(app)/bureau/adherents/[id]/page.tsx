@@ -5,6 +5,7 @@ import { getCurrentMember, hasRole, POSITION_LABELS, type Position } from "@/lib
 import { createClient } from "@/lib/supabase/server";
 import { DeleteMemberButton } from "./DeleteMemberButton";
 import { MemberForm } from "./MemberForm";
+import { RemovePhotoButton } from "./RemovePhotoButton";
 import { PositionsEditor } from "@/app/(app)/equipes/[id]/PositionsEditor";
 
 export const metadata: Metadata = { title: "Fiche adhérent" };
@@ -20,7 +21,7 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
       .from("members")
       .select(
         `id, first_name, last_name, email, sex, phone, emergency_contact_name, emergency_contact_phone,
-         image_consent, position_1, position_2, fsgt_license, dues_paid, user_id,
+         image_consent, position_1, position_2, fsgt_license, dues_paid, user_id, photo_updated_at,
          member_teams(team_id), roles:member_roles(role, team_id)`,
       )
       .eq("id", id)
@@ -79,6 +80,9 @@ export default async function MemberPage({ params }: { params: Promise<{ id: str
           level: level?.level ?? null,
         }}
       />
+      {m.photo_updated_at && (
+        <RemovePhotoButton id={m.id} name={`${m.first_name} ${m.last_name}`} version={String(Date.parse(m.photo_updated_at))} />
+      )}
       {me?.id !== m.id && <DeleteMemberButton id={m.id} name={`${m.first_name} ${m.last_name}`} />}
     </main>
   );
