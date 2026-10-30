@@ -17,8 +17,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="app-header">
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
-        {member && (
-          <Link href="/jeu" className="header-game" aria-label="Jeu de cartes">
+        {member && hasRole(member, "board") && (
+          <Link href="/jeu" className="header-game" aria-label="VUT, jeu de cartes">
             <span aria-hidden="true">🃏</span>
           </Link>
         )}

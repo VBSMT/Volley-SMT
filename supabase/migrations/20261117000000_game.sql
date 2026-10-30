@@ -1,5 +1,6 @@
 -- =============================================================================
--- Jeu de cartes du club (style FUT) : cartes, note de forme, boosters, collection, photos.
+-- VUT (Volley Ultimate Team), jeu de cartes du club (style FUT). Pour l'instant réservé au Bureau
+-- (phase de test) : vue des cartes limitée au Bureau. : cartes, note de forme, boosters, collection, photos.
 -- Une carte = un joueur dans une équipe, au poste 1. Le sexe est visible dans le jeu (décision du
 -- club : règle « au moins une fille ») ; le niveau ne l'est jamais.
 -- Photos : l'adhérent ajoute la sienne, seulement avec le droit à l'image ; retirer ce droit
@@ -45,7 +46,7 @@ create view public.game_cards with (security_invoker = false) as
   join public.members m on m.id = mt.member_id
   join public.teams t on t.id = mt.team_id
   left join public.game_team_form f on f.team_id = mt.team_id
-  where m.position_1 is not null and public.is_member();
+  where m.position_1 is not null and public.is_board();
 revoke all on public.game_cards from anon;
 grant select on public.game_cards to authenticated;
 

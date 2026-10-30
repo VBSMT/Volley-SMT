@@ -28,7 +28,7 @@ export function PhotoEditor({ memberId, consent, version }: { memberId: string; 
   const [pending, startTransition] = useTransition();
 
   if (!consent) {
-    return <p className="small">Pour mettre ta photo sur tes cartes du jeu, coche le droit à l&apos;image puis enregistre.</p>;
+    return <p className="small">Pour mettre ta photo sur tes cartes VUT, coche le droit à l&apos;image puis enregistre.</p>;
   }
 
   async function choose(file: File | undefined) {
@@ -96,7 +96,7 @@ export function PhotoEditor({ memberId, consent, version }: { memberId: string; 
           )}
         </div>
       )}
-      <p className="small muted">Recadrée au centre en carré. Visible uniquement par les adhérents, dans le jeu.</p>
+      <p className="small muted">Recadrée au centre en carré. Visible uniquement dans VUT, par les adhérents connectés.</p>
       {error && <p className="error" role="alert">{error}</p>}
       {dialog}
     </div>

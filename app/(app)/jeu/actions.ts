@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type GameCard, drawStarter } from "@/lib/domain/game";
 import { getGameCards } from "@/lib/game";
-import { getCurrentMember } from "@/lib/member";
+import { getCurrentMember, hasRole } from "@/lib/member";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function openStarter(): Promise<{ cards?: GameCard[]; error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const cards = drawStarter(await getGameCards(await createClient()));
   if (!cards.length) return { error: "Aucune carte disponible : les joueurs doivent d'abord renseigner leur poste." };
 

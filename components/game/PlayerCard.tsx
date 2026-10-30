@@ -2,7 +2,7 @@ import { type GameCard, GAME_POSITION_LABELS, tierOf } from "@/lib/domain/game";
 import { shortName } from "@/lib/format";
 
 /**
- * Carte d'un joueur : haut à la couleur du poste (note, poste, M/F, photo ou silhouette, nom),
+ * Carte VUT d'un joueur : haut à la couleur du poste (note, poste, M/F, photo ou silhouette, nom),
  * bandeau du bas or / argent / bronze selon la forme de l'équipe, avec le nom de l'équipe.
  */
 export function PlayerCard({ card, copies }: { card: GameCard; copies?: number }) {

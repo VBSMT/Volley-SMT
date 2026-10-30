@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { GAME_POSITIONS, GAME_POSITION_LABELS, STARTER_SIZE } from "@/lib/domain/game";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
-import { getCurrentMember } from "@/lib/member";
+import { notFound } from "next/navigation";
+import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { BoosterOpening } from "./BoosterOpening";
 
-export const metadata: Metadata = { title: "Jeu" };
+export const metadata: Metadata = { title: "VUT" };
 
-/** Jeu de cartes : ouverture du booster de départ, puis collection. */
+/** VUT (Volley Ultimate Team), réservé au Bureau pour l'instant : ouverture du booster de départ, puis collection. */
 export default async function JeuPage() {
   const member = (await getCurrentMember())!;
+  if (!hasRole(member, "board")) notFound();
   const supabase = await createClient();
   const cards = await getGameCards(supabase);
   const opened = await starterOpened(supabase, member.id);
@@ -18,7 +20,7 @@ export default async function JeuPage() {
 
   return (
     <main className="page stack">
-      <h1>Jeu de cartes</h1>
+      <h1>VUT <span className="small muted">Volley Ultimate Team</span></h1>
       {!opened ? (
         <>
           <p>Bienvenue ! Ouvre ton premier booster : {STARTER_SIZE} joueurs du club, dont au moins un par poste.</p>

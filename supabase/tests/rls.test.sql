@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(44);
+select plan(45);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -126,10 +126,12 @@ select is((select count(*) from public.attendance)::int, 1, 'Bureau : ajout et r
 
 -- Jeu de cartes
 select pg_temp.login(2);
-select is((select count(*) from public.game_cards)::int, 1, 'jeu : seuls les joueurs avec un poste ont une carte');
+select is((select count(*) from public.game_cards)::int, 0, 'jeu : réservé au Bureau pour l''instant');
 select is((select count(*) from public.game_boosters)::int, 0, 'jeu : boosters des autres invisibles');
 select is((select count(*) from public.game_collection)::int, 0, 'jeu : collections des autres invisibles');
 select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
+select pg_temp.login(4);
+select is((select count(*) from public.game_cards)::int, 1, 'jeu (Bureau) : seuls les joueurs avec un poste ont une carte');
 select pg_temp.login(1);
 select is((select count(*) from public.game_collection)::int, 1, 'jeu : voit sa collection');
 update public.members set image_consent = false where id = '00000000-0000-0000-0000-000000000001';

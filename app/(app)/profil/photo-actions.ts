@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentMember } from "@/lib/member";
+import { getCurrentMember, hasRole } from "@/lib/member";
 import { removePhotoFile } from "@/lib/photos-server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -12,6 +12,7 @@ const MAX_BYTES = 200_000;
 export async function uploadPhoto(formData: FormData): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   if (!member.image_consent) return { error: "Coche d'abord le droit à l'image et enregistre ton profil." };
   const file = formData.get("photo");
   if (!(file instanceof Blob) || file.type !== "image/webp" || file.size > MAX_BYTES) return { error: "Photo invalide." };
