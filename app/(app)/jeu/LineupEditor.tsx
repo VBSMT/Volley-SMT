@@ -79,12 +79,27 @@ export function LineupEditor({
     onLift: (e, phase) => {
       if (phase === "move") return setGhost({ x: e.clientX, y: e.clientY });
       setGhost(null);
+      // Relâchée hors d'une place : la carte retourne simplement dans la main.
       const el = document.elementsFromPoint(e.clientX, e.clientY).find((x) => (x as HTMLElement).dataset?.slot) as HTMLElement | undefined;
       const card = hand[Math.round(wheel.center)];
       if (el && card) place(card, el.dataset.slot as Slot);
     },
   });
   const centerCard = hand[Math.round(wheel.center)];
+
+  // Filet de sécurité : la carte fantôme disparaît à tout relâché (doigt sorti, défilement…).
+  useEffect(() => {
+    if (!ghost) return;
+    const clear = () => setGhost(null);
+    window.addEventListener("pointerup", clear);
+    window.addEventListener("pointercancel", clear);
+    window.addEventListener("scroll", clear, { passive: true });
+    return () => {
+      window.removeEventListener("pointerup", clear);
+      window.removeEventListener("pointercancel", clear);
+      window.removeEventListener("scroll", clear);
+    };
+  }, [ghost]);
 
   function tapSlot(slot: Slot) {
     if (slotLocked(slot)) return;
@@ -136,6 +151,7 @@ export function LineupEditor({
     const isTarget = !card && (target === slot || (centerCard && fits(centerCard, slot) && !slotLocked(slot) && slot !== "sub"));
     return (
       <div key={slot} className={`court-spot court-spot-${slot}${isTarget ? " is-target" : ""}`}>
+        {slot === "sub" && <span className="court-sub-label" aria-hidden="true">Remplaçant</span>}
         <button
           type="button"
           data-slot={slot}
@@ -160,7 +176,7 @@ export function LineupEditor({
             </span>
           ) : (
             <span className="court-spot-empty" aria-hidden="true">
-              {slot === "sub" ? "½" : SHORT[slot]}
+              {slot === "sub" ? "" : SHORT[slot]}
             </span>
           )}
         </button>
@@ -189,9 +205,11 @@ export function LineupEditor({
         {errors.map((e) => (
           <span key={e} className="pill pill-warn">⚠ {e}</span>
         ))}
-        {absent.map((t) => (
-          <span key={t} className="pill">⚠ {t} ne joue pas</span>
-        ))}
+        {absent.length > 0 && (
+          <span className="pill">
+            ⚠ Sans match cette semaine : {absent.join(", ")}
+          </span>
+        )}
         {error && <span className="pill pill-warn" role="alert">{error}</span>}
       </div>
 

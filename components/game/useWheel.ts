@@ -24,8 +24,9 @@ export function useWheel(count: number, step: number, opts: { onTap?: (i: number
     if (!s) return;
     const dx = e.clientX - s.x;
     const dy = e.clientY - s.y;
-    if (s.mode === "none" && Math.hypot(dx, dy) > 8) {
-      s.mode = opts.onLift && dy < -Math.abs(dx) && s.index === Math.round(center) ? "lift" : "spin";
+    if (s.mode === "none" && Math.hypot(dx, dy) > 12) {
+      // Glisser vers le haut franchement (deux fois plus vertical qu'horizontal) = déposer.
+      s.mode = opts.onLift && -dy > 2 * Math.abs(dx) && s.index === Math.round(center) ? "lift" : "spin";
       (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
       if (s.mode === "spin") setDragging(true);
     }
@@ -46,7 +47,8 @@ export function useWheel(count: number, step: number, opts: { onTap?: (i: number
     /** Infinity : carte du milieu (main équilibrée de part et d'autre). */
     setCenter: (i: number) => setCenter(i === Infinity ? Infinity : clamp(i)),
     dragging,
-    handlers: { onPointerMove, onPointerUp: end, onPointerCancel: end },
+    // Capture perdue (doigt relâché hors de la carte, geste repris par le navigateur) = relâché.
+    handlers: { onPointerMove, onPointerUp: end, onPointerCancel: end, onLostPointerCapture: end },
     onPointerDown,
   };
 }
