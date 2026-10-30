@@ -71,6 +71,7 @@ export default async function ProfilPage() {
               notify_training: member.notify_training,
               notify_match: member.notify_match ?? true,
               notify_reinforcement: member.notify_reinforcement ?? true,
+              notify_mentions: member.notify_mentions ?? false,
             }}
           />
         )}

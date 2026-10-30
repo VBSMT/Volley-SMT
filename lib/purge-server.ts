@@ -1,5 +1,6 @@
 import "server-only";
 import { parisClock } from "@/lib/domain/notifications";
+import { CHAT_RETENTION_DAYS } from "@/lib/domain/chat";
 import { memberPurgeCutoff } from "@/lib/domain/purge";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
@@ -33,7 +34,13 @@ export async function runPurge(admin: Admin, now: Date) {
     const error = await deleteMemberAndAccount(admin, m.id as string, m.user_id as string | null);
     if (error) errors.push(error);
   }
-  return { levels, members: (old ?? []).length - errors.length, errors };
+  // Messagerie éphémère : messages de plus de 7 jours.
+  const { count: messages } = await admin
+    .from("chat_messages")
+    .delete({ count: "exact" })
+    .lt("created_at", new Date(now.getTime() - CHAT_RETENTION_DAYS * 86_400_000).toISOString());
+
+  return { levels, messages: messages ?? 0, members: (old ?? []).length - errors.length, errors };
 }
 
 /** Supprime une fiche (et tout ce qui en dépend) puis son compte de connexion. Renvoie l'erreur éventuelle. */

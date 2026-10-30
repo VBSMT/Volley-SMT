@@ -3,16 +3,26 @@ import Link from "next/link";
 import { GuidedTour } from "@/components/GuidedTour";
 import { FeedbackProvider } from "@/components/Feedback";
 import { TabBar } from "@/components/TabBar";
+import { getUnread } from "@/lib/chat";
 import { getCurrentMember, hasRole } from "@/lib/member";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
+  // Messages non lus (tous salons) pour la pastille de l'en-tête.
+  const unread = member ? [...(await getUnread(await createClient())).values()].reduce((a, b) => a + b, 0) : 0;
 
   return (
     <>
       <header className="app-header">
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
+        {member && (
+          <Link href="/chat" className="header-chat" aria-label={unread ? `Messages, ${unread} non lu${unread > 1 ? "s" : ""}` : "Messages"}>
+            <span aria-hidden="true">💬</span>
+            {unread > 0 && <span className="chat-badge">{unread > 99 ? "99+" : unread}</span>}
+          </Link>
+        )}
         <Link href="/profil" className="header-profile" aria-label="Mon profil" data-tour="profile">
           {member ? `${member.first_name[0]}${member.last_name[0]}` : "?"}
         </Link>

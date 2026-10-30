@@ -46,12 +46,14 @@ export type CurrentMember = {
   notify_training?: boolean;
   notify_match?: boolean;
   notify_reinforcement?: boolean;
+  notify_mentions?: boolean;
 };
 
-export type NotificationPref = "notify_training" | "notify_match" | "notify_reinforcement";
+export type NotificationPref = "notify_training" | "notify_match" | "notify_reinforcement" | "notify_mentions";
 
 export const NOTIFICATION_PREFS: { key: NotificationPref; label: string }[] = [
   { key: "notify_training", label: "Entraînements (la veille : demande ou rappel)" },
   { key: "notify_match", label: "Matchs de mon équipe (2 jours avant)" },
   { key: "notify_reinforcement", label: "Demandes de renfort des autres équipes" },
+  { key: "notify_mentions", label: "Messages où l'on me cite (@Prénom N.)" },
 ];
