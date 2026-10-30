@@ -1189,3 +1189,27 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .rules-tiers .pcard-slot { width: 99px; height: 144px; }
 .rules-tiers .pcard-slot > .pcard { transform: scale(0.55); }
 .rules-play { display: grid; place-items: center; text-decoration: none; }
+/* Ouverture : paquet fermé sans espace vide au-dessus ; la scène s'agrandit quand les cartes sortent. */
+.booster-scene { transition: height 0.35s ease; }
+.booster-scene.is-closed { height: 262px; }
+.booster-stage .small { margin: 0; }
+/* Nombre de boosters restant, en pastille sur le paquet. */
+.booster-count {
+  position: absolute; top: -10px; right: -10px; z-index: 4; min-width: 44px; height: 44px; padding: 0 8px; border-radius: 22px;
+  display: grid; place-items: center; background: var(--noir); color: var(--jaune); border: 3px solid var(--jaune);
+  font: 700 20px "Barlow Condensed", sans-serif; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+}
+/* 3ᵉ carte (booster de 3) : petit saut et éclat « +1 ». */
+.booster-current.is-third { animation: booster-out 0.7s cubic-bezier(0.2, 1.1, 0.4, 1) both, third-pop 0.7s 0.7s ease-out; }
+.booster-current.is-third::after {
+  content: "+1 carte !"; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); z-index: 5; white-space: nowrap;
+  padding: 3px 10px; border-radius: 12px; background: var(--jaune); color: var(--noir); font: 700 15px "Barlow Condensed", sans-serif;
+  animation: third-tag 1.6s 0.6s ease-out both; pointer-events: none;
+}
+@keyframes third-pop { 30% { transform: translateY(-14px) rotate(-3deg) scale(1.05); filter: drop-shadow(0 0 18px var(--jaune)); } 60% { transform: translateY(0) rotate(2deg); } }
+@keyframes third-tag { 0% { opacity: 0; transform: translateX(-50%) scale(0.4); } 20% { opacity: 1; transform: translateX(-50%) scale(1.15); } 80% { opacity: 1; transform: translateX(-50%) scale(1); } 100% { opacity: 0; transform: translateX(-50%) translateY(-12px); } }
+@media (prefers-reduced-motion: reduce) {
+  .booster-scene { transition: none; }
+  .booster-current.is-third, .booster-current.is-third::after { animation: none; }
+  .booster-current.is-third::after { opacity: 1; }
+}
