@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
-import { type Lineup, SLOTS, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
+import { type Lineup, SLOTS, addDays, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
 import { rewardReason, shardPrice, shardsFromOpening } from "@/lib/domain/game-rewards";
 import { getCollection, getGameCards } from "@/lib/game";
 import { awardBooster, getDailyState } from "@/lib/game-rewards";
@@ -40,23 +40,10 @@ export async function openStarter(): Promise<{ cards?: GameCard[]; error?: strin
 
 type Admin = ReturnType<typeof createAdminClient>;
 
-/** Ajoute des cartes à une collection (un doublon augmente le nombre d'exemplaires). */
+/** Ajoute des cartes à une collection, en une seule opération en base (un doublon augmente le nombre d'exemplaires). */
 async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[], gifted = false): Promise<string | null> {
-  const { data } = await admin.from("game_collection").select("member_id, team_id, kind, copies, gifted").eq("owner_id", ownerId);
-  // Mention « Cadeau » : seulement pour une carte obtenue d'abord par un cadeau.
-  const wasGifted = new Map((data ?? []).map((r) => [cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }), r.gifted as boolean]));
-  const copies = new Map((data ?? []).map((r) => [cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }), r.copies as number]));
-  for (const c of cards) copies.set(cardKey(c), (copies.get(cardKey(c)) ?? 0) + 1);
-  const unique = new Map(cards.map((c) => [cardKey(c), c]));
-  const rows = [...unique.entries()].map(([key, c]) => ({
-    owner_id: ownerId,
-    member_id: c.memberId,
-    team_id: c.teamId || null,
-    kind: c.kind ?? "common",
-    copies: copies.get(key)!,
-    gifted: wasGifted.get(key) ?? gifted,
-  }));
-  const { error } = await admin.from("game_collection").upsert(rows, { onConflict: "owner_id,member_id,team_id,kind" });
+  const payload = cards.map((c) => ({ memberId: c.memberId, teamId: c.teamId || "", kind: c.kind ?? "common" }));
+  const { error } = await admin.rpc("game_add_cards", { p_owner: ownerId, p_cards: payload, p_gifted: gifted });
   return error?.message ?? null;
 }
 
@@ -145,17 +132,26 @@ export async function saveLineup(lineup: Lineup, week: string): Promise<{ error?
   });
   const { error: e2 } = await admin.from("game_lineups").insert(rows);
   if (e2) return { error: "Enregistrement impossible. Réessayez." };
-  // ignoreDuplicates : l'heure de la première validation reste celle du départage.
-  await admin.from("game_weeks").upsert({ owner_id: member.id, week_start: week }, { onConflict: "owner_id,week_start", ignoreDuplicates: true });
-  // Récompense : un booster pour la première validation de la semaine (une seule fois).
-  await awardBooster(admin, member.id, rewardReason.week(week), "Équipe de la semaine validée : un booster pour toi !");
+  // ignoreDuplicates : l'heure de la première validation reste celle du départage. Une compo
+  // validée à l'avance compte comme validée au début de sa journée (pas d'avantage au départage).
+  const weekOpens = `${addDays(week, -1)}T22:00:00Z`; // lundi 0h, heure de Paris (à 1 h près)
+  const validatedAt = new Date(Math.max(now.getTime(), Date.parse(weekOpens))).toISOString();
+  await admin
+    .from("game_weeks")
+    .upsert({ owner_id: member.id, week_start: week, validated_at: validatedAt }, { onConflict: "owner_id,week_start", ignoreDuplicates: true });
+  // Récompense (une fois par semaine) : tout de suite pour la journée en cours ; pour une journée
+  // validée à l'avance, au début de cette journée (tâche de 22h), si la compo existe encore.
+  if (week === currentWeek()) {
+    await awardBooster(admin, member.id, rewardReason.week(week), "Équipe de la semaine validée : un booster pour toi !");
+  }
   revalidatePath("/jeu");
   return {};
 }
 
-async function addShards(admin: Admin, ownerId: string, n: number) {
-  const { data } = await admin.from("game_wallet").select("shards").eq("owner_id", ownerId).maybeSingle();
-  await admin.from("game_wallet").upsert({ owner_id: ownerId, shards: ((data?.shards as number) ?? 0) + n });
+/** Ajoute (ou retire) des éclats en une seule opération ; null si le solde serait négatif. */
+async function addShards(admin: Admin, ownerId: string, n: number): Promise<number | null> {
+  const { data, error } = await admin.rpc("game_add_shards", { p_owner: ownerId, p_n: n });
+  return error ? null : (data as number | null);
 }
 
 /** Échange des éclats contre une carte au choix : commune 5, rare 20. */
@@ -167,20 +163,11 @@ export async function exchangeShards(key: string): Promise<{ error?: string }> {
   const price = card ? shardPrice(card) : null;
   if (!card || price === null) return { error: "Carte non disponible contre des éclats." };
   const admin = createAdminClient();
-  const { data } = await admin.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
-  const shards = (data?.shards as number) ?? 0;
-  if (shards < price) return { error: `Il faut ${price} éclats.` };
-  // Débit conditionnel : deux échanges simultanés ne peuvent pas dépenser les mêmes éclats.
-  const { data: spent } = await admin
-    .from("game_wallet")
-    .update({ shards: shards - price })
-    .eq("owner_id", member.id)
-    .eq("shards", shards)
-    .select("owner_id");
-  if (!spent?.length) return { error: "Réessayez." };
+  // Débit atomique en base : refusé si le solde est insuffisant, même avec des actions simultanées.
+  if ((await addShards(admin, member.id, -price)) === null) return { error: `Il faut ${price} éclats.` };
   const error = await addToCollection(admin, member.id, [card]);
   if (error) {
-    await admin.from("game_wallet").update({ shards }).eq("owner_id", member.id);
+    await addShards(admin, member.id, price);
     return { error: "Échange impossible. Réessayez." };
   }
   revalidatePath("/jeu");

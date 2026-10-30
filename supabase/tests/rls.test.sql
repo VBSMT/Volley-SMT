@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(53);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -147,6 +147,13 @@ select is((select count(*) from public.game_collection)::int, 1, 'jeu : voit sa 
 update public.members set image_consent = false where id = '00000000-0000-0000-0000-000000000001';
 select pg_temp.logout();
 select is((select photo_updated_at from public.members where id = '00000000-0000-0000-0000-000000000001'), null, 'jeu : retirer le droit à l''image efface la photo');
+
+-- Audit de sécurité : fonctions du jeu réservées au serveur, liens vérifiés en base
+select pg_temp.login(2);
+select throws_ok($$ select public.game_add_shards('00000000-0000-0000-0000-000000000002', 100) $$, '42501', null, 'jeu : un adhérent ne peut pas s''ajouter des éclats');
+select pg_temp.login(4);
+select throws_ok($$ insert into public.useful_links (label, url, position) values ('x', 'javascript:alert(1)', 1) $$, '23514', null, 'liens : seulement http(s), même pour le Bureau');
+select pg_temp.logout();
 
 -- Non connecté
 set local role anon;

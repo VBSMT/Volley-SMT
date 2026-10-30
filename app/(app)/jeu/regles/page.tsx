@@ -108,7 +108,7 @@ export default async function ReglesPage() {
           <li><strong>4 titulaires</strong> à leur poste : passe, Avant (4), Avant (2), fond.</li>
           <li><strong>1 remplaçant</strong> de n&apos;importe quel poste (facultatif).</li>
           <li><strong>1 case Bonus</strong> : un Capitaine ou une Légende (facultatif).</li>
-          <li>Au moins <strong>une fille</strong> parmi les titulaires, et au plus <strong>2 joueurs</strong> d&apos;une même équipe.</li>
+          <li>Au moins <strong>une fille</strong> parmi les titulaires, et au plus <strong>2 joueurs</strong> d&apos;une même équipe (le Capitaine en case Bonus ne compte pas, mais il ne peut pas aussi jouer sur le terrain).</li>
         </ul>
         <div className="rules-box">
           <strong>🔒 Verrouillage</strong>
@@ -169,7 +169,7 @@ export default async function ReglesPage() {
           <caption className="small">Comment gagner un booster (2 ou 3 cartes)</caption>
           <tbody>
             <tr><th scope="row">Booster du jour</th><td>1 par jour, à récupérer dans l&apos;onglet Boosters ; 1 de plus au 7ᵉ jour de suite (un jour manqué remet la série à zéro)</td></tr>
-            <tr><th scope="row">Valider ton équipe</th><td>1 par journée</td></tr>
+            <tr><th scope="row">Valider ton équipe</th><td>1 par journée (validée à l&apos;avance : le booster arrive pendant la journée)</td></tr>
             <tr><th scope="row">Top 3 de la journée</th><td>1 de plus</td></tr>
             <tr><th scope="row">Sondage d&apos;entraînement</th><td>1 tous les {TRAININGS_PER_BOOSTER} entraînements répondus</td></tr>
             <tr><th scope="row">Événement du club</th><td>1 si tu es venu·e</td></tr>

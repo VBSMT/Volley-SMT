@@ -202,3 +202,17 @@ describe("résultats rattachés à la date du match", () => {
     expect(weekFromResults([])).toBeNull();
   });
 });
+
+describe("capitaine en case Bonus", () => {
+  const s = card("1", "setter", "F"), l = card("2", "front_left", "M", "tA"), r = card("3", "front_right", "M", "tA"), b = card("4", "back");
+  const cap = { ...card("2", "setter", "M", "tA"), kind: "captain" as const };
+  const capOther = { ...card("9", "setter", "M", "tA"), kind: "captain" as const };
+  const at = (c: GameCard) => ({ memberId: c.memberId, teamId: c.teamId, kind: c.kind });
+  const base = { setter: at(s), front_left: at(l), front_right: at(r), back: at(b) };
+  it("ne compte pas dans la limite de 2 par équipe", () => {
+    expect(lineupErrors({ ...base, bonus: at(capOther) }, [s, l, r, b, capOther])).toEqual([]);
+  });
+  it("ne peut pas aussi jouer", () => {
+    expect(lineupErrors({ ...base, bonus: at(cap) }, [s, l, r, b, cap])).toContain("Un capitaine ne peut pas être à la fois en case Bonus et sur le terrain.");
+  });
+});
