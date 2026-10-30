@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type GamePosition, cardKey, gamePosition } from "@/lib/domain/game";
-import { type Lineup, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, teamWeek, weekStart } from "@/lib/domain/game-week";
+import { type CardKind, type LegendBonus, cardKey, gamePosition } from "@/lib/domain/game";
+import { type CardInfo, type Lineup, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, teamWeek, weekStart } from "@/lib/domain/game-week";
 import { parisClock } from "@/lib/domain/notifications";
 import type { StandingRow } from "@/lib/domain/standings";
 
@@ -19,9 +19,10 @@ export async function getWeekMatches(client: SupabaseClient, week: string) {
 
 /** Équipe d'un joueur pour une semaine. */
 export async function getLineup(client: SupabaseClient, ownerId: string, week: string): Promise<Lineup> {
-  const { data } = await client.from("game_lineups").select("slot, member_id, team_id").eq("owner_id", ownerId).eq("week_start", week);
+  const { data } = await client.from("game_lineups").select("slot, member_id, team_id, kind").eq("owner_id", ownerId).eq("week_start", week);
   const lineup: Lineup = {};
-  for (const r of data ?? []) lineup[r.slot as Slot] = { memberId: r.member_id as string, teamId: r.team_id as string };
+  for (const r of data ?? [])
+    lineup[r.slot as Slot] = { memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind: (r.kind as CardKind) ?? "common" };
   return lineup;
 }
 
@@ -65,18 +66,23 @@ export async function computeWeek(admin: SupabaseClient, week: string): Promise<
     weeks.set(t.id as string, teamWeek(before, after));
   }
 
-  const { data: lineups } = await admin.from("game_lineups").select("owner_id, slot, member_id, team_id").eq("week_start", week);
-  const { data: members } = await admin.from("members").select("id, position_1");
-  const memberPos = new Map((members ?? []).map((m) => [m.id as string, gamePosition(m.position_1 as string | null)]));
+  const { data: lineups } = await admin.from("game_lineups").select("owner_id, slot, member_id, team_id, kind").eq("week_start", week);
+  const { data: members } = await admin.from("members").select("id, sex, position_1, position_2");
+  const { data: legends } = await admin.from("game_legends").select("member_id, bonus");
+  const byId = new Map((members ?? []).map((m) => [m.id as string, m]));
+  const legendOf = new Map((legends ?? []).map((l) => [l.member_id as string, l.bonus as LegendBonus]));
 
   for (const e of entries) {
     const lineup: Lineup = {};
-    const positions = new Map<string, GamePosition>();
+    const positions = new Map<string, CardInfo>();
     for (const r of (lineups ?? []).filter((l) => l.owner_id === e.owner_id)) {
-      const pick = { memberId: r.member_id as string, teamId: r.team_id as string };
+      const kind = ((r.kind as CardKind) ?? "common") as CardKind;
+      const pick = { memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind };
       lineup[r.slot as Slot] = pick;
-      const p = memberPos.get(pick.memberId);
-      if (p) positions.set(cardKey(pick), p);
+      const m = byId.get(pick.memberId);
+      // Poste de la carte : 2ᵉ poste pour une rare, sinon le 1er (sans effet pour Capitaine/Légende).
+      const position = gamePosition((kind === "rare" ? m?.position_2 : m?.position_1) as string | null) ?? "setter";
+      if (m) positions.set(cardKey(pick), { position, sex: m.sex as "F" | "M", kind, legendBonus: legendOf.get(pick.memberId) ?? null });
     }
     const score = lineupScore(lineup, positions, weeks);
     await admin

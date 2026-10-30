@@ -60,7 +60,7 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
       {phase !== "done" && (
         <div className="booster-scene">
           {current && (
-            <div key={index} className={`booster-current${tierOf(current.rating) === "gold" ? " is-gold" : ""}`}>
+            <div key={index} className={`booster-current${tierOf(current.rating) === "gold" ? " is-gold" : ""}${current.kind && current.kind !== "common" ? ` is-${current.kind}` : ""}`}>
               <button
                 type="button"
                 className={`flip-card${flipped ? " is-flipped" : ""}`}

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { type GameCard, drawEarned, drawStarter } from "@/lib/domain/game";
+import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
 import { type Lineup, SLOTS, isLocked, lineupErrors } from "@/lib/domain/game-week";
 import { getCollection, getGameCards } from "@/lib/game";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
@@ -39,14 +39,18 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 /** Ajoute des cartes à une collection (un doublon augmente le nombre d'exemplaires). */
 async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[]): Promise<string | null> {
-  const { data } = await admin.from("game_collection").select("member_id, team_id, copies").eq("owner_id", ownerId);
-  const copies = new Map((data ?? []).map((r) => [`${r.member_id}:${r.team_id}`, r.copies as number]));
-  for (const c of cards) copies.set(`${c.memberId}:${c.teamId}`, (copies.get(`${c.memberId}:${c.teamId}`) ?? 0) + 1);
-  const rows = [...new Set(cards.map((c) => `${c.memberId}:${c.teamId}`))].map((k) => {
-    const [member_id, team_id] = k.split(":");
-    return { owner_id: ownerId, member_id, team_id, copies: copies.get(k)! };
-  });
-  const { error } = await admin.from("game_collection").upsert(rows, { onConflict: "owner_id,member_id,team_id" });
+  const { data } = await admin.from("game_collection").select("member_id, team_id, kind, copies").eq("owner_id", ownerId);
+  const copies = new Map((data ?? []).map((r) => [cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }), r.copies as number]));
+  for (const c of cards) copies.set(cardKey(c), (copies.get(cardKey(c)) ?? 0) + 1);
+  const unique = new Map(cards.map((c) => [cardKey(c), c]));
+  const rows = [...unique.entries()].map(([key, c]) => ({
+    owner_id: ownerId,
+    member_id: c.memberId,
+    team_id: c.teamId || null,
+    kind: c.kind ?? "common",
+    copies: copies.get(key)!,
+  }));
+  const { error } = await admin.from("game_collection").upsert(rows, { onConflict: "owner_id,member_id,team_id,kind" });
   return error?.message ?? null;
 }
 
@@ -95,7 +99,7 @@ export async function saveLineup(lineup: Lineup): Promise<{ error?: string }> {
   for (const slot of SLOTS) {
     const before = previous[slot];
     const after = lineup[slot];
-    if (before?.memberId === after?.memberId && before?.teamId === after?.teamId) continue;
+    if (before?.memberId === after?.memberId && before?.teamId === after?.teamId && before?.kind === after?.kind) continue;
     if ((before && isLocked(before.teamId, matches, now)) || (after && isLocked(after.teamId, matches, now))) {
       return { error: "Une carte est verrouillée : le match de son équipe a commencé." };
     }
@@ -104,7 +108,10 @@ export async function saveLineup(lineup: Lineup): Promise<{ error?: string }> {
   const admin = createAdminClient();
   const { error } = await admin.from("game_lineups").delete().eq("owner_id", member.id).eq("week_start", week);
   if (error) return { error: "Enregistrement impossible. Réessayez." };
-  const rows = SLOTS.flatMap((slot) => (lineup[slot] ? [{ owner_id: member.id, week_start: week, slot, member_id: lineup[slot]!.memberId, team_id: lineup[slot]!.teamId }] : []));
+  const rows = SLOTS.flatMap((slot) => {
+    const pick = lineup[slot];
+    return pick ? [{ owner_id: member.id, week_start: week, slot, member_id: pick.memberId, team_id: pick.teamId || null, kind: pick.kind ?? "common" }] : [];
+  });
   const { error: e2 } = await admin.from("game_lineups").insert(rows);
   if (e2) return { error: "Enregistrement impossible. Réessayez." };
   // ignoreDuplicates : l'heure de la première validation reste celle du départage.

@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(48);
+select plan(50);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -136,7 +136,9 @@ select is((select count(*) from public.game_lineups)::int, 0, 'jeu : équipes de
 select is((select count(*) from public.game_weeks)::int, 0, 'jeu : classement réservé au Bureau');
 select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
 select pg_temp.login(4);
-select is((select count(*) from public.game_cards)::int, 1, 'jeu (Bureau) : seuls les joueurs avec un poste ont une carte');
+select is((select count(*) from public.game_cards where kind = 'common')::int, 1, 'jeu (Bureau) : seuls les joueurs avec un poste ont une carte');
+select is((select count(*) from public.game_cards where kind = 'captain')::int, 1, 'jeu (Bureau) : une carte Capitaine par capitaine');
+select is((select count(*) from public.game_cards where kind = 'captain' and photo_updated_at is not null)::int, 0, 'jeu (Bureau) : pas de photo sur les cartes spéciales');
 select is((select count(*) from public.game_weeks)::int, 1, 'jeu (Bureau) : voit le classement');
 select pg_temp.login(1);
 select is((select count(*) from public.game_collection)::int, 1, 'jeu : voit sa collection');

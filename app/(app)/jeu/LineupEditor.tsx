@@ -5,13 +5,15 @@ import { useEffect, useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { useWheel } from "@/components/game/useWheel";
-import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, cardKey, tierOf } from "@/lib/domain/game";
+import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, cardKey, isSpecial, tierOf } from "@/lib/domain/game";
 import { type Lineup, type Slot, SLOTS, lineupErrors } from "@/lib/domain/game-week";
 import { saveLineup } from "./actions";
 
-const SLOT_LABELS: Record<Slot, string> = { ...GAME_POSITION_LABELS, sub: "Remplaçant" };
-const SHORT: Record<string, string> = { setter: "Passe", front_left: "Av. (4)", front_right: "Av. (2)", back: "Fond", all: "Tous" };
-const fits = (card: GameCard, slot: Slot) => slot === "sub" || card.position === slot;
+const SLOT_LABELS: Record<Slot, string> = { ...GAME_POSITION_LABELS, sub: "Remplaçant", bonus: "Bonus" };
+const SHORT: Record<string, string> = { setter: "Passe", front_left: "Av. (4)", front_right: "Av. (2)", back: "Fond", bonus: "Bonus", all: "Tous" };
+// Case Bonus : Capitaine ou Légende ; autres places : communes et rares (le remplaçant de tout poste).
+const fits = (card: GameCard, slot: Slot) => (slot === "bonus" ? isSpecial(card) : !isSpecial(card) && (slot === "sub" || card.position === slot));
+const homeSlot = (card: GameCard): Slot => (isSpecial(card) ? "bonus" : card.position);
 const STEP = 46; // pixels par carte dans la main
 
 /**
@@ -40,7 +42,7 @@ export function LineupEditor({
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
   const [lineup, setLineup] = useState<Lineup>(initial);
-  const [filter, setFilter] = useState<GamePosition | "all">("all");
+  const [filter, setFilter] = useState<GamePosition | "bonus" | "all">("all");
   const [target, setTarget] = useState<Slot | null>(null);
   const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
   const [landed, setLanded] = useState<Slot | null>(null);
@@ -53,8 +55,8 @@ export function LineupEditor({
   const byKey = new Map(owned.map((c) => [cardKey(c), c]));
   const placed = new Set(SLOTS.flatMap((s) => (lineup[s] ? [cardKey(lineup[s]!)] : [])));
   const hand = owned
-    .filter((c) => !placed.has(cardKey(c)) && (filter === "all" || c.position === filter))
-    .sort((a, b) => GAME_POSITIONS.indexOf(a.position) - GAME_POSITIONS.indexOf(b.position) || b.rating - a.rating);
+    .filter((c) => !placed.has(cardKey(c)) && (filter === "all" || (filter === "bonus" ? isSpecial(c) : !isSpecial(c) && c.position === filter)))
+    .sort((a, b) => Number(isSpecial(a)) - Number(isSpecial(b)) || GAME_POSITIONS.indexOf(a.position) - GAME_POSITIONS.indexOf(b.position) || b.rating - a.rating);
   const errors = lineupErrors(lineup, owned).filter((e) => e !== "Il faut un joueur à chaque poste.");
   const complete = SLOTS.slice(0, 4).every((s) => lineup[s]);
   const changed = JSON.stringify(lineup) !== JSON.stringify(initial);
@@ -62,9 +64,9 @@ export function LineupEditor({
 
   function place(card: GameCard, slot: Slot) {
     if (slotLocked(slot) || locked.has(card.teamId)) return setError("Carte verrouillée : le match de son équipe a commencé.");
-    if (!fits(card, slot)) return setError(`Cette carte joue ${GAME_POSITION_LABELS[card.position]}.`);
+    if (!fits(card, slot)) return setError(isSpecial(card) ? "Capitaines et Légendes vont dans la case Bonus." : slot === "bonus" ? "La case Bonus accueille un Capitaine ou une Légende." : `Cette carte joue ${GAME_POSITION_LABELS[card.position]}.`);
     setError(undefined);
-    setLineup((l) => ({ ...l, [slot]: { memberId: card.memberId, teamId: card.teamId } }));
+    setLineup((l) => ({ ...l, [slot]: { memberId: card.memberId, teamId: card.teamId, kind: card.kind ?? "common" } }));
     setLanded(slot);
     setTarget(null);
     setFilter("all");
@@ -74,7 +76,7 @@ export function LineupEditor({
     onTap: (i) => {
       if (i !== Math.round(wheel.center)) return wheel.setCenter(i);
       const card = hand[i];
-      if (card) place(card, target && fits(card, target) ? target : card.position);
+      if (card) place(card, target && fits(card, target) ? target : homeSlot(card));
     },
     onLift: (e, phase) => {
       if (phase === "move") return setGhost({ x: e.clientX, y: e.clientY });
@@ -151,7 +153,7 @@ export function LineupEditor({
     const isTarget = !card && (target === slot || (centerCard && fits(centerCard, slot) && !slotLocked(slot) && slot !== "sub"));
     return (
       <div key={slot} className={`court-spot court-spot-${slot}${isTarget ? " is-target" : ""}`}>
-        {slot === "sub" && <span className="court-sub-label" aria-hidden="true">Remplaçant</span>}
+        {(slot === "sub" || slot === "bonus") && <span className="court-sub-label" aria-hidden="true">{SLOT_LABELS[slot]}</span>}
         <button
           type="button"
           data-slot={slot}
@@ -176,12 +178,12 @@ export function LineupEditor({
             </span>
           ) : (
             <span className="court-spot-empty" aria-hidden="true">
-              {slot === "sub" ? "" : SHORT[slot]}
+              {slot === "sub" || slot === "bonus" ? "" : SHORT[slot]}
             </span>
           )}
         </button>
         {card && slotLocked(slot) && <span className="court-flag">🔒</span>}
-        {card && !slotLocked(slot) && !playing.has(card.teamId) && (
+        {card && card.kind !== "legend" && !slotLocked(slot) && !playing.has(card.teamId) && (
           <span className="court-flag" title={`${card.teamName} ne joue pas cette semaine`}>⚠</span>
         )}
       </div>
@@ -190,13 +192,23 @@ export function LineupEditor({
 
   const absent = [...new Set(SLOTS.flatMap((s) => {
     const c = lineup[s] && byKey.get(cardKey(lineup[s]!));
-    return c && !playing.has(c.teamId) ? [c.teamName] : [];
+    // Une Légende n'a pas d'équipe : pas d'alerte « sans match ».
+    return c && c.kind !== "legend" && !playing.has(c.teamId) ? [c.teamName] : [];
   }))];
 
   return (
     <div className="lineup-screen">
       {dialog}
       <div className="lineup-status" aria-live="polite">
+        <button
+          type="button"
+          className="court-validate"
+          disabled={pending || !complete || errors.length > 0 || (validated && !changed)}
+          onClick={save}
+        >
+          {pending ? "…" : validated ? (changed ? "Enregistrer" : "✓ Validée") : "Valider"}
+        </button>
+
         {points !== null && (
           <span className="pill pill-score">
             <Counter value={points} /> pts
@@ -215,20 +227,12 @@ export function LineupEditor({
 
       <div className="lineup-court">
         <div className="court-net" aria-hidden="true" />
-        {(["front_left", "setter", "front_right", "back", "sub"] as Slot[]).map((s, i) => spot(s, i))}
-        <button
-          type="button"
-          className="court-validate"
-          disabled={pending || !complete || errors.length > 0 || (validated && !changed)}
-          onClick={save}
-        >
-          {pending ? "…" : validated ? (changed ? "Enregistrer" : "✓ Validée") : "Valider"}
-        </button>
+        {(["front_left", "setter", "front_right", "back", "sub", "bonus"] as Slot[]).map((s, i) => spot(s, i))}
       </div>
 
       <div className="hand-zone">
         <div className="chip-row" role="group" aria-label="Filtrer la main par poste">
-          {(["all", ...GAME_POSITIONS] as const).map((p) => (
+          {(["all", ...GAME_POSITIONS, "bonus"] as const).map((p) => (
             <button
               key={p}
               type="button"

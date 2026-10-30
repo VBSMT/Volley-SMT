@@ -5,7 +5,9 @@ import { formRating } from "@/lib/domain/game";
 import { scorePoints } from "@/lib/domain/game";
 import { computeWeek, currentWeek } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
+import { getGameCards } from "@/lib/game";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * Outils de test de VUT (Bureau) : agissent pour tous les joueurs qui ont accès au jeu
@@ -92,4 +94,25 @@ export async function recomputeNow(): Promise<Result> {
   const n = await computeWeek(admin, currentWeek());
   revalidatePath("/jeu");
   return { message: `Points recalculés pour ${n} équipe${n > 1 ? "s" : ""}.` };
+}
+
+/** Donne à chaque joueur une carte Capitaine et une Légende au hasard (tester la case Bonus). */
+export async function giveSpecials(): Promise<Result> {
+  const admin = await guard();
+  if (!admin) return { error: "Réservé au Bureau." };
+  // La vue des cartes est lue avec les droits du Bureau connecté (elle est réservée au Bureau).
+  const cards = await getGameCards(await createClient());
+  const captains = cards.filter((c) => c.kind === "captain");
+  const legends = cards.filter((c) => c.kind === "legend");
+  if (!captains.length && !legends.length) return { error: "Aucun capitaine ni Légende configurés." };
+  const pick = <T,>(l: T[]) => l[Math.floor(Math.random() * l.length)];
+  const rows = (await players(admin)).flatMap((owner_id) =>
+    [captains.length ? pick(captains) : null, legends.length ? pick(legends) : null]
+      .filter((c) => !!c)
+      .map((c) => ({ owner_id, member_id: c!.memberId, team_id: c!.teamId || null, kind: c!.kind })),
+  );
+  const { error } = await admin.from("game_collection").upsert(rows, { onConflict: "owner_id,member_id,team_id,kind", ignoreDuplicates: true });
+  if (error) return { error: error.message };
+  revalidatePath("/jeu");
+  return { message: "Un Capitaine et une Légende ajoutés à chaque collection." };
 }
