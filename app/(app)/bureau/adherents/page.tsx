@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatDay, shortName } from "@/lib/format";
 import { getCurrentMember, hasRole, ROLE_LABELS, type Role } from "@/lib/member";
+import { SETUP_LABELS, setupStatus, type SetupStatus } from "@/lib/domain/setup-status";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { ImportMembersForm } from "./ImportMembersForm";
 import { TeamFilter } from "./TeamFilter";
@@ -16,6 +18,7 @@ type Row = {
   last_name: string;
   email: string;
   user_id: string | null;
+  onboarding_done_at?: string | null;
   member_teams: { team: { name: string } }[];
   roles: { role: Role; team: { name: string } | null }[];
 };
@@ -28,7 +31,7 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
   const [{ data }, { data: teams }, { data: requests }] = await Promise.all([
     supabase
       .from("members")
-      .select("id, first_name, last_name, email, user_id, member_teams(team:teams(name)), roles:member_roles(role, team:teams(name))")
+      .select("id, first_name, last_name, email, user_id, onboarding_done_at, member_teams(team:teams(name)), roles:member_roles(role, team:teams(name))")
       .order("last_name"),
     supabase.from("teams").select("name").order("name"),
     supabase
@@ -38,6 +41,18 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
       .order("created_at"),
   ]);
   const all = (data ?? []) as unknown as Row[];
+
+  // Dernière connexion (comptes Auth, lus côté serveur avec la clé de service, Bureau uniquement).
+  const lastSignIn = new Map<string, string | null>();
+  const { data: users } = await createAdminClient().auth.admin.listUsers({ perPage: 1000 });
+  for (const u of users?.users ?? []) lastSignIn.set(u.id, u.last_sign_in_at ?? null);
+  const statusOf = (m: Row): SetupStatus =>
+    setupStatus({
+      hasAccount: !!m.user_id,
+      lastSignInAt: m.user_id ? (lastSignIn.get(m.user_id) ?? null) : null,
+      onboardingDoneAt: m.onboarding_done_at ?? null,
+    });
+  const counts = all.reduce((acc, m) => ({ ...acc, [statusOf(m)]: (acc[statusOf(m)] ?? 0) + 1 }), {} as Partial<Record<SetupStatus, number>>);
   const teamsOf = (m: Row) => m.member_teams.map((t) => t.team.name).sort((a, b) => a.localeCompare(b, "fr"));
   const members =
     filter === "" ? all : filter === "aucune" ? all.filter((m) => !m.member_teams.length) : all.filter((m) => teamsOf(m).includes(filter));
@@ -60,6 +75,13 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
         <h2>
           {members.length} adhérent{members.length > 1 ? "s" : ""}
         </h2>
+        <ul className="setup-summary" aria-label="Installation de l'appli">
+          {(["configured", "connected", "never", "no_account"] as SetupStatus[]).map((s) => (
+            <li key={s} className={`setup-badge setup-${s}`}>
+              {SETUP_LABELS[s]} : {counts[s] ?? 0}
+            </li>
+          ))}
+        </ul>
         <TeamFilter teams={(teams ?? []).map((t) => t.name)} value={filter} />
         <ul className="list">
           {members.map((m) => (
@@ -77,7 +99,7 @@ export default async function AdherentsPage({ searchParams }: { searchParams: Pr
                       .join("")}
                   </p>
                 </div>
-                <span className={m.user_id ? "badge home" : "badge away"}>{m.user_id ? "Compte" : "Sans compte"}</span>
+                <span className={`setup-badge setup-${statusOf(m)}`}>{SETUP_LABELS[statusOf(m)]}</span>
               </Link>
             </li>
           ))}
