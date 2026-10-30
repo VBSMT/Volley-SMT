@@ -13,13 +13,14 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Ouverture animée d'un booster : le paquet tremble et s'ouvre, puis les cartes sortent une à une,
  * face cachée. Toucher la carte la retourne ; toucher encore la range et fait sortir la suivante.
  */
-export function BoosterOpening({ label, open, starter = false }: { label: string; starter?: boolean; open: () => Promise<{ cards?: GameCard[]; error?: string }> }) {
+export function BoosterOpening({ label, open, starter = false }: { label: string; starter?: boolean; open: () => Promise<{ cards?: GameCard[]; shards?: number; error?: string }> }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("closed");
   const [cards, setCards] = useState<GameCard[]>([]);
   const [index, setIndex] = useState(0); // carte en cours
   const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shards, setShards] = useState(0);
 
   async function start() {
     if (phase !== "closed") return;
@@ -31,6 +32,7 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
       return setPhase("closed");
     }
     setCards(result.cards);
+    setShards(result.shards ?? 0);
     setPhase("open");
   }
 
@@ -47,7 +49,7 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
     phase === "done"
       ? starter
         ? `Ta collection compte ${cards.length} cartes !`
-        : `${cards.length} nouvelles cartes !`
+        : `${cards.length} nouvelles cartes !${shards ? ` Doublon${shards > 1 ? "s" : ""} : +${shards} éclat${shards > 1 ? "s" : ""} ✦` : ""}`
       : phase === "open"
         ? flipped
           ? `${index + 1} / ${cards.length} — touche la carte pour la suivante`

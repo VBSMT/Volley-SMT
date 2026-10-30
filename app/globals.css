@@ -1164,3 +1164,5 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .flip-card.is-flipped > .flip-face { visibility: hidden; }
 .flip-card.is-flipped > .flip-face.flip-front { visibility: visible; }
 @media (prefers-reduced-motion: reduce) { .flip-card > .flip-face { transition: none; } }
+.shard-box { gap: 0.5rem; } .shard-count { margin: 0; font-weight: 700; } .shard-count span[aria-hidden] { color: var(--lien); }
+.podium { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.35rem; font-size: 1.05rem; } .podium-card { border: 2px solid var(--jaune); }

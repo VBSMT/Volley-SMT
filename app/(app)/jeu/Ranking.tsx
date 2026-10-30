@@ -1,13 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { inSeason } from "@/lib/domain/game-rewards";
 import { rank } from "@/lib/domain/game-week";
 import { shortName } from "@/lib/format";
 
 type Row = { owner_id: string; week_start: string; total: number; bonus: number; validated_at: string };
 
 /** Classements VUT : semaine en cours (points provisoires) et saison (somme des semaines). */
-export async function Ranking({ client, week, memberId }: { client: SupabaseClient; week: string; memberId: string }) {
+export async function Ranking({ client, week, memberId, season: current }: { client: SupabaseClient; week: string; memberId: string; season: { startsOn: string; endsOn: string } | null }) {
   const { data } = await client.from("game_weeks").select("owner_id, week_start, total, bonus, validated_at");
-  const rows = (data ?? []) as Row[];
+  // Saison en cours seulement (l'historique des saisons passées reste en base).
+  const rows = ((data ?? []) as Row[]).filter((r) => !current || inSeason(r.week_start, current));
   const ids = [...new Set(rows.map((r) => r.owner_id))];
   const { data: people } = ids.length ? await client.from("members").select("id, first_name, last_name").in("id", ids) : { data: [] };
   const name = new Map((people ?? []).map((p) => [p.id as string, shortName(p.first_name, p.last_name)]));

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STARTER_SIZE } from "@/lib/domain/game";
+import { STARTER_SIZE, cardKey } from "@/lib/domain/game";
+import { exchangeable } from "@/lib/domain/game-rewards";
 import { isLocked, matchdayTitle } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
@@ -13,6 +14,7 @@ import { BoosterOpening } from "./BoosterOpening";
 import { CollectionCarousel } from "./CollectionCarousel";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
+import { ShardExchange } from "./ShardExchange";
 import { TestTools } from "./TestTools";
 
 export const metadata: Metadata = { title: "VUT" };
@@ -97,13 +99,19 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     ) : (
       <div className="card stack booster-empty">
         <div className="booster-idle" aria-hidden="true">VUT</div>
-        <p>Pas de booster à ouvrir. Tu en gagnes en validant ton équipe chaque semaine, en finissant dans le top 3, en répondant au sondage de 3 entraînements et en venant aux événements.</p>
+        <p>Pas de booster à ouvrir. Tu en gagnes : en validant ton équipe chaque semaine, en finissant dans le top 3 de la semaine, tous les 3 entraînements où tu as répondu au sondage (à 22h après le 3e), et en venant aux événements.</p>
       </div>
     );
   } else if (tab === "classement") {
-    content = <Ranking client={supabase} week={week} memberId={member.id} />;
+    content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
-    content = <CollectionCarousel entries={collection} total={cards.length} />;
+    const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
+    content = (
+      <>
+        <ShardExchange shards={(wallet?.shards as number) ?? 0} choices={cards.filter(exchangeable)} owned={collection.map((e) => cardKey(e.card))} />
+        <CollectionCarousel entries={collection} total={cards.length} />
+      </>
+    );
   }
 
   return (

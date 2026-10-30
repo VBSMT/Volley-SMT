@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MatchPoll } from "@/components/MatchPoll";
 import { CelebrationCards } from "@/components/CelebrationCard";
+import { SeasonPodium } from "@/components/game/SeasonPodium";
 import { getCelebrations } from "@/lib/stats";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { NotificationToggle } from "@/components/NotificationToggle";
@@ -82,6 +83,8 @@ export default async function AccueilPage() {
     <main className="page stack">
       <h1>Bonjour {member.first_name}</h1>
       {celebrations.length > 0 && <CelebrationCards items={celebrations} />}
+      {/* VUT réservé au Bureau pour l'instant : podium de fin de saison pour ses joueurs. */}
+      {isBoard && <SeasonPodium client={supabase} />}
       <InstallPrompt />
       <NotificationToggle compact />
       {!!pendingReschedules && (
