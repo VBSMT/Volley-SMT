@@ -10,6 +10,7 @@ import {
   reminderMessage,
   type ReminderKind,
 } from "@/lib/domain/notifications";
+import { runGameScoring } from "@/lib/game-week";
 import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
 import { isPurgeDue, runPurge } from "@/lib/purge-server";
@@ -165,6 +166,9 @@ export async function POST(request: NextRequest) {
     }
   }
   report.push(...(await sendMatchReminders(admin, now, sendHour, members)));
+  // VUT : points provisoires de la semaine (et définitifs de la précédente le lundi), après la synchro.
+  const game = await runGameScoring(admin, now);
+  if (game) report.push({ vut: game });
   // Purge RGPD quotidienne (idempotente).
   if (isPurgeDue(now)) report.push({ purge: await runPurge(admin, now) });
 

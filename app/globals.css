@@ -899,45 +899,118 @@ a { color: var(--lien); text-underline-offset: 3px; }
 
 .game-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 0.75rem 0.5rem; justify-items: center; }
 .game-grid .pcard-slot { width: 112px; height: 163px; }
-.pcard-slot > .pcard, .pcard-slot > .flip-card { transform: scale(0.622); transform-origin: 0 0; }
+.pcard-slot > .pcard { transform: scale(0.622); transform-origin: 0 0; }
 .game-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 
-/* Ouverture du booster */
-.booster-stage { position: relative; min-height: 560px; display: grid; justify-items: center; align-content: start; gap: 1rem; padding-top: 1rem; }
+/* Ouverture du booster : le paquet tremble, s'ouvre (rabat), puis les cartes sortent une à une,
+   face cachée ; toucher retourne la carte, toucher encore la range et fait sortir la suivante. */
+.booster-stage { display: grid; justify-items: center; gap: 0.75rem; padding-top: 0.5rem; }
+.booster-scene { position: relative; width: 220px; height: 430px; }
 .booster-pack {
-  width: 190px; height: 290px; border: 0; border-radius: 14px; cursor: pointer; position: relative; z-index: 2;
-  background: linear-gradient(150deg, var(--jaune), color-mix(in srgb, var(--jaune) 80%, #000) 45%, #111 46%, #1b1b1b);
-  box-shadow: 0 0 40px color-mix(in srgb, var(--jaune) 40%, transparent), 0 20px 40px rgba(0, 0, 0, 0.5);
-  animation: booster-float 3s ease-in-out infinite; color: var(--jaune);
+  position: absolute; left: 15px; bottom: 0; width: 190px; height: 250px; border: 0; padding: 0; cursor: pointer; z-index: 3;
+  background: none; perspective: 600px; animation: booster-float 3s ease-in-out infinite;
 }
-.booster-pack svg { position: absolute; top: 34px; left: 50%; margin-left: -38px; width: 76px; height: 76px; fill: none; stroke: #111; stroke-width: 5; }
-.booster-pack-label { position: absolute; inset: auto 0 30px; text-align: center; font: 700 30px/1 "Barlow Condensed", sans-serif; letter-spacing: 0.06em; }
+.booster-pack:disabled { cursor: default; opacity: 1; filter: none; }
+.booster-body, .booster-lid { position: absolute; left: 0; right: 0; }
+.booster-body {
+  bottom: 0; height: 200px; border-radius: 0 0 14px 14px; overflow: hidden;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--jaune) 80%, #000) 0 30%, #111 31%, #1b1b1b);
+  box-shadow: 0 0 40px color-mix(in srgb, var(--jaune) 40%, transparent), 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+.booster-lid {
+  bottom: 199px; height: 52px; border-radius: 14px 14px 0 0; transform-origin: 50% 100%; transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+  background: linear-gradient(150deg, var(--jaune), color-mix(in srgb, var(--jaune) 80%, #000));
+  border-bottom: 2px dashed rgba(0, 0, 0, 0.4);
+}
+.booster-pack svg { position: absolute; top: 46px; left: 50%; margin-left: -34px; width: 68px; height: 68px; fill: none; stroke: var(--jaune); stroke-width: 5; }
+.booster-pack-label { position: absolute; inset: auto 0 22px; text-align: center; color: var(--jaune); font: 700 28px/1 "Barlow Condensed", sans-serif; letter-spacing: 0.06em; }
 .booster-pack-label small { display: block; font: 600 13px "Barlow", sans-serif; color: #ddd; margin-top: 6px; }
-.booster-pack.is-shaking { animation: booster-shake 0.7s ease-in; }
-.booster-pack.is-gone { animation: booster-burst 0.5s forwards; }
-.booster-flash { position: fixed; inset: 0; pointer-events: none; opacity: 0; background: radial-gradient(circle, #fff, var(--jaune) 30%, transparent 70%); z-index: 50; }
-.booster-flash.is-on { animation: booster-flash 0.7s; }
-@keyframes booster-float { 50% { transform: translateY(-8px) rotate(-1deg); } }
-@keyframes booster-shake { 20% { transform: rotate(-6deg) scale(1.03); } 40% { transform: rotate(6deg) scale(1.06); } 60% { transform: rotate(-8deg) scale(1.09); } 80% { transform: rotate(8deg) scale(1.12); } }
-@keyframes booster-burst { to { transform: scale(1.6); opacity: 0; filter: brightness(3); } }
-@keyframes booster-flash { 20% { opacity: 1; } 100% { opacity: 0; } }
-.booster-grid { display: grid; grid-template-columns: repeat(3, 112px); gap: 12px 10px; justify-content: center; }
-.booster-slot { width: 112px; height: 163px; perspective: 800px; opacity: 0; transform: translateY(-160px) scale(0.4); }
-.booster-slot.is-in { transition: transform 0.55s cubic-bezier(0.2, 1.3, 0.4, 1), opacity 0.55s; opacity: 1; transform: none; }
-.flip-card { all: unset; display: block; width: 112px; height: 163px; position: relative; transform-style: preserve-3d; transition: transform 0.7s; cursor: pointer; }
-.booster-slot.is-revealed .flip-card { transform: rotateY(180deg); }
-.flip-face { position: absolute; inset: 0; backface-visibility: hidden; }
-.flip-face > * { transform: scale(0.622); transform-origin: 0 0; }
+.booster-pack.is-shaking { animation: booster-shake 0.6s ease-in; }
+.booster-pack.is-open { animation: none; }
+.booster-pack.is-open .booster-lid { transform: rotateX(110deg) translateY(-6px); }
+.booster-glow {
+  position: absolute; left: 10px; right: 10px; bottom: 190px; height: 40px; border-radius: 50%; z-index: 1; opacity: 0;
+  background: radial-gradient(closest-side, #fff, var(--jaune) 50%, transparent); transition: opacity 0.4s 0.3s;
+}
+.booster-pack.is-open ~ .booster-glow { opacity: 1; }
+/* Carte en cours : sort du paquet (derrière le corps du paquet au départ), puis se retourne. */
+.booster-current { position: absolute; left: 20px; top: 0; width: 180px; height: 262px; z-index: 2; perspective: 900px; animation: booster-out 0.7s cubic-bezier(0.2, 1.1, 0.4, 1) both; }
+.booster-current .flip-card { width: 180px; height: 262px; }
+.booster-current .flip-face > * { transform: none; }
+.booster-current.is-gold .is-flipped .flip-front { filter: drop-shadow(0 0 16px rgba(255, 214, 90, 0.9)); }
+@keyframes booster-out { from { transform: translateY(190px) scale(0.85); } to { transform: none; } }
+@keyframes booster-float { 50% { transform: translateY(-6px) rotate(-1deg); } }
+@keyframes booster-shake { 20% { transform: rotate(-5deg); } 40% { transform: rotate(5deg); } 60% { transform: rotate(-7deg) scale(1.04); } 80% { transform: rotate(7deg) scale(1.06); } }
+.flip-card { all: unset; display: block; position: relative; transform-style: preserve-3d; transition: transform 0.6s; cursor: pointer; }
+.flip-card.is-flipped { transform: rotateY(180deg); }
+.flip-card:focus-visible { outline: 3px solid var(--jaune); outline-offset: 4px; }
+.flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 .flip-front { transform: rotateY(180deg); }
 .flip-back-card {
   width: 180px; height: 262px; display: grid; place-items: center; clip-path: polygon(50% 0, 100% 7%, 100% 82%, 50% 100%, 0 82%, 0 7%);
   background: repeating-linear-gradient(45deg, #1a1a1a 0 10px, #262626 10px 20px); color: var(--jaune); font: 700 64px "Barlow Condensed", sans-serif;
 }
-.booster-slot.is-revealed.is-gold .flip-front { filter: drop-shadow(0 0 14px rgba(255, 214, 90, 0.8)); }
+/* Cartes déjà sorties, en petit sous le paquet. */
+.booster-pile { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 112px); gap: 10px; justify-content: center; }
+.booster-pile li { width: 112px; height: 163px; animation: booster-land 0.4s ease-out both; }
+.booster-pile li > .pcard { transform: scale(0.622); transform-origin: 0 0; }
+@keyframes booster-land { from { opacity: 0; transform: translateY(-40px) scale(1.2); } }
 @media (prefers-reduced-motion: reduce) {
-  .booster-pack, .booster-pack.is-shaking, .booster-pack.is-gone, .booster-flash.is-on { animation: none; }
-  .booster-slot.is-in, .flip-card { transition: none; }
+  .booster-pack, .booster-pack.is-shaking, .booster-current, .booster-pile li { animation: none; }
+  .booster-lid, .flip-card { transition: none; }
 }
 .header-game { color: var(--jaune); width: 44px; height: 44px; display: grid; place-items: center; font-size: 1.3rem; text-decoration: none; margin-left: auto; }
 .header-game + .header-chat { margin-left: 0; }
 .photo-preview { width: 96px; height: 96px; border-radius: 12px; object-fit: cover; background: var(--surface); }
+/* VUT : équipe de la semaine (terrain + main de cartes) et classements */
+.mini-card { display: block; width: 81px; height: 118px; pointer-events: none; }
+.mini-card > .pcard { transform: scale(0.45); transform-origin: 0 0; }
+.lineup-court {
+  position: relative; height: 330px; border-radius: 12px; border: 3px solid #fff;
+  background: linear-gradient(#e8894b, #d9743a); box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+.court-net { position: absolute; top: 0; left: -3px; right: -3px; height: 6px; background: repeating-linear-gradient(90deg, #111 0 4px, #fff 4px 8px); }
+.lineup-court::after { content: ""; position: absolute; left: 0; right: 0; top: 33%; border-top: 2px solid rgba(255, 255, 255, 0.85); }
+.court-spot { position: absolute; width: 81px; height: 118px; transform: translateX(-50%); z-index: 1; }
+.court-spot-front_left { left: 18%; top: 14px; }
+.court-spot-setter { left: 50%; top: 14px; }
+.court-spot-front_right { left: 82%; top: 14px; }
+.court-spot-back { left: 50%; top: 196px; }
+.lineup-bench { display: grid; grid-template-columns: 81px 1fr; gap: 0.75rem; align-items: center; }
+.lineup-bench .court-spot { position: relative; left: auto; transform: none; }
+.court-spot-btn { all: unset; display: block; width: 81px; height: 118px; cursor: pointer; }
+.court-spot-btn:focus-visible { outline: 3px solid var(--jaune); outline-offset: 2px; }
+.court-spot-empty {
+  width: 81px; height: 118px; display: grid; place-items: center; text-align: center; padding: 0 4px; box-sizing: border-box;
+  font: 700 13px "Barlow Condensed", sans-serif; text-transform: uppercase; color: #fff;
+  background: rgba(0, 0, 0, 0.22); border: 2px dashed rgba(255, 255, 255, 0.8); border-radius: 10px;
+}
+.lineup-bench .court-spot-empty { color: var(--texte); background: var(--surface); border-color: var(--trait); }
+.court-spot.is-target .court-spot-empty { border-color: var(--jaune); border-style: solid; box-shadow: 0 0 0 3px var(--jaune); }
+.court-flag { position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: #fff; display: grid; place-items: center; font-size: 13px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); }
+.hand {
+  position: sticky; bottom: calc(62px + env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: center;
+  overflow-x: auto; padding: 26px 12px 10px; margin: 0 -8px;
+  background: var(--fond); border-top: 1px solid var(--trait);
+}
+/* Main en éventail : cartes qui se chevauchent, inclinées autour du centre. */
+.hand-card {
+  all: unset; flex: none; width: 81px; height: 118px; cursor: grab; touch-action: pan-x; position: relative;
+  margin-left: -34px; transform-origin: 50% 120%; transform: translateY(var(--drop, 0)) rotate(var(--angle, 0deg));
+  transition: transform 0.18s, margin 0.18s; filter: drop-shadow(-2px 2px 3px rgba(0, 0, 0, 0.25));
+}
+.hand-card:first-child { margin-left: 0; }
+.hand-card.is-selected { transform: translateY(-22px) rotate(0deg) scale(1.08); z-index: 2; filter: drop-shadow(0 0 6px var(--jaune)); }
+.hand-card.is-dragging { opacity: 0.35; }
+.hand-card:disabled { opacity: 0.45; cursor: not-allowed; }
+.hand-card:focus-visible { outline: 3px solid var(--jaune); outline-offset: 2px; z-index: 2; }
+.vut-ghost { position: fixed; z-index: 60; pointer-events: none; transform: translate(-50%, -60%) rotate(-4deg) scale(1.1); filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.4)); }
+.warning-text { color: var(--texte); font-weight: 600; }
+.ranking { width: 100%; border-collapse: collapse; }
+.ranking th, .ranking td { text-align: left; padding: 0.35rem 0.25rem; border-bottom: 1px solid var(--trait); }
+.ranking td:nth-child(n + 3), .ranking th:nth-child(n + 3) { text-align: right; }
+.ranking tr.is-mine td { font-weight: 700; }
+.game-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.game-tabs a { min-height: 44px; display: inline-grid; place-items: center; padding: 0 0.9rem; border-radius: 22px; border: 2px solid var(--trait); text-decoration: none; color: var(--texte); font-weight: 600; }
+.game-tabs a[aria-current="page"] { background: var(--accent-fond); color: var(--accent-texte); border-color: var(--accent-fond); }
+.header-game { font: 700 1.1rem "Barlow Condensed", sans-serif; letter-spacing: 0.04em; }
