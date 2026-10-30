@@ -841,3 +841,16 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .palette-option.is-selected { border-color: var(--texte); }
 .palette-option:focus-within { outline: 2px solid var(--texte); outline-offset: 2px; }
 .palette-swatch { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font: 700 0.95rem var(--font-barlow-condensed), sans-serif; flex-shrink: 0; }
+
+/* Installation de l'appli par adhérent (Bureau > Adhérents) : libellé + symbole, jamais la couleur seule. */
+.setup-summary { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.setup-badge { display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap; font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 999px; border: 1.5px solid currentColor; }
+.setup-badge::before { font-size: 0.8rem; }
+.setup-configured { color: var(--succes); }
+.setup-configured::before { content: "✓"; }
+.setup-connected { color: var(--texte); }
+.setup-connected::before { content: "●"; }
+.setup-never { color: var(--texte-doux); }
+.setup-never::before { content: "○"; }
+.setup-no_account { color: var(--texte-doux); border-style: dashed; }
+.setup-no_account::before { content: "–"; }

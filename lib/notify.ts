@@ -82,12 +82,12 @@ export async function notifyMembers(
 }
 
 /** Email d'invitation envoyé par le Bureau à l'import des adhérents. */
-export async function sendInvitation(to: Recipient) {
+export async function sendInvitation(to: Recipient, options: { reminder?: boolean } = {}) {
   const link = `${siteUrl()}/connexion`;
   await getMailer().sendMail({
     from: process.env.MAIL_FROM,
     to: to.email,
-    subject: "Bienvenue sur Volley SMT, l'appli du club",
+    subject: options.reminder ? "Rappel : ton accès à Volley SMT, l'appli du club" : "Bienvenue sur Volley SMT, l'appli du club",
     text: `Bonjour ${to.first_name},
 
 Le club Volley-Ball Loisirs Saint-Mathieu-de-Tréviers a son application : entraînements, matchs, renforts…
