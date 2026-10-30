@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameCard } from "./game";
-import { inSeason, podiumVisible, rewardReason, shardsFromOpening, trainingRewardsDue } from "./game-rewards";
+import { inSeason, podiumVisible, rewardReason, shardPrice, shardsFromOpening, trainingRewardsDue } from "./game-rewards";
 
 const card = (id: string, kind: GameCard["kind"] = "common"): GameCard => ({
   memberId: id,
@@ -23,6 +23,12 @@ describe("récompenses", () => {
     expect(trainingRewardsDue(7, 1)).toEqual([2]);
     expect(trainingRewardsDue(9, 1)).toEqual([2, 3]);
     expect(trainingRewardsDue(9, 3)).toEqual([]);
+  });
+  it("prix en éclats : commune 5, rare 20, spéciales non échangeables", () => {
+    expect(shardPrice(card("a"))).toBe(5);
+    expect(shardPrice(card("a", "rare"))).toBe(20);
+    expect(shardPrice(card("a", "captain"))).toBeNull();
+    expect(shardPrice(card("a", "legend"))).toBeNull();
   });
   it("raisons uniques", () => {
     expect(rewardReason.week("2026-11-02")).toBe("week:2026-11-02");

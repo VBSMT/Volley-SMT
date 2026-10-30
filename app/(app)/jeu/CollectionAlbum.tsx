@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS, cardKey } from "@/lib/domain/game";
+import { shardPrice } from "@/lib/domain/game-rewards";
 import { shortName } from "@/lib/format";
 
 type Entry = { card: GameCard; copies: number };
@@ -41,11 +42,23 @@ function sectionOrder(group: Group, keys: string[]): string[] {
  * Collection en album : grille de petites cartes rangées par équipe, poste ou rareté, avec les
  * cartes manquantes en gris (« ? ») et un compteur par rubrique ; toucher une carte l'ouvre en grand.
  */
-export function CollectionAlbum({ entries, all, onOpen }: { entries: Entry[]; all: GameCard[]; onOpen: (key: string, keys: string[]) => void }) {
+export function CollectionAlbum({
+  entries,
+  all,
+  onOpen,
+  exchange,
+}: {
+  entries: Entry[];
+  all: GameCard[];
+  onOpen: (key: string, keys: string[]) => void;
+  /** Mode échange : cartes manquantes seulement, avec leur prix en éclats ; toucher = acheter. */
+  exchange?: { shards: number; onBuy: (card: GameCard) => void };
+}) {
   const [group, setGroup] = useState<Group>("team");
   const [missingOnly, setMissingOnly] = useState(false);
   const owned = new Map(entries.map((e) => [cardKey(e.card), e]));
-  const visible = all.filter((c) => !missingOnly || !owned.has(cardKey(c)));
+  const onlyMissing = missingOnly || !!exchange;
+  const visible = all.filter((c) => (!onlyMissing || !owned.has(cardKey(c))) && (!exchange || shardPrice(c) !== null));
   const sections = new Map<string, GameCard[]>();
   for (const c of visible) {
     const k = sectionOf(c, group);
@@ -63,9 +76,11 @@ export function CollectionAlbum({ entries, all, onOpen }: { entries: Entry[]; al
             </button>
           ))}
         </div>
-        <label className="album-toggle">
-          <input type="checkbox" checked={missingOnly} onChange={(e) => setMissingOnly(e.target.checked)} /> Manquantes
-        </label>
+        {!exchange && (
+          <label className="album-toggle">
+            <input type="checkbox" checked={missingOnly} onChange={(e) => setMissingOnly(e.target.checked)} /> Manquantes
+          </label>
+        )}
       </div>
 
       {sectionOrder(group, [...sections.keys()]).map((key) => {
@@ -95,6 +110,18 @@ export function CollectionAlbum({ entries, all, onOpen }: { entries: Entry[]; al
                           <PlayerCard card={c} />
                         </span>
                         {e.copies > 1 && <span className="album-copies">×{e.copies}</span>}
+                      </button>
+                    ) : exchange ? (
+                      <button
+                        type="button"
+                        className={`album-missing album-buy${(shardPrice(c) ?? Infinity) <= exchange.shards ? " is-affordable" : ""}${c.kind === "rare" ? " is-rare" : ""}`}
+                        disabled={(shardPrice(c) ?? Infinity) > exchange.shards}
+                        onClick={() => exchange.onBuy(c)}
+                        aria-label={`Obtenir ${shortName(c.firstName, c.lastName)}${c.kind === "rare" ? " (rare)" : ""} pour ${shardPrice(c)} éclats`}
+                      >
+                        <span aria-hidden="true">{c.kind === "rare" ? "★" : "?"}</span>
+                        <small aria-hidden="true">{shortName(c.firstName, c.lastName)}</small>
+                        <b className="album-price" aria-hidden="true">✦ {shardPrice(c)}</b>
                       </button>
                     ) : (
                       <span className="album-missing" aria-label={`Carte manquante : ${shortName(c.firstName, c.lastName)}`}>

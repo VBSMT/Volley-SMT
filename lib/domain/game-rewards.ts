@@ -6,8 +6,9 @@ import { type GameCard, cardKey } from "./game";
 
 /** Un booster tous les 3 entraînements passés auxquels on a répondu au sondage. */
 export const TRAININGS_PER_BOOSTER = 3;
-/** Éclats nécessaires pour choisir une carte. */
+/** Éclats nécessaires pour choisir une carte : commune 5, rare 20. */
 export const SHARDS_PER_CARD = 5;
+export const SHARDS_PER_RARE = 20;
 /** Durée d'affichage du podium de fin de saison sur l'accueil (jours). */
 export const PODIUM_DAYS = 7;
 /** Nombre de joueurs récompensés chaque semaine. */
@@ -50,6 +51,10 @@ export function shardsFromOpening(ownedBefore: Set<string>, cards: GameCard[]): 
 
 /** Cartes qu'on peut choisir contre des éclats : communes et rares (pas Capitaine ni Légende). */
 export const exchangeable = (c: GameCard) => (c.kind ?? "common") === "common" || c.kind === "rare";
+
+/** Prix d'une carte en éclats (null : pas échangeable). */
+export const shardPrice = (c: GameCard): number | null =>
+  (c.kind ?? "common") === "common" ? SHARDS_PER_CARD : c.kind === "rare" ? SHARDS_PER_RARE : null;
 
 const DAY = 86_400_000;
 const days = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / DAY);

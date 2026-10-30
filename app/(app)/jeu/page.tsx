@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STARTER_SIZE } from "@/lib/domain/game";
-import { exchangeable } from "@/lib/domain/game-rewards";
 import { defaultMatchday, editableWeek, isLocked, matchdayTitle } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
@@ -135,7 +134,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
     const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
-    content = <CollectionView entries={collection} all={cards} shards={(wallet?.shards as number) ?? 0} choices={cards.filter(exchangeable)} />;
+    content = <CollectionView entries={collection} all={cards} shards={(wallet?.shards as number) ?? 0} />;
   }
 
   return (

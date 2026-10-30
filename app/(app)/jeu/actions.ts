@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
 import { type Lineup, SLOTS, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
-import { exchangeable, rewardReason, SHARDS_PER_CARD, shardsFromOpening } from "@/lib/domain/game-rewards";
+import { rewardReason, shardPrice, shardsFromOpening } from "@/lib/domain/game-rewards";
 import { getCollection, getGameCards } from "@/lib/game";
 import { awardBooster } from "@/lib/game-rewards";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
@@ -139,21 +139,22 @@ async function addShards(admin: Admin, ownerId: string, n: number) {
   await admin.from("game_wallet").upsert({ owner_id: ownerId, shards: ((data?.shards as number) ?? 0) + n });
 }
 
-/** Échange 5 éclats contre une carte commune ou rare au choix. */
+/** Échange des éclats contre une carte au choix : commune 5, rare 20. */
 export async function exchangeShards(key: string): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
   if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const card = (await getGameCards(await createClient())).find((c) => cardKey(c) === key);
-  if (!card || !exchangeable(card)) return { error: "Carte non disponible contre des éclats." };
+  const price = card ? shardPrice(card) : null;
+  if (!card || price === null) return { error: "Carte non disponible contre des éclats." };
   const admin = createAdminClient();
   const { data } = await admin.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
   const shards = (data?.shards as number) ?? 0;
-  if (shards < SHARDS_PER_CARD) return { error: `Il faut ${SHARDS_PER_CARD} éclats.` };
+  if (shards < price) return { error: `Il faut ${price} éclats.` };
   // Débit conditionnel : deux échanges simultanés ne peuvent pas dépenser les mêmes éclats.
   const { data: spent } = await admin
     .from("game_wallet")
-    .update({ shards: shards - SHARDS_PER_CARD })
+    .update({ shards: shards - price })
     .eq("owner_id", member.id)
     .eq("shards", shards)
     .select("owner_id");
