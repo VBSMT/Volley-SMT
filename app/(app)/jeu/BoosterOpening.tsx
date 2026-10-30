@@ -1,5 +1,6 @@
 "use client";
 
+import { BOOSTER_OPENED } from "@/components/game/VutHeaderLink";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PlayerCard } from "@/components/game/PlayerCard";
@@ -33,6 +34,7 @@ export function BoosterOpening({ label, open, starter = false, remaining = 1 }: 
       setError(result.error ?? "Ouverture impossible.");
       return setPhase("closed");
     }
+    window.dispatchEvent(new Event(BOOSTER_OPENED));
     setCards(result.cards);
     setShards(result.shards ?? 0);
     setPhase("open");
