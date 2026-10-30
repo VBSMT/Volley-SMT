@@ -27,7 +27,7 @@ export function GiftPanel({ players, teams, cards, history }: { players: Option[
     return f ? cards.filter((c) => c.label.toLowerCase().includes(f)) : cards;
   }, [cards, filter]);
 
-  const targetLabel = (to === "all" ? "Tous les joueurs" : (players.find((p) => `m:${p.id}` === to) ?? teams.find((t) => `t:${t.id}` === to))?.label) ?? "";
+  const targetLabel = (to === "all" ? "Tous les adhérents" : (players.find((p) => `m:${p.id}` === to) ?? teams.find((t) => `t:${t.id}` === to))?.label) ?? "";
   const giftLabel = kind === "boosters" ? `${count} booster${count > 1 ? "s" : ""}` : (cards.find((c) => c.id === cardKey)?.label ?? "");
 
   const submit = async () => {
@@ -49,11 +49,12 @@ export function GiftPanel({ players, teams, cards, history }: { players: Option[
     <details className="card stack">
       {dialog}
       <summary>🎁 Cadeaux (maître du jeu)</summary>
+      <p className="small muted">Les adhérents hors Bureau trouveront leur cadeau à l&apos;ouverture du jeu à tous (pas de notification d&apos;ici là).</p>
       <label>
         À qui
         <select value={to} onChange={(e) => setTo(e.target.value)}>
-          <option value="all">Tous les joueurs</option>
-          <optgroup label="Un joueur">
+          <option value="all">Tous les adhérents</option>
+          <optgroup label="Un adhérent">
             {players.map((p) => <option key={p.id} value={`m:${p.id}`}>{p.label}</option>)}
           </optgroup>
           <optgroup label="Une équipe">
