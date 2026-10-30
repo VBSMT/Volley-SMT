@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
-import { type Lineup, SLOTS, isLocked, lineupErrors } from "@/lib/domain/game-week";
+import { type Lineup, SLOTS, bonusLocked, isLocked, lineupErrors } from "@/lib/domain/game-week";
 import { getCollection, getGameCards } from "@/lib/game";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -102,6 +102,9 @@ export async function saveLineup(lineup: Lineup): Promise<{ error?: string }> {
     if (before?.memberId === after?.memberId && before?.teamId === after?.teamId && before?.kind === after?.kind) continue;
     if ((before && isLocked(before.teamId, matches, now)) || (after && isLocked(after.teamId, matches, now))) {
       return { error: "Une carte est verrouillée : le match de son équipe a commencé." };
+    }
+    if (slot === "bonus" && bonusLocked(previous, matches, now)) {
+      return { error: "Case Bonus verrouillée : le premier match d'un de tes titulaires a commencé." };
     }
   }
 

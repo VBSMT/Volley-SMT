@@ -227,6 +227,11 @@ export function isLocked(teamId: string, matches: { teamId: string; startsAt: st
   return matches.some((m) => m.teamId === teamId && Date.parse(m.startsAt) <= now.getTime());
 }
 
+/** La case Bonus se verrouille dès le début du premier match d'un des titulaires alignés. */
+export function bonusLocked(lineup: Lineup, matches: { teamId: string; startsAt: string }[], now: Date): boolean {
+  return STARTERS.some((s) => lineup[s] && isLocked(lineup[s]!.teamId, matches, now));
+}
+
 export type RankEntry = { ownerId: string; total: number; bonus: number; validatedAt: string };
 
 /** Classement : points, puis bonus de poste, puis équipe validée le plus tôt. */
