@@ -10,6 +10,11 @@ import { createClient } from "@/lib/supabase/server";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
   // Messages non lus (tous salons) pour la pastille de l'en-tête.
+  // Boosters VUT à ouvrir (pastille sur « VUT », Bureau seulement pour l'instant).
+  const boosters =
+    member && hasRole(member, "board")
+      ? ((await (await createClient()).from("game_boosters").select("id", { count: "exact", head: true }).is("opened_at", null)).count ?? 0)
+      : 0;
   const unread = member ? [...(await getUnread(await createClient())).values()].reduce((a, b) => a + b, 0) : 0;
 
   return (
@@ -18,8 +23,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
         {member && hasRole(member, "board") && (
-          <Link href="/jeu" className="header-game" aria-label="VUT, Volley Ultimate Team">
+          <Link
+            href={boosters ? "/jeu?vue=boosters" : "/jeu"}
+            className="header-game"
+            aria-label={boosters ? `VUT, ${boosters} booster${boosters > 1 ? "s" : ""} à ouvrir` : "VUT, Volley Ultimate Team"}
+          >
             VUT
+            {boosters > 0 && <span className="chat-badge">{boosters}</span>}
           </Link>
         )}
         {member && (
