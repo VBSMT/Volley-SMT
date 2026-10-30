@@ -13,7 +13,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Ouverture animée d'un booster : le paquet tremble et s'ouvre, puis les cartes sortent une à une,
  * face cachée. Toucher la carte la retourne ; toucher encore la range et fait sortir la suivante.
  */
-export function BoosterOpening({ label, open, starter = false }: { label: string; starter?: boolean; open: () => Promise<{ cards?: GameCard[]; shards?: number; error?: string }> }) {
+export function BoosterOpening({ label, open, starter = false, remaining = 1 }: { label: string; starter?: boolean; remaining?: number; open: () => Promise<{ cards?: GameCard[]; shards?: number; error?: string }> }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("closed");
   const [cards, setCards] = useState<GameCard[]>([]);
@@ -21,6 +21,8 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
   const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shards, setShards] = useState(0);
+  // Restant après celui-ci : décompté dès l'ouverture, sans attendre le rafraîchissement de la page.
+  const left = phase === "closed" || phase === "shaking" ? remaining : remaining - 1;
 
   async function start() {
     if (phase !== "closed") return;
@@ -58,11 +60,14 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
 
   return (
     <div className="booster-stage">
-      <p aria-live="polite" className="small">{status}</p>
+      {/* Aide visible seulement avant l'ouverture ; ensuite annoncée aux lecteurs d'écran seulement. */}
+      <p aria-live="polite" className={phase === "closed" || phase === "done" ? "small" : "sr-only"}>
+        {status}
+      </p>
       {phase !== "done" && (
-        <div className="booster-scene">
+        <div className={`booster-scene${phase === "closed" || phase === "shaking" ? " is-closed" : ""}`}>
           {current && (
-            <div key={index} className={`booster-current${tierOf(current.rating) === "gold" ? " is-gold" : ""}${current.kind && current.kind !== "common" ? ` is-${current.kind}` : ""}`}>
+            <div key={index} className={`booster-current${index === 2 ? " is-third" : ""}${tierOf(current.rating) === "gold" ? " is-gold" : ""}${current.kind && current.kind !== "common" ? ` is-${current.kind}` : ""}`}>
               <button
                 type="button"
                 className={`flip-card${flipped ? " is-flipped" : ""}`}
@@ -99,6 +104,12 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
                 VUT<small>{label}</small>
               </span>
             </span>
+            {/* Boosters restant à ouvrir (celui-ci compris), mis à jour dès l'ouverture. */}
+            {left > 1 && (
+              <span className="booster-count" aria-label={`${left} boosters à ouvrir`}>
+                ×{left}
+              </span>
+            )}
           </button>
           <span className="booster-glow" aria-hidden="true" />
         </div>
@@ -132,7 +143,7 @@ export function BoosterOpening({ label, open, starter = false }: { label: string
           </button>
           {!starter && (
             <button type="button" className="btn-secondary" onClick={() => router.refresh()}>
-              Mes boosters
+              Mes boosters{left > 0 ? ` (${left})` : ""}
             </button>
           )}
         </div>

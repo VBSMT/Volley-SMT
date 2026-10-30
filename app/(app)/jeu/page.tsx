@@ -124,10 +124,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   } else if (tab === "boosters") {
     content = waiting ? (
       <>
-        <p>
-          {waiting} booster{waiting > 1 ? "s" : ""} à ouvrir.
-        </p>
-        <BoosterOpening key={pending![0].id} label="2 ou 3 joueurs" open={openEarned.bind(null, pending![0].id as string)} />
+        <BoosterOpening key={pending![0].id} label="2 ou 3 joueurs" remaining={waiting} open={openEarned.bind(null, pending![0].id as string)} />
       </>
     ) : (
       <div className="card stack booster-empty">
