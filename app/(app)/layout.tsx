@@ -3,6 +3,7 @@ import Link from "next/link";
 import { GuidedTour } from "@/components/GuidedTour";
 import { FeedbackProvider } from "@/components/Feedback";
 import { TabBar } from "@/components/TabBar";
+import { VutHeaderLink } from "@/components/game/VutHeaderLink";
 import { getUnread } from "@/lib/chat";
 import { getDailyState } from "@/lib/game-rewards";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -27,14 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <span className="brand">Volley SMT</span>
         {/* VUT : tout le monde voit l'icône ; le jeu est réservé au Bureau, les autres arrivent sur les règles. */}
         {member && (
-          <Link
-            href={!hasRole(member, "board") ? "/jeu/regles" : boosters ? "/jeu?vue=boosters" : "/jeu"}
-            className="header-game"
-            aria-label={boosters ? `VUT, ${boosters} booster${boosters > 1 ? "s" : ""} à ouvrir` : "VUT, Volley Ultimate Team"}
-          >
-            VUT
-            {boosters > 0 && <span className="chat-badge">{boosters}</span>}
-          </Link>
+          <VutHeaderLink count={boosters} rulesOnly={!hasRole(member, "board")} />
         )}
         {member && (
           <Link href="/chat" className="header-chat" aria-label={unread ? `Messages, ${unread} non lu${unread > 1 ? "s" : ""}` : "Messages"}>
