@@ -56,6 +56,8 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
   - **non-répondants** : la demande (« Entraînement demain 20h–22h — tu viens ? Réponds avant 12h demain. »), ouvre le sondage ;
   - **inscrits présents** : un rappel (« N'oublie pas : entraînement demain 20h–22h, X inscrits »).
   - Rien pour ceux qui ont répondu « je ne viens pas ». Pas d'autre relance.
+  - Si une de ses équipes a un match le même jour, le message l'ajoute (« tu as match ce jour-là »), sans notif de plus.
+- **Match le même jour** : la carte de la séance affiche « 🏐 Attention, tu as match ! » (équipe, adversaire, heure, lieu ; un encadré par match), même sans terrain libre ; si l'adhérent a répondu « je viens », rappel de modifier sa réponse. La réponse n'est jamais changée automatiquement.
 - Envoi en **push** (Web Push) uniquement ; sans notifications activées, rien n'est reçu (l'accueil invite à les activer).
 - **Clôture à 12h le jour J** (réglable dans Paramètres, de 6h à 20h ; textes de l'appli alignés sur ce réglage), puis : génération de la compo, puis notif au Bureau « compo prête, X présents, Y terrains ».
 - La compo est visible **Bureau uniquement**. Les ajustements de dernière minute se font sur place ; le Bureau peut **ajouter ou retirer manuellement un présent** (Compo du soir), la compo est alors recalculée, et **déplacer des joueurs entre équipes par glisser-déposer** (ou toucher puis « Mettre ici ») : totaux et alertes recalculés, répartition conservée jusqu'à une régénération. Il peut aussi **ajouter ou supprimer une équipe** : le nombre d'équipes est alors fixé à la main (`lineups.forced_teams`) et la compo recalculée avec ce nombre (retour possible au nombre automatique).

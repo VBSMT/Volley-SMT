@@ -19,7 +19,11 @@ export type SessionView = {
   present: { id: string; name: string }[];
   absentCount: number;
   myAnswer: boolean | null;
+  /** Matchs des équipes de l'adhérent le même jour (« Attention, tu as match ! »). */
+  myMatches: MyMatch[];
 };
+
+export type MyMatch = { teamName: string; opponent: string; isHome: boolean; startsAt: string; venue: string | null };
 
 /** Séances avec terrains libres et réponses au sondage (lecture autorisée à tout adhérent). */
 export async function getSessions(opts: {
@@ -43,7 +47,7 @@ export async function getSessions(opts: {
   const last = sessions.at(-1)!.starts_at as string;
   const dayMs = 86_400_000;
 
-  const [{ data: matches }, { data: reschedules }, { data: attendance }, { data: directory }, schedule] =
+  const [{ data: matches }, { data: reschedules }, { data: attendance }, { data: directory }, schedule, myMatchMap] =
     await Promise.all([
       supabase
         .from("matches")
@@ -59,6 +63,7 @@ export async function getSessions(opts: {
       supabase.from("attendance").select("session_id, member_id, present").in("session_id", ids),
       supabase.from("member_directory").select("id, first_name, last_name"),
       getSchedule(supabase, opts.client ? "table" : "view"),
+      opts.memberId ? memberMatches(supabase, [opts.memberId], first, last) : Promise.resolve(new Map<string, MyMatch[]>()),
     ]);
 
   const homeByDate = new Map<string, number>();
@@ -97,6 +102,34 @@ export async function getSessions(opts: {
         .sort((a, b) => a.name.localeCompare(b.name, "fr")),
       absentCount: answers.filter((a) => !a.present).length,
       myAnswer: mine ? mine.present : null,
+      myMatches: (opts.memberId ? myMatchMap.get(opts.memberId) : undefined)?.filter((m) => parisDate(m.startsAt) === date) ?? [],
     };
   });
+}
+
+/**
+ * Matchs des équipes de ces adhérents entre deux dates (à un jour près), par adhérent :
+ * sert à signaler un entraînement le jour d'un match.
+ */
+export async function memberMatches(client: SupabaseClient, memberIds: string[], from: string, to: string): Promise<Map<string, MyMatch[]>> {
+  const dayMs = 86_400_000;
+  const { data: links } = await client.from("member_teams").select("member_id, team_id, team:teams(name)").in("member_id", memberIds);
+  const teamIds = [...new Set((links ?? []).map((l) => l.team_id as string))];
+  const byMember = new Map<string, MyMatch[]>();
+  if (!teamIds.length) return byMember;
+  const { data: matches } = await client
+    .from("matches")
+    .select("team_id, opponent, is_home, starts_at, venue")
+    .in("team_id", teamIds)
+    .gte("starts_at", new Date(new Date(from).getTime() - dayMs).toISOString())
+    .lte("starts_at", new Date(new Date(to).getTime() + dayMs).toISOString())
+    .order("starts_at");
+  for (const l of links ?? []) {
+    const team = l.team as unknown as { name: string } | null;
+    const list = (matches ?? [])
+      .filter((m) => m.team_id === l.team_id)
+      .map((m) => ({ teamName: team?.name ?? "", opponent: m.opponent as string, isHome: m.is_home as boolean, startsAt: m.starts_at as string, venue: (m.venue as string | null) ?? null }));
+    byMember.set(l.member_id as string, [...(byMember.get(l.member_id as string) ?? []), ...list]);
+  }
+  return byMember;
 }

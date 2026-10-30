@@ -207,3 +207,11 @@ describe("eventMessage", () => {
     });
   });
 });
+
+describe("entraînement le jour d'un match", () => {
+  it("le message le signale", () => {
+    expect(reminderMessage("ask", 0, 12, true).body).toContain("tu as match ce jour-là");
+    expect(reminderMessage("remind", 5, 12, true).body).toContain("tu as match ce jour-là");
+    expect(reminderMessage("ask", 0, 12).body).not.toContain("match");
+  });
+});

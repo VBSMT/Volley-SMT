@@ -19,7 +19,8 @@ import { runRescheduleMaintenance } from "@/lib/reschedule-server";
 import { getSchedule } from "@/lib/settings";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSessions, type SessionView } from "@/lib/training";
+import { getSessions, memberMatches, type SessionView } from "@/lib/training";
+import { parisDate } from "@/lib/domain/training";
 import { isVolley34SyncDue, runVolley34Sync } from "@/lib/volley34-sync";
 
 export const dynamic = "force-dynamic";
@@ -63,14 +64,20 @@ async function sendReminders(admin: Admin, session: SessionView, members: Member
   const audience = reminderAudience(wanting.map((m) => m.id), answers);
   const byId = new Map(wanting.map((m) => [m.id, m]));
 
+  const day = parisDate(session.startsAt);
+  const matches = await memberMatches(admin, wanting.map((m) => m.id), session.startsAt, session.startsAt);
+  const hasMatch = (id: string) => (matches.get(id) ?? []).some((m) => parisDate(m.startsAt) === day);
+
   const sent: Record<ReminderKind, number> = { ask: 0, remind: 0 };
   for (const kind of ["ask", "remind"] as const) {
-    const message = reminderMessage(kind, session.present.length, closeHour);
     sent[kind] = await send(
       admin,
       kind,
       { session_id: session.id },
-      audience.filter((a) => a.kind === kind).map((a) => ({ recipient: byId.get(a.memberId)!, message })),
+      audience.filter((a) => a.kind === kind).map((a) => ({
+        recipient: byId.get(a.memberId)!,
+        message: reminderMessage(kind, session.present.length, closeHour, hasMatch(a.memberId)),
+      })),
     );
   }
   return sent;
