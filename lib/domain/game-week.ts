@@ -124,6 +124,75 @@ export function simulatedWeek(scores: TeamWeek["scores"]): TeamWeek | null {
   };
 }
 
+// --- Résultats rattachés à la date du match ------------------------------------------------------
+
+export type MatchResult = {
+  matchId: string | null;
+  playedAt: string; // ISO
+  score: TeamWeek["scores"][number];
+  setsWon: number;
+  setsLost: number;
+  pointsWon: number;
+  pointsLost: number;
+};
+
+/** Délai au-delà duquel une semaine est figée même s'il manque un résultat (jours après le dimanche). */
+export const RESULT_DEADLINE_DAYS = 14;
+
+/**
+ * Nouveaux résultats apparus au classement entre deux photos, rattachés aux matchs joués de
+ * l'équipe qui n'ont pas encore de résultat (le plus ancien d'abord). Sets d'après le score ;
+ * points répartis au prorata des sets quand plusieurs résultats arrivent en même temps. Un
+ * résultat sans match connu au calendrier est daté de la veille de la photo.
+ */
+export function attributeResults(
+  before: Totals | null,
+  after: Totals,
+  unresolved: { id: string; startsAt: string }[],
+  photoDate: string,
+): MatchResult[] {
+  const week = teamWeek(before, after);
+  if (!week) return [];
+  const matches = [...unresolved].sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  const totalSets = week.setsWon + week.setsLost || 1;
+  return week.scores.map((score, i) => {
+    const [w, l] = SETS[score];
+    const share = (w + l) / totalSets;
+    const m = matches[i];
+    return {
+      matchId: m?.id ?? null,
+      playedAt: m?.startsAt ?? `${addDays(photoDate, -1)}T18:00:00Z`,
+      score,
+      setsWon: w,
+      setsLost: l,
+      pointsWon: Math.round(week.pointsWon * share),
+      pointsLost: Math.round(week.pointsLost * share),
+    };
+  });
+}
+
+/** Semaine d'une équipe à partir de ses résultats datés (null : pas de résultat cette semaine). */
+export function weekFromResults(results: MatchResult[]): TeamWeek | null {
+  if (!results.length) return null;
+  return {
+    scores: results.map((r) => r.score),
+    setsWon: results.reduce((a, r) => a + r.setsWon, 0),
+    setsLost: results.reduce((a, r) => a + r.setsLost, 0),
+    pointsWon: results.reduce((a, r) => a + r.pointsWon, 0),
+    pointsLost: results.reduce((a, r) => a + r.pointsLost, 0),
+  };
+}
+
+/**
+ * Une semaine devient définitive quand elle est terminée et que tous ses matchs ont un résultat,
+ * ou 14 jours après sa fin (les résultats manquants comptent alors comme non joués).
+ */
+export function weekIsFinal(week: string, pending: number, today: string): boolean {
+  const sunday = addDays(week, 6);
+  if (today <= sunday) return false;
+  return pending === 0 || today > addDays(sunday, RESULT_DEADLINE_DAYS);
+}
+
 // --- Points ------------------------------------------------------------------------------------
 
 export type CardScore = { base: number; bonus: number };

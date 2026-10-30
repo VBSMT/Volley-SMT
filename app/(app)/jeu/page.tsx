@@ -70,7 +70,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     const [lineup, matches, { data: entry }, season] = await Promise.all([
       getLineup(supabase, member.id, week),
       getWeekMatches(supabase, week),
-      supabase.from("game_weeks").select("total, bonus, computed_at").eq("owner_id", member.id).eq("week_start", week).maybeSingle(),
+      supabase.from("game_weeks").select("total, bonus, computed_at, pending").eq("owner_id", member.id).eq("week_start", week).maybeSingle(),
       getCurrentSeason(supabase),
     ]);
     const now = new Date();
@@ -78,6 +78,9 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = (
       <>
         <h2 className="lineup-title">{matchdayTitle(week, season?.startsOn ?? null)}</h2>
+        {!!(entry?.pending as string[] | undefined)?.length && (
+          <p className="pill">⏳ En attente du résultat : {(entry!.pending as string[]).join(", ")} (points provisoires)</p>
+        )}
         <LineupEditor
           points={entry ? Number(entry.total) : null}
           owned={collection.map((e) => e.card)}
@@ -141,6 +144,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
           <li>Le remplaçant compte à 50 %, ou à 100 % s&apos;il remplace un titulaire dont l&apos;équipe n&apos;a pas joué.</li>
           <li>La note (40–99) est la forme de l&apos;équipe sur ses 5 derniers matchs (60 au départ) ; bandeau or ≥ 80, argent 65–79, bronze en dessous.</li>
           <li>Classement : points, puis bonus, puis équipe validée le plus tôt.</li>
+          <li>Un résultat publié en retard sur volley34 compte dans la semaine du match : la semaine reste provisoire tant qu&apos;un résultat manque, et se fige au plus tard 14 jours après sa fin. Le booster du top 3 est donné quand la semaine est définitive.</li>
         </ul>
       </details>
       {tools}

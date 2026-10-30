@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, bonusLocked, matchdayTitle, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, attributeResults, bonusLocked, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -163,5 +163,34 @@ describe("case Bonus : Capitaine et Légendes", () => {
     expect(run("front_x2_5").total - plain.total).toBe(9); // 2 avants : 3 → 7,5
     expect(run("bench_x2").total - plain.total).toBe(6.5); // remplaçant 50 % → 100 %
     expect(run("all_win_30").extra).toBeCloseTo(0.3 * (13 * 4), 1);
+  });
+});
+
+describe("résultats rattachés à la date du match", () => {
+  const z = { s30: 0, s31: 0, s32: 0, s23: 0, s13: 0, s03: 0, fWon: 0, fLost: 0 };
+  const t = (sc: Partial<typeof z>, sw: number, sl: number, pw: number, pl: number) => ({ scores: { ...z, ...sc }, setsWon: sw, setsLost: sl, pointsWon: pw, pointsLost: pl });
+  it("un résultat tardif va au match joué le plus ancien", () => {
+    const r = attributeResults(t({}, 0, 0, 0, 0), t({ s31: 1 }, 3, 1, 100, 80), [
+      { id: "m2", startsAt: "2026-11-12T19:00:00Z" },
+      { id: "m1", startsAt: "2026-11-05T19:00:00Z" },
+    ], "2026-11-14");
+    expect(r).toEqual([{ matchId: "m1", playedAt: "2026-11-05T19:00:00Z", score: "s31", setsWon: 3, setsLost: 1, pointsWon: 100, pointsLost: 80 }]);
+  });
+  it("deux résultats d'un coup : points au prorata des sets", () => {
+    const r = attributeResults(null, t({ s30: 1, s23: 1 }, 5, 3, 180, 160), [
+      { id: "a", startsAt: "2026-11-03T19:00:00Z" },
+      { id: "b", startsAt: "2026-11-05T19:00:00Z" },
+    ], "2026-11-06");
+    expect(r.map((x) => [x.matchId, x.score, x.pointsWon])).toEqual([["a", "s30", 68], ["b", "s23", 113]]);
+  });
+  it("sans match au calendrier : daté de la veille de la photo", () => {
+    expect(attributeResults(null, t({ s03: 1 }, 0, 3, 50, 75), [], "2026-11-06")[0]).toMatchObject({ matchId: null, playedAt: "2026-11-05T18:00:00Z" });
+  });
+  it("semaine définitive : complète, ou 14 jours après", () => {
+    expect(weekIsFinal("2026-11-02", 0, "2026-11-08")).toBe(false); // pas terminée
+    expect(weekIsFinal("2026-11-02", 0, "2026-11-09")).toBe(true);
+    expect(weekIsFinal("2026-11-02", 1, "2026-11-20")).toBe(false);
+    expect(weekIsFinal("2026-11-02", 1, "2026-11-23")).toBe(true);
+    expect(weekFromResults([])).toBeNull();
   });
 });

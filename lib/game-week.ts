@@ -1,9 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type CardKind, type LegendBonus, cardKey, gamePosition } from "@/lib/domain/game";
-import { type CardInfo, type Lineup, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, teamWeek, weekStart } from "@/lib/domain/game-week";
+import { type CardInfo, type Lineup, type MatchResult, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, weekFromResults, weekIsFinal, weekStart } from "@/lib/domain/game-week";
 import { parisClock } from "@/lib/domain/notifications";
 import { awardTop3 } from "@/lib/game-rewards";
-import type { StandingRow } from "@/lib/domain/standings";
 
 /** Lundi de la semaine en cours (heure de Paris). */
 export const currentWeek = (now = new Date()) => weekStart(parisClock(now).date);
@@ -27,45 +26,48 @@ export async function getLineup(client: SupabaseClient, ownerId: string, week: s
   return lineup;
 }
 
-type Totals = Pick<StandingRow, "scores" | "setsWon" | "setsLost" | "pointsWon" | "pointsLost">;
-
-/** Totaux de l'équipe du club dans la dernière photo du classement prise au plus tard ce jour-là. */
-async function totalsAt(admin: SupabaseClient, teamId: string, code: string | null, name: string, day: string): Promise<Totals | null> {
-  const { data } = await admin
-    .from("standings_snapshots")
-    .select("rows")
-    .eq("team_id", teamId)
-    .lte("taken_on", day)
-    .order("taken_on", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  const rows = (data?.rows as StandingRow[] | undefined) ?? [];
-  return rows.find((r) => (code && r.code === code) || r.name === name) ?? null;
-}
-
 /**
- * Calcule (ou recalcule) les points de toutes les équipes VUT d'une semaine. Les matchs de la
- * semaine apparaissent entre la photo du lundi (avant) et celle du lundi suivant (après) ; en cours
- * de semaine, la dernière photo donne des points provisoires. Idempotent.
+ * Calcule (ou recalcule) les points de toutes les équipes VUT d'une semaine, d'après les résultats
+ * datés des matchs (`game_team_results`, rattachés à la date du match même s'ils sont publiés en
+ * retard). Tant qu'un match joué de la semaine n'a pas de résultat, la semaine reste provisoire
+ * (équipes listées dans `pending`) ; elle devient définitive une fois complète, ou 14 jours après
+ * sa fin. Idempotent. Renvoie le nombre de joueurs et si la semaine est définitive.
  */
-export async function computeWeek(admin: SupabaseClient, week: string): Promise<number> {
+export async function computeWeek(admin: SupabaseClient, week: string, now = new Date()): Promise<{ players: number; final: boolean }> {
   const { data: entries } = await admin.from("game_weeks").select("owner_id").eq("week_start", week);
-  if (!entries?.length) return 0;
+  const { from, to } = weekRange(week);
 
-  const { data: teams } = await admin.from("teams").select("id, name, volley34_ref");
+  const { data: teams } = await admin.from("teams").select("id, name");
   // Outils de test : un résultat simulé remplace le vrai pour l'équipe et la semaine.
   const { data: tests } = await admin.from("game_test_results").select("team_id, score").eq("week_start", week);
+  const { data: results } = await admin.from("game_team_results").select("*").gte("played_at", from).lt("played_at", to);
+  const { data: played } = await admin.from("matches").select("id, team_id, starts_at").gte("starts_at", from).lt("starts_at", to).lt("starts_at", now.toISOString());
+  const withResult = new Set((results ?? []).map((r) => r.match_id as string | null).filter(Boolean));
+
   const weeks = new Map<string, TeamWeek | null>();
+  const pending: string[] = [];
   for (const t of teams ?? []) {
     const simulated = (tests ?? []).filter((r) => r.team_id === t.id).map((r) => r.score as TeamWeek["scores"][number]);
     if (simulated.length) {
       weeks.set(t.id as string, simulatedWeek(simulated));
       continue;
     }
-    const before = await totalsAt(admin, t.id, t.volley34_ref, t.name, week);
-    const after = await totalsAt(admin, t.id, t.volley34_ref, t.name, addDays(week, 7));
-    weeks.set(t.id as string, teamWeek(before, after));
+    const mine: MatchResult[] = (results ?? [])
+      .filter((r) => r.team_id === t.id)
+      .map((r) => ({
+        matchId: r.match_id as string | null,
+        playedAt: r.played_at as string,
+        score: r.score as MatchResult["score"],
+        setsWon: r.sets_won as number,
+        setsLost: r.sets_lost as number,
+        pointsWon: r.points_won as number,
+        pointsLost: r.points_lost as number,
+      }));
+    weeks.set(t.id as string, weekFromResults(mine));
+    if ((played ?? []).some((m) => m.team_id === t.id && !withResult.has(m.id as string))) pending.push(t.name as string);
   }
+  const final = weekIsFinal(week, pending.length, parisClock(now).date);
+  if (!entries?.length) return { players: 0, final };
 
   const { data: lineups } = await admin.from("game_lineups").select("owner_id, slot, member_id, team_id, kind").eq("week_start", week);
   const { data: members } = await admin.from("members").select("id, sex, position_1, position_2");
@@ -88,27 +90,33 @@ export async function computeWeek(admin: SupabaseClient, week: string): Promise<
     const score = lineupScore(lineup, positions, weeks);
     await admin
       .from("game_weeks")
-      .update({ total: score.total, bonus: score.bonus, detail: score.slots, computed_at: new Date().toISOString() })
+      .update({ total: score.total, bonus: score.bonus, detail: score.slots, computed_at: new Date().toISOString(), final, pending })
       .eq("owner_id", e.owner_id)
       .eq("week_start", week);
   }
-  return entries.length;
+  return { players: entries.length, final };
 }
 
 /** Heure (Paris) du calcul quotidien des points, après la synchro volley34 de 6h. */
 const COMPUTE_HOUR = 7;
 
-/** Tick horaire : chaque jour à 7h, points provisoires de la semaine ; le lundi, points définitifs de la précédente. */
+/**
+ * Tick horaire, chaque jour à 7h (après la synchro de 6h) : points de la semaine en cours et de
+ * toutes les semaines encore provisoires (résultats publiés en retard) ; quand une semaine devient
+ * définitive, son top 3 reçoit son booster (une seule fois).
+ */
 export async function runGameScoring(admin: SupabaseClient, now: Date) {
   const clock = parisClock(now);
   if (clock.hour !== COMPUTE_HOUR) return null;
-  const week = weekStart(clock.date);
-  const report: Record<string, number> = { [week]: await computeWeek(admin, week) };
-  if (clock.date === week) {
-    // Lundi : points définitifs de la semaine passée, puis un booster pour son top 3.
-    const last = addDays(week, -7);
-    report[last] = await computeWeek(admin, last);
-    report.top3 = await awardTop3(admin, last);
+  const current = weekStart(clock.date);
+  const oldest = addDays(current, -7 * 4); // au-delà, les semaines sont forcément figées (14 jours)
+  const { data: open } = await admin.from("game_weeks").select("week_start").eq("final", false).gte("week_start", oldest).lt("week_start", current);
+  const weeks = [...new Set([current, ...(open ?? []).map((w) => w.week_start as string)])];
+  const report: Record<string, unknown> = {};
+  for (const week of weeks) {
+    const r = await computeWeek(admin, week, now);
+    report[week] = r;
+    if (r.final) report[`top3:${week}`] = await awardTop3(admin, week);
   }
   return report;
 }
