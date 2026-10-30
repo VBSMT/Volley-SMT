@@ -142,7 +142,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 
 ## Messagerie éphémère
 - Salons : **Tout le club**, **chaque équipe** (ses joueurs uniquement ; le Bureau n'y a pas accès, sauf ses membres qui jouent dans l'équipe), **Capitaines** (capitaines + Bureau), **Bénévoles** (bénévoles + Bureau), **Bureau**. Accès via l'icône 💬 de l'en-tête (pastille des non-lus) ; pages `/chat`, `/chat/[salon]`.
-- Texte seulement (1000 caractères max), noms « Prénom N. », messages **effacés après 30 jours** (purge de nuit) ; ouverture d'un salon = 70 derniers messages, bouton « Messages précédents » par paquets de 70 jusqu'à la limite de conservation. Temps réel Supabase Realtime (RLS appliquée : `can_access_room`).
+- Texte seulement (1000 caractères max), noms « Prénom N. », messages **effacés après 30 jours** (purge de nuit) ; ouverture d'un salon = 70 derniers messages, bouton « Messages précédents » par paquets de 70 jusqu'à la limite de conservation. Temps réel Supabase Realtime (RLS appliquée : `can_access_room`) ; son propre message s'affiche dès l'envoi, et si le temps réel est coupé, relève des nouveaux messages toutes les 15 s (onglet visible). Un salon s'ouvre tout en bas, sur les derniers messages.
 - Chacun supprime ses messages, le Bureau tous ; « Signaler » notifie le Bureau.
 - Notifications **désactivées par défaut** : par salon (cloche 🔔 dans le salon, `chat_room_prefs.notify`) et « quand on me cite » (@Prénom N., `members.notify_mentions`, dans le profil).
 - Exception à la convention de confirmation : l'envoi d'un message n'en demande pas (suppression et signalement, si).
