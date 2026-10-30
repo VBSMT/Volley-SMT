@@ -18,6 +18,8 @@ import { formatDay, formatTime } from "@/lib/format";
 import { getMatchPoll } from "@/lib/match-polls";
 import { getOpenReinforcements } from "@/lib/reinforcements";
 import { createClient } from "@/lib/supabase/server";
+import { getDailyState } from "@/lib/game-rewards";
+import { DailyBoosterLink } from "./DailyBoosterLink";
 import { getSessions } from "@/lib/training";
 
 export const metadata: Metadata = { title: "Accueil" };
@@ -57,6 +59,8 @@ export default async function AccueilPage() {
 
   // Bureau : demandes en attente (bénévolat).
   const isBoard = hasRole(member, "board");
+  // Booster VUT du jour : Bureau seulement tant que le jeu n'est pas ouvert à tous.
+  const daily = isBoard ? await getDailyState(supabase, member.id) : null;
   const [{ count: pendingVolunteers }, { count: pendingReschedules }] = isBoard
     ? await Promise.all([
         supabase.from("volunteer_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -81,7 +85,10 @@ export default async function AccueilPage() {
 
   return (
     <main className="page stack">
-      <h1>Bonjour {member.first_name}</h1>
+      <div className="home-title">
+        <h1>Bonjour {member.first_name}</h1>
+        {daily && !daily.claimedToday && <DailyBoosterLink bonus={daily.bonusToday} />}
+      </div>
       {celebrations.length > 0 && <CelebrationCards items={celebrations} />}
       {/* VUT réservé au Bureau pour l'instant : podium de fin de saison pour ses joueurs. */}
       {isBoard && <SeasonPodium client={supabase} />}

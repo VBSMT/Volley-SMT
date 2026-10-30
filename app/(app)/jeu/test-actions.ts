@@ -36,7 +36,8 @@ export async function resetAll(): Promise<Result> {
     if (error) return { error: error.message };
   }
   await admin.from("game_test_results").delete().neq("id", NO_ID);
-  revalidatePath("/jeu");
+  // Les boosters du jour et la série partent avec game_boosters ; la pastille VUT de l'en-tête suit.
+  revalidatePath("/", "layout");
   return { message: "VUT remis à zéro pour tout le monde." };
 }
 

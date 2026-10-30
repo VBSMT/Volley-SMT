@@ -14,7 +14,6 @@ export function DailyCard({ state }: { state: DailyState }) {
   const { claimedToday, dayInCycle, streak, bonusToday } = state;
   // Jours déjà faits dans le cycle en cours (aujourd'hui compris s'il est récupéré).
   const done = claimedToday ? dayInCycle : dayInCycle - 1;
-  const left = STREAK_DAYS - dayInCycle;
 
   const claim = () =>
     start(async () => {
@@ -30,27 +29,23 @@ export function DailyCard({ state }: { state: DailyState }) {
     <section className={`card daily-card${bonusToday && !claimedToday ? " is-bonus" : ""}`} aria-labelledby="daily-title">
       <div className="daily-head">
         <div className="daily-pack" aria-hidden="true">VUT</div>
-        <div>
+        <div className="daily-text">
           <h2 id="daily-title" className="daily-title">{claimedToday ? "✓ Booster récupéré" : bonusToday ? "🔥 Série de 7 jours !" : "🎁 Booster du jour"}</h2>
-          <p className="small muted">{claimedToday ? "Reviens demain pour le suivant." : "2 ou 3 cartes · à récupérer avant minuit"}</p>
+          <p className="small muted">
+            🔥 {streak} jour{streak > 1 ? "s" : ""} de suite
+          </p>
         </div>
+        <button type="button" className="btn-primary daily-button" disabled={claimedToday || busy} onClick={claim}>
+          {claimedToday ? "À demain" : busy ? "…" : bonusToday ? "Récupérer ×2" : "Récupérer"}
+        </button>
       </div>
-      <ol className="daily-dots" aria-label={`Série : jour ${dayInCycle} sur ${STREAK_DAYS}`}>
+      <ol className="daily-dots" aria-label={`Série : jour ${dayInCycle} sur ${STREAK_DAYS}, booster bonus au ${STREAK_DAYS}e jour, un jour manqué remet à zéro`}>
         {Array.from({ length: STREAK_DAYS }, (_, i) => (
           <li key={i} className={i < done ? "is-done" : i === done && !claimedToday ? "is-today" : ""}>
             {i === STREAK_DAYS - 1 ? "🎁" : i < done ? "✓" : i + 1}
           </li>
         ))}
       </ol>
-      <p className="small">
-        <span aria-label={`${streak} jours de suite`}>🔥 {streak}</span>
-        {" · "}
-        {bonusToday && !claimedToday ? "Booster bonus aujourd'hui !" : left > 0 ? `Encore ${left} jour${left > 1 ? "s" : ""} pour un booster bonus` : "Booster bonus récupéré"}
-      </p>
-      <button type="button" className="btn-primary" disabled={claimedToday || busy} onClick={claim}>
-        {claimedToday ? "À DEMAIN" : busy ? "…" : bonusToday ? "RÉCUPÉRER LES 2 BOOSTERS" : "RÉCUPÉRER"}
-      </button>
-      <p className="small muted">Un jour manqué remet la série à zéro.</p>
     </section>
   );
 }
