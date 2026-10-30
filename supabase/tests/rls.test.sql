@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(48);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -54,6 +54,9 @@ update public.members set position_1 = 'setter', image_consent = true, photo_upd
 insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000001', 'starter');
 insert into public.game_collection (owner_id, member_id, team_id) values
   ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1');
+insert into public.game_lineups (owner_id, week_start, slot, member_id, team_id) values
+  ('00000000-0000-0000-0000-000000000001', current_date, 'setter', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1');
+insert into public.game_weeks (owner_id, week_start) values ('00000000-0000-0000-0000-000000000001', current_date);
 
 -- Se connecter en tant que l'utilisateur n (1 adhérent, 2 capitaine, 3 bénévole, 4 Bureau).
 create function pg_temp.login(n int) returns void language plpgsql as $$
@@ -129,9 +132,12 @@ select pg_temp.login(2);
 select is((select count(*) from public.game_cards)::int, 0, 'jeu : réservé au Bureau pour l''instant');
 select is((select count(*) from public.game_boosters)::int, 0, 'jeu : boosters des autres invisibles');
 select is((select count(*) from public.game_collection)::int, 0, 'jeu : collections des autres invisibles');
+select is((select count(*) from public.game_lineups)::int, 0, 'jeu : équipes des autres invisibles');
+select is((select count(*) from public.game_weeks)::int, 0, 'jeu : classement réservé au Bureau');
 select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
 select pg_temp.login(4);
 select is((select count(*) from public.game_cards)::int, 1, 'jeu (Bureau) : seuls les joueurs avec un poste ont une carte');
+select is((select count(*) from public.game_weeks)::int, 1, 'jeu (Bureau) : voit le classement');
 select pg_temp.login(1);
 select is((select count(*) from public.game_collection)::int, 1, 'jeu : voit sa collection');
 update public.members set image_consent = false where id = '00000000-0000-0000-0000-000000000001';
