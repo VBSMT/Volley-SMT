@@ -27,6 +27,11 @@
   --defaite: #b91c1c;
   --sur-victoire: #111111;
   --sur-defaite: #ffffff;
+  --accent-fond: #111111;
+  --accent-texte: #ffe81a;
+  --carte-forte: #111111;
+  --carte-forte-bord: transparent;
+  --lien: #111111;
 }
 
 /* Thème sombre : choisi dans le profil, ou automatique selon le téléphone. */
@@ -54,6 +59,11 @@
   --defaite: #ff5c7a;
   --sur-victoire: #111111;
   --sur-defaite: #111111;
+  --accent-fond: #ffe81a;
+  --accent-texte: #111111;
+  --carte-forte: #262624;
+  --carte-forte-bord: #5c5a2a;
+  --lien: #f2f2ef;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -79,6 +89,11 @@
     --defaite: #ff5c7a;
     --sur-victoire: #111111;
     --sur-defaite: #111111;
+  --accent-fond: #ffe81a;
+  --accent-texte: #111111;
+  --carte-forte: #262624;
+  --carte-forte-bord: #5c5a2a;
+  --lien: #f2f2ef;
   }
 }
 
@@ -516,6 +531,7 @@ a.btn-primary { color: var(--noir); }
   border-radius: 10px;
   background: #111111;
   color: #ffffff;
+  border: 1px solid var(--carte-forte-bord);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.3);
 }
 .toast span { flex: 1; }
@@ -640,7 +656,7 @@ a.btn-primary { color: var(--noir); }
 .eff-tile .eff-second { margin-top: 0.4rem; }
 .eff-ring {
   width: 56px; height: 56px; border-radius: 50%; margin-bottom: 0.3rem;
-  background: conic-gradient(var(--texte) calc(var(--p) * 1%), var(--grille) 0);
+  background: conic-gradient(var(--texte) calc(var(--p) * 1%), var(--axe) 0);
   -webkit-mask: radial-gradient(circle, transparent 54%, #000 56%);
   mask: radial-gradient(circle, transparent 54%, #000 56%);
 }
@@ -672,7 +688,7 @@ a.btn-primary { color: var(--noir); }
 .pts-value { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
 
 /* --- Félicitations éphémères (accueil) --- */
-.bravo { position: relative; overflow: hidden; background: #111111; color: #ffffff; border-radius: 16px; padding: 1rem; display: grid; gap: 0.4rem; }
+.bravo { position: relative; overflow: hidden; background: var(--carte-forte); border: 1px solid var(--carte-forte-bord); color: #ffffff; border-radius: 16px; padding: 1rem; display: grid; gap: 0.4rem; }
 .bravo > *:not(.confetti) { position: relative; z-index: 1; }
 .bravo-top { display: flex; justify-content: space-between; align-items: center; }
 .bravo-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; color: #FFE81A; }
@@ -726,7 +742,7 @@ a.btn-primary { color: var(--noir); }
 .roster li:last-child { border-bottom: 0; }
 .team-badge { justify-self: start; background: #FFE81A; color: #111111; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px; }
 .team-initials { display: flex; }
-.team-initials i { width: 26px; height: 26px; border-radius: 50%; background: #111111; color: #FFE81A; font: 700 0.62rem/22px inherit; text-align: center; font-style: normal; border: 2px solid var(--surface); margin-left: -7px; }
+.team-initials i { width: 26px; height: 26px; border-radius: 50%; background: var(--accent-fond); color: var(--accent-texte); font: 700 0.62rem/22px inherit; text-align: center; font-style: normal; border: 2px solid var(--surface); margin-left: -7px; }
 .team-initials i:first-child { margin-left: 0; }
 .roster-edit li { flex-wrap: wrap; align-items: center; }
 .roster-selects { display: flex; gap: 0.4rem; }
@@ -735,7 +751,7 @@ a.btn-primary { color: var(--noir); }
 .team-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: 0.5rem; }
 .team-nav-btn {
   min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.45rem;
-  border-radius: 12px; background: #111111; color: #FFE81A; font-weight: 700; text-decoration: none;
+  border-radius: 12px; background: var(--accent-fond); color: var(--accent-texte); font-weight: 700; text-decoration: none;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
 }
 .team-nav-btn:active { transform: scale(0.98); }
@@ -761,7 +777,7 @@ a.btn-primary { color: var(--noir); }
 .tour-dots i.on { width: 20px; background: var(--texte); }
 .tour-actions { display: flex; justify-content: space-between; align-items: center; }
 .tour-skip { min-height: 44px; border: 0; background: none; color: var(--texte-doux); font: inherit; font-weight: 600; cursor: pointer; }
-.tour-next { min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: 10px; background: #111111; color: #FFE81A; font: inherit; font-weight: 700; cursor: pointer; }
+.tour-next { min-height: 44px; padding: 0 1.1rem; border: 0; border-radius: 10px; background: var(--accent-fond); color: var(--accent-texte); font: inherit; font-weight: 700; cursor: pointer; }
 @media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
 
 .contact-view { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; background: var(--surface-2); border-radius: 10px; padding: 0.6rem 0.75rem; }
@@ -769,3 +785,12 @@ a.btn-primary { color: var(--noir); }
 .contact-view .btn-secondary { width: auto; min-height: 44px; padding: 0 0.9rem; }
 .contact-view a { color: var(--texte); }
 .pending-report { margin: 0; padding: 0.35rem 0.6rem; border-radius: 8px; background: var(--surface-2); border-left: 3px solid #FFE81A; }
+
+/* Liens : jamais le bleu par défaut du navigateur (illisible en sombre). */
+a { color: var(--lien); text-underline-offset: 3px; }
+
+/* Sombre : barres des autres équipes un peu plus visibles. */
+[data-theme="dark"] .diverging li:not(.mine) .div-bar { opacity: 0.75; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .diverging li:not(.mine) .div-bar { opacity: 0.75; }
+}
