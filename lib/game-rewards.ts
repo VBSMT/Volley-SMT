@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { rank } from "@/lib/domain/game-week";
-import { TOP_REWARDED, rewardReason, trainingRewardsDue } from "@/lib/domain/game-rewards";
+import { TOP_REWARDED, dailyState, rewardReason, trainingRewardsDue } from "@/lib/domain/game-rewards";
 import { parisClock } from "@/lib/domain/notifications";
 import { notifyMembers } from "@/lib/notify";
 
@@ -89,6 +89,22 @@ export async function runGameRewards(admin: SupabaseClient, now: Date) {
  * Début d'une nouvelle saison : les collections repartent de zéro (boosters, cartes, équipes,
  * éclats). L'historique des points (`game_weeks`) reste, filtré par saison. Une fois par jour (3h).
  */
+/**
+ * Purge de nuit : boosters du jour et de série ouverts depuis plus de 30 jours supprimés ; pour les
+ * autres boosters ouverts, la liste des cartes tirées est effacée (la raison reste, elle évite qu'une
+ * récompense soit redonnée). Les cartes obtenues restent dans les collections.
+ */
+export async function purgeOldBoosters(admin: SupabaseClient, now: Date) {
+  const before = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const { count: deleted } = await admin
+    .from("game_boosters")
+    .delete({ count: "exact" })
+    .lt("opened_at", before)
+    .or("reason.like.daily:%,reason.like.streak:%,reason.eq.test");
+  await admin.from("game_boosters").update({ cards: null }).lt("opened_at", before).not("cards", "is", null);
+  return deleted ?? 0;
+}
+
 export async function resetGameIfSeasonStarts(admin: SupabaseClient, now: Date) {
   const clock = parisClock(now);
   if (clock.hour !== 3) return null;
@@ -99,4 +115,11 @@ export async function resetGameIfSeasonStarts(admin: SupabaseClient, now: Date) 
     await admin.from(table).delete().neq("owner_id", none);
   }
   return { reset: true };
+}
+
+/** Booster du jour : jours déjà récupérés (15 derniers jours suffisent pour une série de 7). */
+export async function getDailyState(client: SupabaseClient, ownerId: string, now = new Date()) {
+  const since = new Date(now.getTime() - 15 * 86_400_000).toISOString();
+  const { data } = await client.from("game_boosters").select("reason").eq("owner_id", ownerId).like("reason", "daily:%").gte("created_at", since);
+  return dailyState((data ?? []).map((r) => (r.reason as string).slice("daily:".length)), parisClock(now).date);
 }

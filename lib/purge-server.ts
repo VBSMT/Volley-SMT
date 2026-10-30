@@ -2,6 +2,7 @@ import "server-only";
 import { parisClock } from "@/lib/domain/notifications";
 import { CHAT_RETENTION_DAYS } from "@/lib/domain/chat";
 import { memberPurgeCutoff } from "@/lib/domain/purge";
+import { purgeOldBoosters } from "@/lib/game-rewards";
 import type { createAdminClient } from "@/lib/supabase/admin";
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -41,8 +42,9 @@ export async function runPurge(admin: Admin, now: Date) {
     .lt("created_at", new Date(now.getTime() - CHAT_RETENTION_DAYS * 86_400_000).toISOString());
 
   const photos = await purgePhotos(admin);
+  const boosters = await purgeOldBoosters(admin, now);
 
-  return { levels, messages: messages ?? 0, photos, members: (old ?? []).length - errors.length, errors };
+  return { levels, messages: messages ?? 0, photos, boosters, members: (old ?? []).length - errors.length, errors };
 }
 
 /** Supprime une fiche (et tout ce qui en dépend) puis son compte de connexion. Renvoie l'erreur éventuelle. */

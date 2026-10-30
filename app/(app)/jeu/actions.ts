@@ -5,7 +5,8 @@ import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/ga
 import { type Lineup, SLOTS, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
 import { rewardReason, shardPrice, shardsFromOpening } from "@/lib/domain/game-rewards";
 import { getCollection, getGameCards } from "@/lib/game";
-import { awardBooster } from "@/lib/game-rewards";
+import { awardBooster, getDailyState } from "@/lib/game-rewards";
+import { parisClock } from "@/lib/domain/notifications";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -166,4 +167,21 @@ export async function exchangeShards(key: string): Promise<{ error?: string }> {
   }
   revalidatePath("/jeu");
   return {};
+}
+
+/** Booster du jour (une fois par jour, heure de Paris) et, au 7ᵉ jour de suite, un booster bonus. */
+export async function claimDaily(): Promise<{ error?: string; bonus?: boolean }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
+  const admin = createAdminClient();
+  const state = await getDailyState(admin, member.id);
+  if (state.claimedToday) return { error: "Booster du jour déjà récupéré. Reviens demain !" };
+  const today = parisClock(new Date()).date;
+  // L'index unique (joueur, raison) empêche un double booster, même en cas de double toucher.
+  const { error } = await admin.from("game_boosters").insert({ owner_id: member.id, kind: "earned", reason: rewardReason.daily(today) });
+  if (error) return { error: error.code === "23505" ? "Booster du jour déjà récupéré." : "Récupération impossible. Réessayez." };
+  if (state.bonusToday) await admin.from("game_boosters").insert({ owner_id: member.id, kind: "earned", reason: rewardReason.streak(today) });
+  revalidatePath("/", "layout");
+  return { bonus: state.bonusToday };
 }

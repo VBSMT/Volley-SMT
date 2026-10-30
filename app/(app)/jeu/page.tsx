@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { STARTER_SIZE } from "@/lib/domain/game";
 import { defaultMatchday, editableWeek, isLocked, matchdayTitle } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
+import { getDailyState } from "@/lib/game-rewards";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
 import { currentWeek, getLineup, getMatchdays, getWeekMatches } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -14,6 +15,7 @@ import { CollectionView } from "./CollectionView";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
 import { TestTools } from "./TestTools";
+import { DailyCard } from "./DailyCard";
 
 export const metadata: Metadata = { title: "VUT" };
 
@@ -120,15 +122,20 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
       </>
     );
   } else if (tab === "boosters") {
+    const daily = <DailyCard state={await getDailyState(supabase, member.id)} />;
     content = waiting ? (
       <>
+        {daily}
         <BoosterOpening key={pending![0].id} label="2 ou 3 joueurs" remaining={waiting} open={openEarned.bind(null, pending![0].id as string)} />
       </>
     ) : (
+      <>
+      {daily}
       <div className="card stack booster-empty">
         <div className="booster-idle" aria-hidden="true">VUT</div>
         <p>Pas de booster à ouvrir. Tu en gagnes : en validant ton équipe chaque semaine, en finissant dans le top 3 de la semaine, tous les 3 entraînements où tu as répondu au sondage (à 22h après le 3e), et en venant aux événements.</p>
       </div>
+      </>
     );
   } else if (tab === "classement") {
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;

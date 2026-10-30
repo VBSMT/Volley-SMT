@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { GameCard } from "./game";
-import { inSeason, podiumVisible, rewardReason, shardPrice, shardsFromOpening, trainingRewardsDue } from "./game-rewards";
+import { dailyState, inSeason, podiumVisible, rewardReason, shardPrice, shardsFromOpening, trainingRewardsDue } from "./game-rewards";
 
 const card = (id: string, kind: GameCard["kind"] = "common"): GameCard => ({
   memberId: id,
@@ -55,4 +55,19 @@ describe("fin de saison", () => {
     expect(inSeason("2026-08-24", s)).toBe(false);
     expect(inSeason("2027-07-05", s)).toBe(false);
   });
+});
+
+describe("booster du jour et série", () => {
+  const days = (from: string, n: number) => Array.from({ length: n }, (_, i) => new Date(Date.parse(`${from}T12:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10));
+  it("premier jour", () => expect(dailyState([], "2026-11-03")).toEqual({ claimedToday: false, streak: 0, dayInCycle: 1, bonusToday: false }));
+  it("4ᵉ jour à récupérer après 3 jours de suite", () => {
+    expect(dailyState(days("2026-11-01", 3), "2026-11-04")).toMatchObject({ claimedToday: false, streak: 3, dayInCycle: 4 });
+  });
+  it("déjà récupéré aujourd'hui", () => expect(dailyState(days("2026-11-01", 4), "2026-11-04")).toMatchObject({ claimedToday: true, streak: 4, dayInCycle: 4 }));
+  it("7ᵉ jour : bonus, puis la série repart", () => {
+    expect(dailyState(days("2026-11-01", 6), "2026-11-07").bonusToday).toBe(true);
+    expect(dailyState(days("2026-11-01", 7), "2026-11-08")).toMatchObject({ dayInCycle: 1, bonusToday: false });
+    expect(dailyState(days("2026-11-01", 13), "2026-11-14").bonusToday).toBe(true);
+  });
+  it("un jour manqué remet à zéro", () => expect(dailyState(["2026-11-01", "2026-11-02"], "2026-11-04")).toMatchObject({ streak: 0, dayInCycle: 1 }));
 });

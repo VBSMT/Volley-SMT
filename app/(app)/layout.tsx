@@ -4,6 +4,7 @@ import { GuidedTour } from "@/components/GuidedTour";
 import { FeedbackProvider } from "@/components/Feedback";
 import { TabBar } from "@/components/TabBar";
 import { getUnread } from "@/lib/chat";
+import { getDailyState } from "@/lib/game-rewards";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,9 +12,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const member = await getCurrentMember();
   // Messages non lus (tous salons) pour la pastille de l'en-tête.
   // Boosters VUT à ouvrir (pastille sur « VUT », Bureau seulement pour l'instant).
+  // Le booster du jour pas encore récupéré compte aussi.
   const boosters =
     member && hasRole(member, "board")
-      ? ((await (await createClient()).from("game_boosters").select("id", { count: "exact", head: true }).is("opened_at", null)).count ?? 0)
+      ? ((await (await createClient()).from("game_boosters").select("id", { count: "exact", head: true }).is("opened_at", null)).count ?? 0) +
+        ((await getDailyState(await createClient(), member.id)).claimedToday ? 0 : 1)
       : 0;
   const unread = member ? [...(await getUnread(await createClient())).values()].reduce((a, b) => a + b, 0) : 0;
 
