@@ -4,7 +4,7 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { deleteMessage, loadOlder, markRead, reportMessage, sendMessage, setRoomNotify } from "../actions";
+import { deleteMessage, loadNewer, loadOlder, markRead, reportMessage, sendMessage, setRoomNotify } from "../actions";
 
 type Msg = { id: string; authorId: string | null; body: string; createdAt: string };
 
@@ -45,6 +45,25 @@ export function ChatRoom({
   const [loadingOlder, setLoadingOlder] = useState(false);
   const keepScroll = useRef<number | null>(null);
 
+  const [live, setLive] = useState(true);
+  const latest = useRef(messages);
+  latest.current = messages;
+  const add = (list: Msg[], more: Msg[]) => [...list, ...more.filter((m) => !list.some((x) => x.id === m.id))];
+
+  // Secours si le temps réel est coupé : relève les nouveaux messages toutes les 15 s (onglet visible).
+  useEffect(() => {
+    if (live) return;
+    const id = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      const list = latest.current;
+      const last = list[list.length - 1]?.createdAt ?? new Date(0).toISOString();
+      loadNewer(room, last)
+        .then((more) => more.length && setMessages((l) => add(l, more)))
+        .catch(() => {});
+    }, 15_000);
+    return () => clearInterval(id);
+  }, [live, room]);
+
   // Temps réel : nouveaux messages et suppressions du salon.
   useEffect(() => {
     const supabase = getBrowserClient();
@@ -58,7 +77,7 @@ export function ChatRoom({
         const id = (payload.old as unknown as { id?: string }).id;
         if (id) setMessages((list) => list.filter((x) => x.id !== id));
       })
-      .subscribe();
+      .subscribe((status: string) => setLive(status === "SUBSCRIBED"));
     return () => {
       supabase.removeChannel(channel);
     };
@@ -76,6 +95,14 @@ export function ChatRoom({
       markRead(room).catch(() => {});
     }
   }, [messages.length, room]);
+
+  // À l'ouverture du salon : tout en bas, sur les derniers messages (après le défilement de Next).
+  useEffect(() => {
+    const toBottom = () => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" });
+    toBottom();
+    const timers = [50, 250, 600].map((ms) => setTimeout(toBottom, ms));
+    return () => timers.forEach(clearTimeout);
+  }, [room]);
 
   // Suggestions de mention quand le dernier mot commence par « @ ».
   const mention = /(?:^|\s)@([^\s@]*)$/.exec(text)?.[1];
@@ -95,6 +122,8 @@ export function ChatRoom({
       if (r.error) return setError(r.error);
       setError(undefined);
       setText("");
+      // Affiché tout de suite, sans attendre le temps réel (doublon ignoré à son arrivée).
+      if (r.message) setMessages((list) => add(list, [r.message!]));
     });
   };
 

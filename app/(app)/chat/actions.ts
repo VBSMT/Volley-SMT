@@ -13,14 +13,20 @@ import { createClient } from "@/lib/supabase/server";
 const ROOM_LABELS: Record<string, string> = { club: "Tout le club", board: "Bureau", captains: "Capitaines", volunteers: "Bénévoles" };
 
 /** Envoie un message (droits vérifiés en base) puis notifie : abonnés du salon, et personnes citées qui l'ont choisi. */
-export async function sendMessage(room: string, body: string): Promise<{ error?: string }> {
+type ChatMsg = { id: string; authorId: string | null; body: string; createdAt: string };
+
+export async function sendMessage(room: string, body: string): Promise<{ error?: string; message?: ChatMsg }> {
   const me = await getCurrentMember();
   if (!me) return { error: "Session expirée. Reconnectez-vous." };
   const text = body.trim().slice(0, 1000);
   if (!text) return {};
   const supabase = await createClient();
-  const { error } = await supabase.from("chat_messages").insert({ room, author_id: me.id, body: text });
-  if (error) return { error: "Message non envoyé." };
+  const { data: row, error } = await supabase
+    .from("chat_messages")
+    .insert({ room, author_id: me.id, body: text })
+    .select("id, author_id, body, created_at")
+    .single();
+  if (error || !row) return { error: "Message non envoyé." };
 
   after(async () => {
     const admin = createAdminClient();
@@ -44,7 +50,7 @@ export async function sendMessage(room: string, body: string): Promise<{ error?:
       }));
     if (recipients.length) await notifyMembers(recipients);
   });
-  return {};
+  return { message: { id: row.id, authorId: row.author_id, body: row.body, createdAt: row.created_at } };
 }
 
 /** Supprime un message (le sien, ou n'importe lequel pour le Bureau : droits en base). */
@@ -122,4 +128,17 @@ export async function loadOlder(
     messages: rows.reverse().map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at })),
     hasMore: rows.length === CHAT_PAGE_SIZE,
   };
+}
+
+/** Messages arrivés après une date (secours si le temps réel est coupé). */
+export async function loadNewer(room: string, after: string): Promise<ChatMsg[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("chat_messages")
+    .select("id, author_id, body, created_at")
+    .eq("room", room)
+    .gt("created_at", after)
+    .order("created_at")
+    .limit(CHAT_PAGE_SIZE);
+  return (data ?? []).map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at }));
 }
