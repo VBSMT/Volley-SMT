@@ -15,7 +15,19 @@ const STEP = 90;
  * côtés ; glisser pour tourner, toucher une voisine pour l'amener au centre, toucher la carte
  * du centre pour la retourner (équipe, record, exemplaires).
  */
-export function CollectionCarousel({ entries, total }: { entries: Entry[]; total: number }) {
+export function CollectionCarousel({
+  entries,
+  total,
+  bare = false,
+  initialKey,
+}: {
+  entries: Entry[];
+  total: number;
+  /** Ouvert depuis l'album : sans compteur, tri ni filtres. */
+  bare?: boolean;
+  /** Carte à afficher au centre à l'ouverture. */
+  initialKey?: string;
+}) {
   const [filter, setFilter] = useState<GamePosition | "all" | "rare" | "captain" | "legend">("all");
   const [sort, setSort] = useState<"rating" | "team">("rating");
   const [flipped, setFlipped] = useState<string | null>(null);
@@ -33,9 +45,18 @@ export function CollectionCarousel({ entries, total }: { entries: Entry[]; total
     },
   });
   const current = list[Math.round(wheel.center)];
+  // Ouverture depuis l'album : centrer la carte touchée (une seule fois).
+  const [centered, setCentered] = useState(false);
+  if (!centered && initialKey) {
+    setCentered(true);
+    const i = list.findIndex((e) => cardKey(e.card) === initialKey);
+    if (i >= 0) wheel.setCenter(i);
+  }
 
   return (
     <div className="stack">
+      {!bare && (
+        <>
       <div className="collection-head">
         <strong className="collection-count">
           {entries.length} <span className="small muted">/ {total}</span>
@@ -65,6 +86,8 @@ export function CollectionCarousel({ entries, total }: { entries: Entry[]; total
           </button>
         ))}
       </div>
+        </>
+      )}
       <div className="carousel" aria-roledescription="carrousel" aria-label="Ma collection : glisser pour tourner">
         {list.length === 0 && <p className="small">Aucune carte à ce poste.</p>}
         {list.map((e, i) => {

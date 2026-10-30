@@ -1213,3 +1213,45 @@ a { color: var(--lien); text-underline-offset: 3px; }
   .booster-current.is-third, .booster-current.is-third::after { animation: none; }
   .booster-current.is-third::after { opacity: 1; }
 }
+/* VUT : collection en album */
+.collection-top { display: grid; gap: 0.35rem; }
+.collection-top-row { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.collection-bar { height: 8px; border-radius: 4px; background: var(--trait); overflow: hidden; }
+.collection-bar span { display: block; height: 100%; background: var(--jaune); }
+.shard-chip { border: 2px solid var(--trait); border-radius: 18px; min-height: 36px; padding: 0 0.7rem; background: var(--surface); color: var(--texte); font-weight: 700; }
+.album-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+.segmented { display: inline-flex; border: 2px solid var(--trait); border-radius: 22px; overflow: hidden; }
+.segmented button { min-height: 40px; padding: 0 0.85rem; border: 0; background: var(--surface); color: var(--texte); font-weight: 600; }
+.segmented button.is-on { background: var(--accent-fond); color: var(--accent-texte); }
+.album-toggle { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 44px; font-size: 0.9rem; }
+.album-section { display: grid; gap: 0.4rem; }
+.album-title {
+  position: sticky; top: 0; z-index: 2; margin: 0; padding: 0.35rem 0; background: var(--fond);
+  display: flex; justify-content: space-between; align-items: baseline; font-size: 1.1rem;
+}
+.album-count { font: 600 0.85rem "Barlow", sans-serif; color: var(--texte-doux); }
+.album-count.is-complete { color: var(--texte); }
+.album-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 81px); justify-content: space-between; gap: 0.5rem 0; }
+.album-card { all: unset; position: relative; display: block; width: 81px; height: 118px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.album-card:focus-visible { outline: 3px solid var(--jaune); outline-offset: 2px; }
+.album-copies { position: absolute; bottom: 2px; right: 2px; padding: 0 5px; border-radius: 8px; background: var(--noir); color: var(--jaune); font: 700 12px "Barlow Condensed", sans-serif; }
+.album-missing {
+  width: 81px; height: 118px; display: grid; place-items: center; align-content: center; gap: 4px; box-sizing: border-box; text-align: center;
+  clip-path: polygon(50% 0, 100% 7%, 100% 82%, 50% 100%, 0 82%, 0 7%); background: var(--trait); color: var(--texte-doux);
+}
+.album-missing span { font: 700 28px "Barlow Condensed", sans-serif; }
+.album-missing small { font-size: 10px; padding: 0 6px; line-height: 1.1; }
+/* Carte en grand depuis l'album */
+.card-viewer { width: min(100vw, 430px); max-width: 100vw; margin: auto; padding: 3rem 0 1rem; border: 0; background: transparent; color: #fff; }
+.card-viewer::backdrop { background: rgba(0, 0, 0, 0.85); }
+.card-viewer .collection-hint { color: #ddd; }
+.card-viewer-close { position: absolute; top: 4px; right: 12px; width: 44px; height: 44px; border-radius: 50%; border: 2px solid #fff; background: transparent; color: #fff; font-size: 1.2rem; }
+/* VUT : échange d'éclats dans l'album */
+.shard-chip.is-on { background: var(--accent-fond); color: var(--accent-texte); border-color: var(--accent-fond); }
+.exchange-banner { margin: 0; display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; padding: 0.5rem 0.7rem; border-radius: 10px; border: 2px dashed var(--jaune); font-size: 0.9rem; }
+.album-buy { border: 0; padding: 0; cursor: pointer; position: relative; opacity: 0.45; font: inherit; -webkit-tap-highlight-color: transparent; }
+.album-buy.is-affordable { opacity: 1; background: color-mix(in srgb, var(--jaune) 35%, var(--trait)); color: var(--texte); animation: spot-pulse 1.6s ease-in-out infinite; }
+.album-buy.is-rare { background-image: linear-gradient(135deg, rgba(255, 110, 199, 0.25), rgba(124, 245, 196, 0.25), rgba(110, 201, 255, 0.25)); }
+.album-price { font: 700 13px "Barlow Condensed", sans-serif; padding: 1px 6px; border-radius: 8px; background: var(--noir); color: var(--jaune); }
+.buy-preview { display: grid; place-items: center; }
+@media (prefers-reduced-motion: reduce) { .album-buy.is-affordable { animation: none; } }

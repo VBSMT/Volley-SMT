@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STARTER_SIZE, cardKey } from "@/lib/domain/game";
-import { exchangeable } from "@/lib/domain/game-rewards";
+import { STARTER_SIZE } from "@/lib/domain/game";
 import { defaultMatchday, editableWeek, isLocked, matchdayTitle } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
@@ -11,10 +10,9 @@ import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { openEarned, openStarter } from "./actions";
 import { BoosterOpening } from "./BoosterOpening";
-import { CollectionCarousel } from "./CollectionCarousel";
+import { CollectionView } from "./CollectionView";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
-import { ShardExchange } from "./ShardExchange";
 import { TestTools } from "./TestTools";
 
 export const metadata: Metadata = { title: "VUT" };
@@ -136,12 +134,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
     const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
-    content = (
-      <>
-        <ShardExchange shards={(wallet?.shards as number) ?? 0} choices={cards.filter(exchangeable)} owned={collection.map((e) => cardKey(e.card))} />
-        <CollectionCarousel entries={collection} total={cards.length} />
-      </>
-    );
+    content = <CollectionView entries={collection} all={cards} shards={(wallet?.shards as number) ?? 0} />;
   }
 
   return (

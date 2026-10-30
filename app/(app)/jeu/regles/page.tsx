@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { type GameCard, CAPTAIN_RATE, LEGEND_BONUS_LABELS, LEGEND_RATE, RARE_RATE, STARTER_SIZE } from "@/lib/domain/game";
-import { SHARDS_PER_CARD, TRAININGS_PER_BOOSTER } from "@/lib/domain/game-rewards";
+import { SHARDS_PER_CARD, SHARDS_PER_RARE, TRAININGS_PER_BOOSTER } from "@/lib/domain/game-rewards";
 import { getCurrentMember, hasRole } from "@/lib/member";
 
 export const metadata: Metadata = { title: "VUT · Règles du jeu" };
@@ -170,7 +170,7 @@ export default async function ReglesPage() {
           </tbody>
         </table>
         <p>
-          <strong>✦ Éclats</strong> : chaque carte en double te donne 1 éclat. Avec {SHARDS_PER_CARD} éclats, tu choisis une carte commune ou rare dans l&apos;onglet Collection.
+          <strong>✦ Éclats</strong> : chaque carte en double te donne 1 éclat. Dans l&apos;onglet Collection, touche « ✦ éclats » puis une carte manquante : {SHARDS_PER_CARD} éclats pour une commune, {SHARDS_PER_RARE} pour une rare (pas de Capitaine ni de Légende).
         </p>
       </section>
 
