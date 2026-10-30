@@ -14,7 +14,7 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * Ouverture animée d'un booster : le paquet tremble et s'ouvre, puis les cartes sortent une à une,
  * face cachée. Toucher la carte la retourne ; toucher encore la range et fait sortir la suivante.
  */
-export function BoosterOpening({ label, open, starter = false, remaining = 1 }: { label: string; starter?: boolean; remaining?: number; open: () => Promise<{ cards?: GameCard[]; shards?: number; error?: string }> }) {
+export function BoosterOpening({ label, open, starter = false, remaining = 1 }: { label: string; starter?: boolean; remaining?: number; open: () => Promise<{ cards?: GameCard[]; shards?: number; message?: string; error?: string }> }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>("closed");
   const [cards, setCards] = useState<GameCard[]>([]);
@@ -22,6 +22,7 @@ export function BoosterOpening({ label, open, starter = false, remaining = 1 }: 
   const [flipped, setFlipped] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shards, setShards] = useState(0);
+  const [message, setMessage] = useState<string>();
   // Restant après celui-ci : décompté dès l'ouverture, sans attendre le rafraîchissement de la page.
   const left = phase === "closed" || phase === "shaking" ? remaining : remaining - 1;
 
@@ -37,6 +38,7 @@ export function BoosterOpening({ label, open, starter = false, remaining = 1 }: 
     window.dispatchEvent(new Event(BOOSTER_OPENED));
     setCards(result.cards);
     setShards(result.shards ?? 0);
+    setMessage(result.message);
     setPhase("open");
   }
 
@@ -66,6 +68,7 @@ export function BoosterOpening({ label, open, starter = false, remaining = 1 }: 
       <p aria-live="polite" className={phase === "closed" || phase === "done" ? "small" : "sr-only"}>
         {status}
       </p>
+      {message && phase !== "closed" && phase !== "shaking" && <p className="gift-message">🎁 {message}</p>}
       {phase !== "done" && (
         <div className={`booster-scene${phase === "closed" || phase === "shaking" ? " is-closed" : ""}`}>
           {current && (

@@ -6,7 +6,7 @@ import { type GameCard, type GamePosition, GAME_POSITIONS, GAME_POSITION_LABELS,
 import { shardPrice } from "@/lib/domain/game-rewards";
 import { shortName } from "@/lib/format";
 
-type Entry = { card: GameCard; copies: number };
+type Entry = { card: GameCard; copies: number; gifted?: boolean };
 type Group = "team" | "position" | "kind";
 
 const GROUPS: [Group, string][] = [

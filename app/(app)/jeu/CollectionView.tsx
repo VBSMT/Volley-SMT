@@ -11,7 +11,7 @@ import { type GameCard, cardKey } from "@/lib/domain/game";
 import { CollectionAlbum } from "./CollectionAlbum";
 import { CollectionCarousel } from "./CollectionCarousel";
 
-type Entry = { card: GameCard; copies: number };
+type Entry = { card: GameCard; copies: number; gifted?: boolean };
 
 /**
  * Onglet Collection : progression et éclats en tête, album rangé par équipe / poste / rareté ;

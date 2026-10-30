@@ -15,6 +15,12 @@ import { CollectionView } from "./CollectionView";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
 import { TestTools } from "./TestTools";
+import { GiftPanel, type GiftHistoryRow } from "./GiftPanel";
+import { isGameMaster, testToolsEnabled } from "@/lib/game-master";
+import { gamePlayers } from "@/lib/game-rewards";
+import { cardKey } from "@/lib/domain/game";
+import { shortName } from "@/lib/format";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DailyCard } from "./DailyCard";
 
 export const metadata: Metadata = { title: "VUT" };
@@ -46,7 +52,42 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
       VUT <span className="small muted">Volley Ultimate Team</span>
     </h1>
   );
-  const tools = <TestTools teams={teams ?? []} />;
+  // Cadeaux et outils de test : maître du jeu seulement (VUT_MASTER_EMAIL).
+  let tools: React.ReactNode = null;
+  if (isGameMaster(member)) {
+    const admin = createAdminClient();
+    const ids = await gamePlayers(admin);
+    const [{ data: people }, { data: gifts }] = await Promise.all([
+      admin.from("members").select("id, first_name, last_name").in("id", ids),
+      admin.from("game_boosters").select("id, owner_id, gift_cards, message, created_at, opened_at").like("reason", "gift:%").order("created_at", { ascending: false }).limit(20),
+    ]);
+    const nameOf = new Map((people ?? []).map((p) => [p.id as string, shortName(p.first_name as string, p.last_name as string)]));
+    const kindLabel = { common: "commune", rare: "rare", captain: "Capitaine", legend: "Légende" } as const;
+    const history: GiftHistoryRow[] = (gifts ?? []).map((g) => {
+      const card = (g.gift_cards as typeof cards | null)?.[0];
+      return {
+        id: g.id as string,
+        to: nameOf.get(g.owner_id as string) ?? "?",
+        what: card ? `${shortName(card.firstName, card.lastName)} (${kindLabel[card.kind ?? "common"]})` : "Booster",
+        at: new Date(g.created_at as string).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", timeZone: "Europe/Paris" }),
+        opened: !!g.opened_at,
+        message: (g.message as string | null) ?? null,
+      };
+    });
+    tools = (
+      <>
+        <GiftPanel
+          players={[...nameOf].map(([id, label]) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))}
+          teams={(teams ?? []).map((t) => ({ id: t.id as string, label: t.name as string }))}
+          cards={cards
+            .map((c) => ({ id: cardKey(c), label: `${shortName(c.firstName, c.lastName)} · ${kindLabel[c.kind ?? "common"]}${c.kind === "legend" ? "" : ` · ${c.teamName}`}` }))
+            .sort((a, b) => a.label.localeCompare(b.label))}
+          history={history}
+        />
+        {testToolsEnabled() && <TestTools teams={teams ?? []} />}
+      </>
+    );
+  }
 
   if (!opened) {
     return (
@@ -59,7 +100,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     );
   }
 
-  const { data: pending } = await supabase.from("game_boosters").select("id").eq("kind", "earned").is("opened_at", null).order("created_at");
+  const { data: pending } = await supabase.from("game_boosters").select("id, gift_cards").eq("kind", "earned").is("opened_at", null).order("created_at");
   const waiting = pending?.length ?? 0;
 
   const collection = await getCollection(supabase, cards);
@@ -126,7 +167,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = waiting ? (
       <>
         {daily}
-        <BoosterOpening key={pending![0].id} label="2 ou 3 joueurs" remaining={waiting} open={openEarned.bind(null, pending![0].id as string)} />
+        <BoosterOpening key={pending![0].id} label={pending![0].gift_cards ? `🎁 Cadeau · ${(pending![0].gift_cards as unknown[]).length} carte${(pending![0].gift_cards as unknown[]).length > 1 ? "s" : ""}` : "2 ou 3 joueurs"} remaining={waiting} open={openEarned.bind(null, pending![0].id as string)} />
       </>
     ) : (
       <>
