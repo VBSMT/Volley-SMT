@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type CardKind, type LegendBonus, cardKey, gamePosition } from "@/lib/domain/game";
-import { type CardInfo, type Lineup, type MatchResult, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, weekFromResults, weekIsFinal, weekStart } from "@/lib/domain/game-week";
+import { type CardInfo, type Lineup, type MatchResult, matchdays, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, weekFromResults, weekIsFinal, weekStart } from "@/lib/domain/game-week";
 import { parisClock } from "@/lib/domain/notifications";
 import { awardTop3 } from "@/lib/game-rewards";
 
@@ -15,6 +15,14 @@ export async function getWeekMatches(client: SupabaseClient, week: string) {
   const { from, to } = weekRange(week);
   const { data } = await client.from("matches").select("team_id, starts_at").gte("starts_at", from).lt("starts_at", to);
   return (data ?? []).map((m) => ({ teamId: m.team_id as string, startsAt: m.starts_at as string }));
+}
+
+/** Journées de la saison : semaines ayant au moins un match d'une équipe du club. */
+export async function getMatchdays(client: SupabaseClient, season: { startsOn: string; endsOn: string } | null): Promise<string[]> {
+  let q = client.from("matches").select("starts_at");
+  if (season) q = q.gte("starts_at", `${season.startsOn}T00:00:00Z`).lte("starts_at", `${season.endsOn}T23:59:59Z`);
+  const { data } = await q;
+  return matchdays((data ?? []).map((m) => m.starts_at as string));
 }
 
 /** Équipe d'un joueur pour une semaine. */

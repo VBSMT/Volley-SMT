@@ -3,6 +3,7 @@
  */
 
 import { type CardKind, type GameCard, type GamePosition, type LegendBonus, MAX_PER_TEAM, cardKey, isSpecial, scorePoints } from "./game";
+import { parisClock } from "./notifications";
 import type { StandingRow } from "./standings";
 
 export type Slot = GamePosition | "sub" | "bonus";
@@ -20,16 +21,26 @@ export function weekStart(date: string): string {
   return new Date(d.getTime() - shift * DAY).toISOString().slice(0, 10);
 }
 
-/** Numéro de la journée VUT : semaines écoulées depuis le début de saison (1 = première semaine). */
-export function matchday(week: string, seasonStart: string | null): number {
-  if (!seasonStart) return 1;
-  return Math.max(1, Math.round((Date.parse(`${week}T12:00:00Z`) - Date.parse(`${weekStart(seasonStart)}T12:00:00Z`)) / (7 * DAY)) + 1);
+// --- Journées : semaines où au moins une équipe du club a un match (calendrier) --------------------
+
+/** Lundis (AAAA-MM-JJ, heure de Paris) des semaines ayant au moins un match, dans l'ordre. */
+export function matchdays(matchStarts: string[]): string[] {
+  return [...new Set(matchStarts.map((iso) => weekStart(parisClock(new Date(iso)).date)))].sort();
 }
 
+/** Journée affichée par défaut : celle de la semaine en cours, sinon la prochaine, sinon la dernière. */
+export function defaultMatchday(days: string[], current: string): string {
+  return days.includes(current) ? current : (days.find((d) => d > current) ?? days[days.length - 1] ?? current);
+}
+
+/** Préparation à l'avance : jusqu'à 4 semaines ; les journées passées sont en lecture seule. */
+export const ADVANCE_WEEKS = 4;
+export const editableWeek = (week: string, current: string) => week >= current && week <= addDays(current, 7 * ADVANCE_WEEKS);
+
 /** « Compo Journée 3 — du 03/11 au 09/11 ». */
-export function matchdayTitle(week: string, seasonStart: string | null): string {
+export function matchdayTitle(number: number, week: string): string {
   const fr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
-  return `Compo Journée ${matchday(week, seasonStart)} — du ${fr(week)} au ${fr(addDays(week, 6))}`;
+  return `Compo Journée ${number} — du ${fr(week)} au ${fr(addDays(week, 6))}`;
 }
 
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);

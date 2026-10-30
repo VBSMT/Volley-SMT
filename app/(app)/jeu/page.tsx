@@ -3,10 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { STARTER_SIZE, cardKey } from "@/lib/domain/game";
 import { exchangeable } from "@/lib/domain/game-rewards";
-import { isLocked, matchdayTitle } from "@/lib/domain/game-week";
+import { defaultMatchday, editableWeek, isLocked, matchdayTitle } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
-import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
+import { currentWeek, getLineup, getMatchdays, getWeekMatches } from "@/lib/game-week";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { openEarned, openStarter } from "./actions";
@@ -28,10 +28,10 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 /** VUT (Volley Ultimate Team), réservé au Bureau pour l'instant. */
-export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string }> }) {
+export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string }> }) {
   const member = (await getCurrentMember())!;
   if (!hasRole(member, "board")) notFound();
-  const { vue } = await searchParams;
+  const { vue, journee } = await searchParams;
   const tab: Tab = TABS.some(([k]) => k === vue) ? (vue as Tab) : "equipe";
 
   const supabase = await createClient();
@@ -67,22 +67,52 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
 
   let content: React.ReactNode;
   if (tab === "equipe") {
-    const [lineup, matches, { data: entry }, season] = await Promise.all([
-      getLineup(supabase, member.id, week),
-      getWeekMatches(supabase, week),
-      supabase.from("game_weeks").select("total, bonus, computed_at, pending").eq("owner_id", member.id).eq("week_start", week).maybeSingle(),
-      getCurrentSeason(supabase),
+    const season = await getCurrentSeason(supabase);
+    const days = await getMatchdays(supabase, season);
+    // Journée choisie (calendrier des matchs) : en cours par défaut, sinon la prochaine.
+    const selected = journee && days.includes(journee) ? journee : defaultMatchday(days, week);
+    const index = days.indexOf(selected);
+    const prevDay = index > 0 ? days[index - 1] : null;
+    const nextDay = index >= 0 && index < days.length - 1 ? days[index + 1] : null;
+    const readOnly = !editableWeek(selected, week);
+    const [lineup, matches, { data: entry }, previous] = await Promise.all([
+      getLineup(supabase, member.id, selected),
+      getWeekMatches(supabase, selected),
+      supabase.from("game_weeks").select("total, bonus, final, pending").eq("owner_id", member.id).eq("week_start", selected).maybeSingle(),
+      prevDay ? getLineup(supabase, member.id, prevDay) : Promise.resolve(undefined),
     ]);
     const now = new Date();
     const teamIds = [...new Set(cards.map((c) => c.teamId))];
+    const nav = (day: string | null, label: string, text: string) =>
+      day ? (
+        <Link href={`/jeu?vue=equipe&journee=${day}`} className="chip" aria-label={label}>
+          {text}
+        </Link>
+      ) : (
+        <span className="chip is-disabled" aria-hidden="true">
+          {text}
+        </span>
+      );
     content = (
       <>
-        <h2 className="lineup-title">{matchdayTitle(week, season?.startsOn ?? null)}</h2>
-        {!!(entry?.pending as string[] | undefined)?.length && (
+        <div className="matchday-nav">
+          {nav(prevDay, "Journée précédente", "‹")}
+          <h2 className="lineup-title">{index >= 0 ? matchdayTitle(index + 1, selected) : "Pas encore de match au calendrier"}</h2>
+          {nav(nextDay, "Journée suivante", "›")}
+        </div>
+        {readOnly && entry && (
+          <p className="pill">{entry.final ? "✓ Journée terminée" : "⏳ Points provisoires"} · {Number(entry.total)} pts</p>
+        )}
+        {readOnly && !entry && <p className="small muted">Pas d&apos;équipe validée pour cette journée.</p>}
+        {!readOnly && !!(entry?.pending as string[] | undefined)?.length && (
           <p className="pill">⏳ En attente du résultat : {(entry!.pending as string[]).join(", ")} (points provisoires)</p>
         )}
         <LineupEditor
-          points={entry ? Number(entry.total) : null}
+          key={selected}
+          week={selected}
+          readOnly={readOnly}
+          previous={previous}
+          points={entry && !readOnly ? Number(entry.total) : null}
           owned={collection.map((e) => e.card)}
           initial={lineup}
           lockedTeams={teamIds.filter((t) => isLocked(t, matches, now))}
