@@ -139,6 +139,13 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
   - **Participation bénévole** (proposé aux bénévoles et au Bureau) : besoins par poste (ex. buvette 4), chacun indique sa dispo et son poste.
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
+## Messagerie éphémère
+- Salons : **Tout le club**, **chaque équipe** (ses joueurs ; le Bureau voit toutes les équipes), **Capitaines** (capitaines + Bureau), **Bureau**. Accès via l'icône 💬 de l'en-tête (pastille des non-lus) ; pages `/chat`, `/chat/[salon]`.
+- Texte seulement (1000 caractères max), noms « Prénom N. », messages **effacés après 7 jours** (purge de nuit). Temps réel Supabase Realtime (RLS appliquée : `can_access_room`).
+- Chacun supprime ses messages, le Bureau tous ; « Signaler » notifie le Bureau.
+- Notifications **désactivées par défaut** : par salon (cloche 🔔 dans le salon, `chat_room_prefs.notify`) et « quand on me cite » (@Prénom N., `members.notify_mentions`, dans le profil).
+- Exception à la convention de confirmation : l'envoi d'un message n'en demande pas (suppression et signalement, si).
+
 ## Onglet Bureau
 Historique des reports · Adhérents (liste filtrable par équipe ; fiche modifiable : identité, licence, cotisation, équipes, capitanats, rôles, niveau ; import Excel/CSV reconnu par email : fiches, équipes et rôles ajoutés, niveaux, comptes + email d’invitation facultatif ; validation des demandes bénévoles ; suppression définitive d'une fiche avec confirmation) · Gymnase (ouverture de créneaux) · Annonces (message au club, à une équipe, aux bénévoles ou aux inscrits d'une séance ; push ; auteur affiché) · Saison (licences, cotisations, relances, exports CSV) · Liens utiles · Paramètres (équipes, échelle de niveau, horaires de notif/clôture, expiration des reports, état de la synchro) · Compo du soir.
 
