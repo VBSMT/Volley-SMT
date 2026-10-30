@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { parseIcs, parseTeams, reconcile, splitLocation, teamMatches, unreadEvents, volley34EntryUrl, type ExistingMatch } from "./volley34";
+import { hasResults, parseIcs, parseTeams, reconcile, splitLocation, teamMatches, unreadEvents, volley34EntryUrl, type ExistingMatch } from "./volley34";
 
 const ICS = readFileSync(new URL("./__fixtures__/smdtx1.ics", import.meta.url), "utf8");
 
@@ -126,5 +126,14 @@ describe("unreadEvents", () => {
       ev("3", "Réunion des capitaines"),
     ];
     expect(unreadEvents(events, "SMDT/Les Bras Cassés").map((e) => e.uid)).toEqual(["2"]);
+  });
+});
+
+describe("API des résultats", () => {
+  it("détecte le premier résultat publié", () => {
+    expect(hasResults('<ArrayOfResultat xmlns:i="x" xmlns="y" />')).toBe(false);
+    expect(hasResults('<ArrayOfResultat><Resultat><Score>3-1</Score></Resultat></ArrayOfResultat>')).toBe(true);
+    expect(hasResults("[]")).toBe(false);
+    expect(hasResults('[{"Score":"3-1"}]')).toBe(true);
   });
 });

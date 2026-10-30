@@ -91,7 +91,7 @@ export async function clearSimulations(): Promise<Result> {
 export async function recomputeNow(): Promise<Result> {
   const admin = await guard();
   if (!admin) return { error: "Réservé au Bureau." };
-  const n = await computeWeek(admin, currentWeek());
+  const { players: n } = await computeWeek(admin, currentWeek());
   revalidatePath("/jeu");
   return { message: `Points recalculés pour ${n} équipe${n > 1 ? "s" : ""}.` };
 }

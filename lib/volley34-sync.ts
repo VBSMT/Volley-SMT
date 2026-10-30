@@ -3,7 +3,7 @@ import { parisClock } from "@/lib/domain/notifications";
 import { parisDate } from "@/lib/domain/training";
 import { parseGyms } from "@/lib/domain/gyms";
 import { poolOf, parseStandings } from "@/lib/domain/standings";
-import { parseIcs, parseTeams, reconcile, teamMatches, unreadEvents } from "@/lib/domain/volley34";
+import { hasResults, parseIcs, parseTeams, reconcile, teamMatches, unreadEvents } from "@/lib/domain/volley34";
 import { notifyMembers, type Recipient } from "@/lib/notify";
 import { updateTeamForm } from "@/lib/game";
 import type { createAdminClient } from "@/lib/supabase/admin";
@@ -14,6 +14,8 @@ const TEAMS_URL = "https://api.volley34.fr/v1/equipes";
 const ICS_URL = (code: string) => `http://calendrier.volley34.fr/?equipe=${encodeURIComponent(code)}`;
 const STANDINGS_URL = (code: string) => `https://api.volley34.fr/v1/equipes/${encodeURIComponent(code)}/classements`;
 const GYMS_URL = "https://api.volley34.fr/v1/gymnases";
+const RESULTS_URL = (code: string) => `https://api.volley34.fr/v1/equipes/${encodeURIComponent(code)}/resultats`;
+const RESULTS_FLAG = "volley34_resultats_api";
 const CLUB_CODE = "SMDT";
 const SYNC_HOUR = 6;
 
@@ -138,7 +140,7 @@ export async function syncVolley34(admin: Admin): Promise<SyncSummary> {
         );
         summary.standings++;
         // Jeu de cartes : note de forme de l'équipe (5 derniers matchs).
-        await updateTeamForm(admin, team.id, mine.scores);
+        await updateTeamForm(admin, team.id, mine, parisDate(new Date().toISOString()));
       }
     } catch (e) {
       console.error("Classement non lu", remoteTeam.code, (e as Error).message);
@@ -211,6 +213,7 @@ export async function runVolley34Sync(admin: Admin, board: Recipient[]) {
         })),
       );
     }
+    await watchResultsApi(admin, board).catch(() => {});
     return { ok: true as const, summary };
   } catch (e) {
     const message = (e as Error).message.slice(0, 500);
@@ -264,4 +267,36 @@ export function syncMessage(s: SyncSummary) {
   if (!s.unread.length) return base;
   const details = s.unread.map((u) => `${u.team} : « ${u.summary} »`).join(" ; ");
   return `${base} · ⚠ ${s.unread.length} événement(s) non lu(s) : ${details} ${unreadSignature(s.unread)}`.slice(0, 2000);
+}
+
+/**
+ * Veille de l'API des résultats match par match (vide ou en erreur pour l'instant) : au premier
+ * résultat publié, une seule alerte au Bureau, pour brancher cette source (dates, points par set).
+ */
+async function watchResultsApi(admin: Admin, board: Recipient[]) {
+  const { data: flag } = await admin.from("sync_flags").select("key").eq("key", RESULTS_FLAG).maybeSingle();
+  if (flag) return;
+  const { data: teams } = await admin.from("teams").select("name, volley34_ref").not("volley34_ref", "is", null);
+  for (const t of teams ?? []) {
+    let body: string;
+    try {
+      body = await fetchText(RESULTS_URL(t.volley34_ref as string), "application/xml, application/json;q=0.9");
+    } catch {
+      continue; // ex. erreur 500 pour SMDTX1
+    }
+    if (!hasResults(body)) continue;
+    const { error } = await admin.from("sync_flags").insert({ key: RESULTS_FLAG });
+    if (error) return; // déjà signalé
+    await notifyMembers(
+      board.map((recipient) => ({
+        recipient,
+        message: {
+          title: "volley34 publie les résultats match par match",
+          body: `Premier résultat vu pour ${t.name}. À brancher dans l'appli (dates et points par set) : prévenir le développeur.`,
+          url: "/bureau/matchs",
+        },
+      })),
+    );
+    return;
+  }
 }

@@ -163,3 +163,16 @@ export function unreadEvents(events: IcsEvent[], teamFullName: string): IcsEvent
   const short = norm(teamFullName.replace(/^[^/]*\//, ""));
   return events.filter((e) => !read.has(e.uid) && (norm(e.summary).includes(norm(teamFullName)) || (short.length > 3 && norm(e.summary).includes(short))));
 }
+
+/** L'API des résultats match par match renvoie-t-elle au moins un résultat (XML ou JSON) ? */
+export function hasResults(body: string): boolean {
+  const text = body.trim();
+  if (text.startsWith("[")) {
+    try {
+      return (JSON.parse(text) as unknown[]).length > 0;
+    } catch {
+      return false;
+    }
+  }
+  return /<Resultat[\s>]/.test(text);
+}
