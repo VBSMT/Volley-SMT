@@ -34,7 +34,7 @@ export async function runPurge(admin: Admin, now: Date) {
     const error = await deleteMemberAndAccount(admin, m.id as string, m.user_id as string | null);
     if (error) errors.push(error);
   }
-  // Messagerie éphémère : messages de plus de 7 jours.
+  // Messagerie éphémère : messages au-delà de la durée de conservation (30 jours).
   const { count: messages } = await admin
     .from("chat_messages")
     .delete({ count: "exact" })

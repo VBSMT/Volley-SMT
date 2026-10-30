@@ -827,3 +827,5 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chat-suggest { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 0.35rem; }
 .chat-suggest button { min-height: 36px; border-radius: 18px; border: 1px solid var(--trait); background: var(--surface); color: var(--texte); padding: 0 0.7rem; font: inherit; cursor: pointer; }
 .header-chat + .header-profile { margin-left: 0; }
+.chat-older { width: auto; justify-self: center; padding: 0 1rem; }
+.chat-start { text-align: center; }

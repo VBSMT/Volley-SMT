@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRooms } from "@/lib/chat";
-import { CHAT_RETENTION_DAYS, slugToRoom } from "@/lib/domain/chat";
+import { CHAT_PAGE_SIZE, CHAT_RETENTION_DAYS, slugToRoom } from "@/lib/domain/chat";
 import { shortName } from "@/lib/format";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
@@ -25,7 +25,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ room:
       .eq("room", room.key)
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(300),
+      .limit(CHAT_PAGE_SIZE),
     supabase.from("member_directory").select("id, first_name, last_name"),
     supabase.from("chat_room_prefs").select("notify").eq("room", room.key).maybeSingle(),
   ]);
@@ -42,6 +42,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ room:
         names={names}
         initial={(messages ?? []).reverse().map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at }))}
         notify={!!pref?.notify}
+        hasMore={(messages ?? []).length === CHAT_PAGE_SIZE}
       />
     </main>
   );
