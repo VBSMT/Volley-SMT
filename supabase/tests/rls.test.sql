@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(38);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -108,8 +108,9 @@ select pg_temp.login(4);
 select is((select count(*) from public.member_levels)::int, 1, 'Bureau : voit les niveaux');
 select is((select count(*) from public.lineups)::int, 1, 'Bureau : voit la compo');
 select is((select count(*) from public.events)::int, 2, 'Bureau : voit tous les événements');
-select is((select count(*) from public.chat_messages)::int, 5, 'Bureau : voit tous les salons');
-select lives_ok($$ delete from public.chat_messages where body = 'Salut l''équipe' $$, 'Bureau : supprime un message');
+select is((select count(*) from public.chat_messages)::int, 3, 'Bureau : club, Bureau et Bénévoles');
+select is((select count(*) from public.chat_messages where room like 'team:%')::int, 0, 'Bureau : pas les salons d''équipe (hors de ses équipes)');
+select lives_ok($$ delete from public.chat_messages where room = 'volunteers' $$, 'Bureau : supprime un message');
 select lives_ok($$ insert into public.attendance (session_id, member_id, present)
   values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000003', true) $$, 'Bureau : ajoute un présent');
 select lives_ok($$ delete from public.attendance where member_id = '00000000-0000-0000-0000-000000000001' $$, 'Bureau : retire un présent');
