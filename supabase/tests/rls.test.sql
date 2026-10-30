@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(50);
+select plan(51);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -57,6 +57,7 @@ insert into public.game_collection (owner_id, member_id, team_id) values
 insert into public.game_lineups (owner_id, week_start, slot, member_id, team_id) values
   ('00000000-0000-0000-0000-000000000001', current_date, 'setter', '00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000000a1');
 insert into public.game_weeks (owner_id, week_start) values ('00000000-0000-0000-0000-000000000001', current_date);
+insert into public.game_wallet (owner_id, shards) values ('00000000-0000-0000-0000-000000000001', 3);
 
 -- Se connecter en tant que l'utilisateur n (1 adhérent, 2 capitaine, 3 bénévole, 4 Bureau).
 create function pg_temp.login(n int) returns void language plpgsql as $$
@@ -133,6 +134,7 @@ select is((select count(*) from public.game_cards)::int, 0, 'jeu : réservé au 
 select is((select count(*) from public.game_boosters)::int, 0, 'jeu : boosters des autres invisibles');
 select is((select count(*) from public.game_collection)::int, 0, 'jeu : collections des autres invisibles');
 select is((select count(*) from public.game_lineups)::int, 0, 'jeu : équipes des autres invisibles');
+select is((select count(*) from public.game_wallet)::int, 0, 'jeu : éclats des autres invisibles');
 select is((select count(*) from public.game_weeks)::int, 0, 'jeu : classement réservé au Bureau');
 select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
 select pg_temp.login(4);

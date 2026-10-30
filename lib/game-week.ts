@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { type CardKind, type LegendBonus, cardKey, gamePosition } from "@/lib/domain/game";
 import { type CardInfo, type Lineup, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, teamWeek, weekStart } from "@/lib/domain/game-week";
 import { parisClock } from "@/lib/domain/notifications";
+import { awardTop3 } from "@/lib/game-rewards";
 import type { StandingRow } from "@/lib/domain/standings";
 
 /** Lundi de la semaine en cours (heure de Paris). */
@@ -103,6 +104,11 @@ export async function runGameScoring(admin: SupabaseClient, now: Date) {
   if (clock.hour !== COMPUTE_HOUR) return null;
   const week = weekStart(clock.date);
   const report: Record<string, number> = { [week]: await computeWeek(admin, week) };
-  if (clock.date === week) report[addDays(week, -7)] = await computeWeek(admin, addDays(week, -7));
+  if (clock.date === week) {
+    // Lundi : points définitifs de la semaine passée, puis un booster pour son top 3.
+    const last = addDays(week, -7);
+    report[last] = await computeWeek(admin, last);
+    report.top3 = await awardTop3(admin, last);
+  }
   return report;
 }

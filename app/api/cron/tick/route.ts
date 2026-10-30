@@ -10,6 +10,7 @@ import {
   reminderMessage,
   type ReminderKind,
 } from "@/lib/domain/notifications";
+import { runGameRewards, resetGameIfSeasonStarts } from "@/lib/game-rewards";
 import { runGameScoring } from "@/lib/game-week";
 import { generateLineup } from "@/lib/lineup-server";
 import { claimNotifications, recordChannels } from "@/lib/notification-log";
@@ -169,6 +170,11 @@ export async function POST(request: NextRequest) {
   // VUT : points provisoires de la semaine (et définitifs de la précédente le lundi), après la synchro.
   const game = await runGameScoring(admin, now);
   if (game) report.push({ vut: game });
+  // VUT : boosters des entraînements et événements (22h), remise à zéro en début de saison (3h).
+  const rewards = await runGameRewards(admin, now);
+  if (rewards) report.push({ vutRewards: rewards });
+  const reset = await resetGameIfSeasonStarts(admin, now);
+  if (reset) report.push({ vutReset: reset });
   // Purge RGPD quotidienne (idempotente).
   if (isPurgeDue(now)) report.push({ purge: await runPurge(admin, now) });
 
