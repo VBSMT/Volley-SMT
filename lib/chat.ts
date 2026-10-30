@@ -18,6 +18,7 @@ export async function getRooms(client: Client, member: CurrentMember): Promise<R
   const teams = isBoard ? ((await client.from("teams").select("id, name").order("name")).data ?? []) : member.teams;
   for (const t of teams) rooms.push(room(`team:${t.id}`, t.name));
   if (isBoard || hasRole(member, "captain")) rooms.push(room("captains", "Capitaines"));
+  if (isBoard || hasRole(member, "volunteer")) rooms.push(room("volunteers", "Bénévoles"));
   if (isBoard) rooms.push(room("board", "Bureau"));
   return rooms;
 }
@@ -27,8 +28,8 @@ export async function roomMembers(admin: Admin, room: RoomKey) {
   const select = "id, email, first_name, last_name, notify_mentions";
   let q;
   if (room === "club") q = admin.from("members").select(select);
-  else if (room === "board" || room === "captains") {
-    const roles = room === "board" ? ["board"] : ["captain", "board"];
+  else if (room === "board" || room === "captains" || room === "volunteers") {
+    const roles = room === "board" ? ["board"] : room === "captains" ? ["captain", "board"] : ["volunteer", "board"];
     q = admin.from("members").select(`${select}, member_roles!inner(role)`).in("member_roles.role", roles);
   } else {
     const teamId = room.slice(5);

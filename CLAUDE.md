@@ -140,7 +140,7 @@ Le Bureau ne gère que la partie gymnase ; l'équipe négocie avec l'adversaire 
 - L'événement le plus proche **visible par la personne** s'affiche sur son accueil.
 
 ## Messagerie éphémère
-- Salons : **Tout le club**, **chaque équipe** (ses joueurs ; le Bureau voit toutes les équipes), **Capitaines** (capitaines + Bureau), **Bureau**. Accès via l'icône 💬 de l'en-tête (pastille des non-lus) ; pages `/chat`, `/chat/[salon]`.
+- Salons : **Tout le club**, **chaque équipe** (ses joueurs ; le Bureau voit toutes les équipes), **Capitaines** (capitaines + Bureau), **Bénévoles** (bénévoles + Bureau), **Bureau**. Accès via l'icône 💬 de l'en-tête (pastille des non-lus) ; pages `/chat`, `/chat/[salon]`.
 - Texte seulement (1000 caractères max), noms « Prénom N. », messages **effacés après 7 jours** (purge de nuit). Temps réel Supabase Realtime (RLS appliquée : `can_access_room`).
 - Chacun supprime ses messages, le Bureau tous ; « Signaler » notifie le Bureau.
 - Notifications **désactivées par défaut** : par salon (cloche 🔔 dans le salon, `chat_room_prefs.notify`) et « quand on me cite » (@Prénom N., `members.notify_mentions`, dans le profil).

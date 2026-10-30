@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(35);
+select plan(37);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -65,6 +65,7 @@ select is((select count(*) from public.chat_messages)::int, 1, 'adhérent : mess
 select lives_ok($$ insert into public.chat_messages (room, author_id, body) values ('team:00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001', 'Salut l''équipe') $$, 'adhérent : écrit dans le salon de son équipe');
 select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('club', '00000000-0000-0000-0000-000000000004', 'usurpation') $$, '42501', null, 'adhérent : n''écrit pas au nom d''un autre');
 select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('board', '00000000-0000-0000-0000-000000000001', 'intrus') $$, '42501', null, 'adhérent : n''écrit pas dans le salon Bureau');
+select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('volunteers', '00000000-0000-0000-0000-000000000001', 'intrus') $$, '42501', null, 'adhérent non bénévole : pas le salon Bénévoles');
 select is((select is_captain from public.team_roster where member_id = '00000000-0000-0000-0000-000000000002'), true, 'adhérent : voit le capitaine de l''équipe');
 select hasnt_column('public', 'team_roster', 'level', 'la fiche équipe n''expose pas le niveau');
 select is((select count(*) from public.events)::int, 1, 'adhérent : seulement les événements pour tous');
@@ -99,6 +100,7 @@ select pg_temp.login(3);
 select is((select count(*) from public.events)::int, 2, 'bénévole : voit l''événement réservé aux bénévoles');
 select is((select count(*) from public.lineups)::int, 0, 'bénévole : compo invisible');
 select is((select count(*) from public.chat_messages where room = 'captains')::int, 0, 'bénévole : pas le salon Capitaines');
+select lives_ok($$ insert into public.chat_messages (room, author_id, body) values ('volunteers', '00000000-0000-0000-0000-000000000003', 'Buvette samedi ?') $$, 'bénévole : écrit dans le salon Bénévoles');
 select pg_temp.logout();
 
 -- Bureau
@@ -106,7 +108,7 @@ select pg_temp.login(4);
 select is((select count(*) from public.member_levels)::int, 1, 'Bureau : voit les niveaux');
 select is((select count(*) from public.lineups)::int, 1, 'Bureau : voit la compo');
 select is((select count(*) from public.events)::int, 2, 'Bureau : voit tous les événements');
-select is((select count(*) from public.chat_messages)::int, 4, 'Bureau : voit tous les salons');
+select is((select count(*) from public.chat_messages)::int, 5, 'Bureau : voit tous les salons');
 select lives_ok($$ delete from public.chat_messages where body = 'Salut l''équipe' $$, 'Bureau : supprime un message');
 select lives_ok($$ insert into public.attendance (session_id, member_id, present)
   values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000003', true) $$, 'Bureau : ajoute un présent');
