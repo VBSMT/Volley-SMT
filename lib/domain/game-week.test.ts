@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, matchdayTitle, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, bonusLocked, matchdayTitle, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -99,6 +99,13 @@ describe("verrouillage et classement", () => {
     expect(isLocked("A", m, new Date("2026-11-04T18:59:00Z"))).toBe(false);
     expect(isLocked("A", m, new Date("2026-11-04T19:00:00Z"))).toBe(true);
     expect(isLocked("B", m, new Date("2026-11-05T00:00:00Z"))).toBe(false);
+  });
+  it("case Bonus verrouillée au premier match d'un titulaire", () => {
+    const m = [{ teamId: "A", startsAt: "2026-11-03T19:00:00Z" }];
+    const lineup = { setter: { memberId: "1", teamId: "A" }, bonus: { memberId: "9", teamId: "", kind: "legend" as const } };
+    expect(bonusLocked(lineup, m, new Date("2026-11-03T18:00:00Z"))).toBe(false);
+    expect(bonusLocked(lineup, m, new Date("2026-11-03T19:30:00Z"))).toBe(true);
+    expect(bonusLocked({ sub: { memberId: "1", teamId: "A" } }, m, new Date("2026-11-04T00:00:00Z"))).toBe(false);
   });
   it("égalité : bonus puis validation la plus tôt", () => {
     const r = rank([

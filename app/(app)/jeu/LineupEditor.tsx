@@ -60,7 +60,9 @@ export function LineupEditor({
   const errors = lineupErrors(lineup, owned).filter((e) => e !== "Il faut un joueur à chaque poste.");
   const complete = SLOTS.slice(0, 4).every((s) => lineup[s]);
   const changed = JSON.stringify(lineup) !== JSON.stringify(initial);
-  const slotLocked = (slot: Slot) => !!lineup[slot] && locked.has(lineup[slot]!.teamId);
+  // Case Bonus : verrouillée dès le premier match d'un titulaire (déjà enregistré) ; autres places : au match de la carte.
+  const bonusIsLocked = SLOTS.slice(0, 4).some((s) => initial[s] && locked.has(initial[s]!.teamId));
+  const slotLocked = (slot: Slot) => (slot === "bonus" ? bonusIsLocked : !!lineup[slot] && locked.has(lineup[slot]!.teamId));
 
   function place(card: GameCard, slot: Slot) {
     if (slotLocked(slot) || locked.has(card.teamId)) return setError("Carte verrouillée : le match de son équipe a commencé.");
