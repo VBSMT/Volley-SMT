@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { placeOnCourt, SLOT_XY, type Slot } from "@/lib/domain/court";
 
-export type RosterPlayer = { id: string; firstName: string; initials: string; position1: "setter" | "front" | "front_right" | "front_left" | "back" | null };
+export type RosterPlayer = { id: string; firstName: string; initials: string; photoVersion?: string | null; position1: "setter" | "front" | "front_right" | "front_left" | "back" | null };
 
 const SLOT_LABEL: Record<Slot, string> = { passe: "Passe", avantG: "Avant (4)", avantD: "Avant (2)", fond: "Fond" };
 
@@ -46,7 +46,13 @@ export function CourtView({ players }: { players: RosterPlayer[] }) {
                 <span className="court-stack">
                   {group.map((p, i) => (
                     <span key={p.id} className="court-dot" style={{ zIndex: group.length - i }}>
-                      {p.initials}
+                      {p.photoVersion ? (
+                        // Photo (droit à l'image) à la place des initiales.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="court-photo" src={`/api/photo/${p.id}?v=${p.photoVersion}`} alt="" loading="lazy" />
+                      ) : (
+                        p.initials
+                      )}
                     </span>
                   ))}
                 </span>
