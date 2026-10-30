@@ -215,4 +215,8 @@ describe("capitaine en case Bonus", () => {
   it("ne peut pas aussi jouer", () => {
     expect(lineupErrors({ ...base, bonus: at(cap) }, [s, l, r, b, cap])).toContain("Un capitaine ne peut pas être à la fois en case Bonus et sur le terrain.");
   });
+  it("même règle pour une Légende", () => {
+    const leg = { ...card("3", "setter", "M", ""), teamId: "", kind: "legend" as const };
+    expect(lineupErrors({ ...base, bonus: at(leg) }, [s, l, r, b, leg])).toContain("Une Légende ne peut pas être à la fois en case Bonus et sur le terrain.");
+  });
 });

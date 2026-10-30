@@ -14,11 +14,12 @@ const GROUPS: [Group, string][] = [
   ["position", "Poste"],
   ["kind", "Rareté"],
 ];
+// Les plus rares en premier.
 const KINDS = [
-  ["common", "Communes"],
-  ["rare", "★ Rares"],
-  ["captain", "C Capitaines"],
   ["legend", "♛ Légendes"],
+  ["captain", "C Capitaines"],
+  ["rare", "★ Rares"],
+  ["common", "Communes"],
 ] as const;
 
 /** Rubrique d'une carte selon le rangement choisi. */
