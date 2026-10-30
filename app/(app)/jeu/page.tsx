@@ -17,7 +17,6 @@ import { Ranking } from "./Ranking";
 import { TestTools } from "./TestTools";
 import { GiftPanel, type GiftHistoryRow } from "./GiftPanel";
 import { isGameMaster, testToolsEnabled } from "@/lib/game-master";
-import { gamePlayers } from "@/lib/game-rewards";
 import { cardKey } from "@/lib/domain/game";
 import { shortName } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -56,9 +55,8 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   let tools: React.ReactNode = null;
   if (isGameMaster(member)) {
     const admin = createAdminClient();
-    const ids = await gamePlayers(admin);
     const [{ data: people }, { data: gifts }] = await Promise.all([
-      admin.from("members").select("id, first_name, last_name").in("id", ids),
+      admin.from("members").select("id, first_name, last_name"),
       admin.from("game_boosters").select("id, owner_id, gift_cards, message, created_at, opened_at").like("reason", "gift:%").order("created_at", { ascending: false }).limit(20),
     ]);
     const nameOf = new Map((people ?? []).map((p) => [p.id as string, shortName(p.first_name as string, p.last_name as string)]));

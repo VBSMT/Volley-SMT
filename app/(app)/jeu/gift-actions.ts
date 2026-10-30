@@ -23,16 +23,21 @@ export async function sendGift(target: GiftTarget, gift: Gift, message: string):
   const member = await getCurrentMember();
   if (!isGameMaster(member)) return { error: "Réservé au maître du jeu." };
   const admin = createAdminClient();
-  const players = await gamePlayers(admin);
+  // N'importe quel adhérent : le cadeau l'attend dans ses boosters jusqu'à l'ouverture du jeu à tous.
   let owners: string[];
-  if (target.type === "all") owners = players;
-  else if (target.type === "member") owners = players.filter((id) => id === target.id);
-  else {
+  if (target.type === "all") {
+    const { data } = await admin.from("members").select("id");
+    owners = (data ?? []).map((r) => r.id as string);
+  } else if (target.type === "member") {
+    const { data } = await admin.from("members").select("id").eq("id", target.id);
+    owners = (data ?? []).map((r) => r.id as string);
+  } else {
     const { data } = await admin.from("member_teams").select("member_id").eq("team_id", target.id);
-    const inTeam = new Set((data ?? []).map((r) => r.member_id as string));
-    owners = players.filter((id) => inTeam.has(id));
+    owners = [...new Set((data ?? []).map((r) => r.member_id as string))];
   }
-  if (!owners.length) return { error: "Aucun joueur du jeu à qui l'envoyer." };
+  if (!owners.length) return { error: "Aucun adhérent à qui l'envoyer." };
+  // Push seulement à ceux qui ont déjà accès au jeu (le Bureau pour l'instant).
+  const players = new Set(await gamePlayers(admin));
 
   let giftCards: GameCard[] | null = null;
   let count = 1;
@@ -51,7 +56,7 @@ export async function sendGift(target: GiftTarget, gift: Gift, message: string):
   const { data, error } = await admin.from("game_boosters").insert(rows).select("id");
   if (error) return { error: "Envoi impossible. Réessayez." };
 
-  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", owners);
+  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", owners.filter((id) => players.has(id)));
   const what = giftCards ? "une carte t'attend" : `${count} booster${count > 1 ? "s" : ""} t'attend${count > 1 ? "ent" : ""}`;
   await notifyMembers(
     (people ?? []).map((m) => ({
@@ -61,7 +66,7 @@ export async function sendGift(target: GiftTarget, gift: Gift, message: string):
   ).catch(() => {});
   revalidatePath("/", "layout");
   const n = owners.length;
-  return { message: `Cadeau envoyé à ${n} joueur${n > 1 ? "s" : ""}.`, ids: (data ?? []).map((r) => r.id as string) };
+  return { message: `Cadeau envoyé à ${n} adhérent${n > 1 ? "s" : ""}.`, ids: (data ?? []).map((r) => r.id as string) };
 }
 
 /** Annule des cadeaux pas encore ouverts. */
