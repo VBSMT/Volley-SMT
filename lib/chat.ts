@@ -10,13 +10,12 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 export type Room = { key: RoomKey; slug: string; label: string };
 
-/** Salons accessibles : Club, ses équipes (toutes pour le Bureau), Capitaines, Bureau. */
+/** Salons accessibles : Club, ses équipes (joueurs seulement, Bureau compris), Capitaines, Bénévoles, Bureau. */
 export async function getRooms(client: Client, member: CurrentMember): Promise<Room[]> {
   const isBoard = hasRole(member, "board");
   const room = (key: RoomKey, label: string): Room => ({ key, slug: roomToSlug(key), label });
   const rooms: Room[] = [room("club", "Tout le club")];
-  const teams = isBoard ? ((await client.from("teams").select("id, name").order("name")).data ?? []) : member.teams;
-  for (const t of teams) rooms.push(room(`team:${t.id}`, t.name));
+  for (const t of member.teams) rooms.push(room(`team:${t.id}`, t.name));
   if (isBoard || hasRole(member, "captain")) rooms.push(room("captains", "Capitaines"));
   if (isBoard || hasRole(member, "volunteer")) rooms.push(room("volunteers", "Bénévoles"));
   if (isBoard) rooms.push(room("board", "Bureau"));
@@ -33,9 +32,8 @@ export async function roomMembers(admin: Admin, room: RoomKey) {
     q = admin.from("members").select(`${select}, member_roles!inner(role)`).in("member_roles.role", roles);
   } else {
     const teamId = room.slice(5);
-    const { data: boardRows } = await admin.from("member_roles").select("member_id").eq("role", "board");
     const { data: teamRows } = await admin.from("member_teams").select("member_id").eq("team_id", teamId);
-    const ids = [...new Set([...(teamRows ?? []), ...(boardRows ?? [])].map((r) => r.member_id as string))];
+    const ids = [...new Set((teamRows ?? []).map((r) => r.member_id as string))];
     q = admin.from("members").select(select).in("id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
   }
   const { data } = await q.not("user_id", "is", null);

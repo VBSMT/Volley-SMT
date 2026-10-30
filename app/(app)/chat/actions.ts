@@ -71,7 +71,8 @@ export async function reportMessage(id: string): Promise<{ error?: string }> {
         message: {
           title: "⚠️ Message signalé",
           body: `${shortName(me.first_name, me.last_name)} signale : « ${String(msg.body).slice(0, 120)} »`,
-          url: `/chat/${roomToSlug(msg.room as string)}`,
+          // Salon d'équipe : le Bureau n'y a pas accès, le texte du message est dans la notification.
+          url: String(msg.room).startsWith("team:") ? "/chat" : `/chat/${roomToSlug(msg.room as string)}`,
         },
       })),
     );
