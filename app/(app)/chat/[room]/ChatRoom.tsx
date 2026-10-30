@@ -39,7 +39,6 @@ export function ChatRoom({
   const [pending, startTransition] = useTransition();
   const toast = useToast();
   const { confirm, dialog } = useConfirm();
-  const bottom = useRef<HTMLDivElement>(null);
   const lastRead = useRef(0);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingOlder, setLoadingOlder] = useState(false);
@@ -89,7 +88,7 @@ export function ChatRoom({
       // Messages ajoutés en haut : on garde le même endroit à l'écran.
       window.scrollBy(0, document.documentElement.scrollHeight - keepScroll.current);
       keepScroll.current = null;
-    } else bottom.current?.scrollIntoView({ block: "end" });
+    } else window.scrollTo({ top: document.documentElement.scrollHeight }); // tout en bas, zone de saisie comprise
     if (Date.now() - lastRead.current > 10_000 && document.visibilityState === "visible") {
       lastRead.current = Date.now();
       markRead(room).catch(() => {});
@@ -223,7 +222,6 @@ export function ChatRoom({
           );
         })}
       </ol>
-      <div ref={bottom} />
 
       <form
         className="chat-composer"

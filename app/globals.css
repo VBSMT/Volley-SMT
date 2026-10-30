@@ -819,8 +819,10 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chat-action { border: 0; background: none; color: inherit; font: inherit; text-decoration: underline; cursor: pointer; min-height: 32px; padding: 0 2px; }
 .chat-empty { text-align: center; padding: 1rem 0; }
 .chat-composer {
-  position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end;
+  position: sticky; bottom: calc(61px + env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end;
   background: var(--fond); padding: 0.5rem 0;
+  /* Fond prolongé jusqu'à la barre d'onglets : les messages ne passent plus visibles sous la zone de saisie. */
+  box-shadow: 0 16px 0 var(--fond);
 }
 .chat-composer textarea { flex: 1; min-height: 44px; max-height: 8rem; resize: vertical; }
 .chat-send { width: auto; padding: 0 1rem; min-height: 44px; }
