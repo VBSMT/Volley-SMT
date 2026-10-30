@@ -3,7 +3,9 @@
  */
 export type RoomKey = string; // 'club' | 'board' | 'captains' | 'volunteers' | 'team:<uuid>'
 
-export const CHAT_RETENTION_DAYS = 7;
+export const CHAT_RETENTION_DAYS = 30;
+/** Messages chargés à l'ouverture d'un salon, puis par « Messages précédents » (économie de trafic). */
+export const CHAT_PAGE_SIZE = 70;
 
 /** Clé de salon ↔ segment d'adresse (/chat/club, /chat/bureau, /chat/capitaines, /chat/equipe-<uuid>). */
 export function roomToSlug(room: RoomKey): string {

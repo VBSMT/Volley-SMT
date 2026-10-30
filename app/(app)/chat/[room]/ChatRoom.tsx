@@ -4,7 +4,7 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { deleteMessage, markRead, reportMessage, sendMessage, setRoomNotify } from "../actions";
+import { deleteMessage, loadOlder, markRead, reportMessage, sendMessage, setRoomNotify } from "../actions";
 
 type Msg = { id: string; authorId: string | null; body: string; createdAt: string };
 
@@ -21,6 +21,7 @@ export function ChatRoom({
   names,
   initial,
   notify: initialNotify,
+  hasMore: initialHasMore,
 }: {
   room: string;
   label: string;
@@ -29,6 +30,7 @@ export function ChatRoom({
   names: Record<string, string>;
   initial: Msg[];
   notify: boolean;
+  hasMore: boolean;
 }) {
   const [messages, setMessages] = useState(initial);
   const [text, setText] = useState("");
@@ -39,6 +41,9 @@ export function ChatRoom({
   const { confirm, dialog } = useConfirm();
   const bottom = useRef<HTMLDivElement>(null);
   const lastRead = useRef(0);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const keepScroll = useRef<number | null>(null);
 
   // Temps réel : nouveaux messages et suppressions du salon.
   useEffect(() => {
@@ -59,9 +64,13 @@ export function ChatRoom({
     };
   }, [room]);
 
-  // Défile vers le bas et marque comme lu (au plus toutes les 10 s).
+  // Défile vers le bas (sauf après « Messages précédents ») et marque comme lu (au plus toutes les 10 s).
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
+    if (keepScroll.current !== null) {
+      // Messages ajoutés en haut : on garde le même endroit à l'écran.
+      window.scrollBy(0, document.documentElement.scrollHeight - keepScroll.current);
+      keepScroll.current = null;
+    } else bottom.current?.scrollIntoView({ block: "end" });
     if (Date.now() - lastRead.current > 10_000 && document.visibilityState === "visible") {
       lastRead.current = Date.now();
       markRead(room).catch(() => {});
@@ -115,8 +124,31 @@ export function ChatRoom({
         </button>
       </div>
 
+      {hasMore && messages.length > 0 && (
+        <button
+          type="button"
+          className="btn-secondary chat-older"
+          disabled={loadingOlder}
+          onClick={async () => {
+            setLoadingOlder(true);
+            try {
+              const r = await loadOlder(room, messages[0].createdAt);
+              keepScroll.current = document.documentElement.scrollHeight;
+              setMessages((list) => [...r.messages.filter((m) => !list.some((x) => x.id === m.id)), ...list]);
+              setHasMore(r.hasMore);
+            } catch {
+              setError("Chargement impossible.");
+            } finally {
+              setLoadingOlder(false);
+            }
+          }}
+        >
+          {loadingOlder ? "Chargement…" : "↑ Messages précédents"}
+        </button>
+      )}
+      {!hasMore && messages.length > 0 && <p className="muted small chat-start">Début de la conversation (messages conservés 30 jours).</p>}
       <ol className="chat-list" aria-live="polite">
-        {messages.length === 0 && <li className="muted small chat-empty">Aucun message ces 7 derniers jours. Lancez la discussion !</li>}
+        {messages.length === 0 && <li className="muted small chat-empty">Aucun message ces 30 derniers jours. Lancez la discussion !</li>}
         {messages.map((m, i) => {
           const mine = m.authorId === meId;
           const newDay = i === 0 || day(messages[i - 1].createdAt) !== day(m.createdAt);

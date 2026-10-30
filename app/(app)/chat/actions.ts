@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { roomMembers } from "@/lib/chat";
-import { mentionedIds, roomToSlug } from "@/lib/domain/chat";
+import { CHAT_PAGE_SIZE, CHAT_RETENTION_DAYS, mentionedIds, roomToSlug } from "@/lib/domain/chat";
 import { shortName } from "@/lib/format";
 import { getCurrentMember } from "@/lib/member";
 import { notifyMembers } from "@/lib/notify";
@@ -100,4 +100,26 @@ export async function setRoomNotify(room: string, notify: boolean): Promise<{ er
     .from("chat_room_prefs")
     .upsert({ member_id: me.id, room, notify }, { onConflict: "member_id,room" });
   return error ? { error: "Réglage non enregistré." } : {};
+}
+
+/** « Messages précédents » : les 70 messages avant le plus ancien affiché (dans la durée de conservation). */
+export async function loadOlder(
+  room: string,
+  before: string,
+): Promise<{ messages: { id: string; authorId: string | null; body: string; createdAt: string }[]; hasMore: boolean }> {
+  const supabase = await createClient();
+  const since = new Date(Date.now() - CHAT_RETENTION_DAYS * 86_400_000).toISOString();
+  const { data } = await supabase
+    .from("chat_messages")
+    .select("id, author_id, body, created_at")
+    .eq("room", room)
+    .lt("created_at", before)
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(CHAT_PAGE_SIZE);
+  const rows = data ?? [];
+  return {
+    messages: rows.reverse().map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at })),
+    hasMore: rows.length === CHAT_PAGE_SIZE,
+  };
 }
