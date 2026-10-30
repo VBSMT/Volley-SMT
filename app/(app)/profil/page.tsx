@@ -11,6 +11,7 @@ import { getCurrentMember, hasRole, ROLE_LABELS } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { NotificationPrefs } from "./NotificationPrefs";
 import { PhotoEditor } from "./PhotoEditor";
+import { gamePosition } from "@/lib/domain/game";
 import { ProfileForm } from "./ProfileForm";
 import { VolunteerRequest } from "./VolunteerRequest";
 
@@ -70,6 +71,19 @@ export default async function ProfilPage() {
           memberId={member.id}
           consent={member.image_consent}
           version={member.photo_updated_at ? String(Date.parse(member.photo_updated_at)) : null}
+          card={{
+            memberId: member.id,
+            teamId: member.teams[0]?.id ?? "",
+            kind: "common",
+            teamName: member.teams[0]?.name ?? "Volley SMT",
+            firstName: member.first_name,
+            lastName: member.last_name,
+            sex: member.sex === "F" ? "F" : "M",
+            position: gamePosition(member.position_1) ?? "setter",
+            rating: 60,
+            bestRating: 60,
+            photoVersion: null,
+          }}
         />
       </section>
 
