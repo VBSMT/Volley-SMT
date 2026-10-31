@@ -72,7 +72,7 @@ export default async function AccueilPage() {
   const [nextEvent] = await getEvents(supabase, { limit: 1 });
 
   // Annonces des 14 derniers jours (les 3 plus récentes).
-  const announcements = await getAnnouncements(supabase, { limit: 3, since: new Date(Date.now() - 14 * 86_400_000) });
+  const announcements = await getAnnouncements(supabase, { limit: 3, since: new Date(Date.now() - 14 * 86_400_000), activeOnly: true });
 
   // Victoires des dernières 48 h : félicitations éphémères, pour tout le club.
   const celebrations = await getCelebrations(supabase);

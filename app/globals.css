@@ -1384,3 +1384,5 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chat-reaction::after { content: ""; position: absolute; inset: -7px -2px; } /* zone tactile ≥ 44 px */
 .poll-pending-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
 .poll-pending-head h4 { margin: 0; }
+.announcement-off { margin-left: 0.5rem; vertical-align: middle; font-family: "Barlow", sans-serif; }
+.announcement-actions { justify-content: flex-end; }
