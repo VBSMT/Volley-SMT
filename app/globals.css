@@ -1368,3 +1368,17 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .fixture-sep { opacity: 0.6; font-size: 0.8rem; }
 .fixture-rank { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 8px; background: var(--trait); font: 700 0.75rem "Barlow Condensed", sans-serif; }
 .fixture-team.is-club .fixture-rank { background: var(--jaune); color: #111; }
+/* Réactions aux messages */
+.chat-msg { position: relative; -webkit-touch-callout: none; }
+.chat-picker {
+  position: absolute; bottom: calc(100% + 4px); left: 0; z-index: 2; display: flex; gap: 2px; padding: 4px; border-radius: 24px;
+  background: var(--surface); border: 1px solid var(--trait); box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+}
+.chat-msg.is-mine .chat-picker { left: auto; right: 0; }
+.chat-picker button { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; font-size: 1.35rem; }
+.chat-picker button:active { transform: scale(1.25); }
+.chat-picker .chat-picker-close { font-size: 0.9rem; color: var(--texte); }
+.chat-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.chat-reaction { position: relative; min-height: 30px; padding: 0 8px; border-radius: 14px; border: 1px solid var(--trait); background: var(--surface); color: var(--texte); font-size: 0.85rem; }
+.chat-reaction.is-mine { border-color: var(--jaune); background: color-mix(in srgb, var(--jaune) 22%, var(--surface)); }
+.chat-reaction::after { content: ""; position: absolute; inset: -7px -2px; } /* zone tactile ≥ 44 px */

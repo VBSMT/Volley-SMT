@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(55);
+select plan(58);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -43,10 +43,10 @@ insert into public.events (id, type, title, starts_at, visible_roles) values
   ('00000000-0000-0000-0000-0000000000f1', 'other', 'Pour tous', now() + interval '10 days', '{}'),
   ('00000000-0000-0000-0000-0000000000f2', 'other', 'Bénévoles', now() + interval '10 days', '{volunteer}');
 
-insert into public.chat_messages (room, author_id, body) values
-  ('club', '00000000-0000-0000-0000-000000000004', 'Bonjour le club'),
-  ('board', '00000000-0000-0000-0000-000000000004', 'Entre nous'),
-  ('team:00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-000000000004', 'Équipe B');
+insert into public.chat_messages (id, room, author_id, body) values
+  ('00000000-0000-0000-0000-0000000000c1', 'club', '00000000-0000-0000-0000-000000000004', 'Bonjour le club'),
+  ('00000000-0000-0000-0000-0000000000c2', 'board', '00000000-0000-0000-0000-000000000004', 'Entre nous'),
+  ('00000000-0000-0000-0000-0000000000c3', 'team:00000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-000000000004', 'Équipe B');
 
 -- Jeu de cartes : Ada a un poste (une carte) et un booster ; Cap n'a pas de poste.
 update public.members set position_1 = 'setter', image_consent = true, photo_updated_at = now()
@@ -77,6 +77,9 @@ select lives_ok($$ insert into public.chat_messages (room, author_id, body) valu
 select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('club', '00000000-0000-0000-0000-000000000004', 'usurpation') $$, '42501', null, 'adhérent : n''écrit pas au nom d''un autre');
 select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('board', '00000000-0000-0000-0000-000000000001', 'intrus') $$, '42501', null, 'adhérent : n''écrit pas dans le salon Bureau');
 select throws_ok($$ insert into public.chat_messages (room, author_id, body) values ('volunteers', '00000000-0000-0000-0000-000000000001', 'intrus') $$, '42501', null, 'adhérent non bénévole : pas le salon Bénévoles');
+select lives_ok($$ insert into public.chat_reactions (message_id, member_id, emoji) select id, '00000000-0000-0000-0000-000000000001', '👍' from public.chat_messages where room = 'club' $$, 'adhérent : réagit dans le salon du club');
+select throws_ok($$ insert into public.chat_reactions (message_id, member_id, emoji) values ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-000000000001', '👍') $$, '42501', null, 'adhérent : ne réagit pas dans le salon Bureau');
+select throws_ok($$ insert into public.chat_reactions (message_id, member_id, emoji) select id, '00000000-0000-0000-0000-000000000004', '❤️' from public.chat_messages where room = 'club' $$, '42501', null, 'adhérent : ne réagit pas au nom d''un autre');
 select is((select is_captain from public.team_roster where member_id = '00000000-0000-0000-0000-000000000002'), true, 'adhérent : voit le capitaine de l''équipe');
 select hasnt_column('public', 'team_roster', 'level', 'la fiche équipe n''expose pas le niveau');
 select is((select count(*) from public.events)::int, 1, 'adhérent : seulement les événements pour tous');

@@ -4,7 +4,8 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { deleteMessage, loadNewer, loadOlder, markRead, reportMessage, sendMessage, setRoomNotify } from "../actions";
+import { deleteMessage, loadNewer, loadOlder, markRead, reportMessage, sendMessage, setRoomNotify, toggleReaction } from "../actions";
+import { REACTIONS, type Reaction, type ReactionRow, reactionSummary } from "@/lib/domain/chat";
 
 type Msg = { id: string; authorId: string | null; body: string; createdAt: string };
 
@@ -48,6 +49,24 @@ export function ChatRoom({
   const keepScroll = useRef<number | null>(null);
 
   const [live, setLive] = useState(true);
+  // Réactions des messages affichés (lues avec la RLS du salon) et barre de choix ouverte.
+  const [reactions, setReactions] = useState<ReactionRow[]>([]);
+  const [picker, setPicker] = useState<string | null>(null);
+  const press = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const ids = messages.map((m) => m.id).join(",");
+  const loadReactions = useRef(() => {});
+  loadReactions.current = () => {
+    const list = ids ? ids.split(",") : [];
+    if (!list.length) return setReactions([]);
+    getBrowserClient()
+      .from("chat_reactions")
+      .select("message_id, member_id, emoji")
+      .in("message_id", list)
+      .then(({ data }: { data: { message_id: string; member_id: string; emoji: Reaction }[] | null }) =>
+        setReactions((data ?? []).map((r) => ({ messageId: r.message_id, memberId: r.member_id, emoji: r.emoji }))),
+      );
+  };
+  useEffect(() => loadReactions.current(), [ids]);
   const latest = useRef(messages);
   latest.current = messages;
   const add = (list: Msg[], more: Msg[]) => [...list, ...more.filter((m) => !list.some((x) => x.id === m.id))];
@@ -62,6 +81,7 @@ export function ChatRoom({
       loadNewer(room, last)
         .then((more) => more.length && setMessages((l) => add(l, more)))
         .catch(() => {});
+      loadReactions.current();
     }, 15_000);
     return () => clearInterval(id);
   }, [live, room]);
@@ -79,11 +99,52 @@ export function ChatRoom({
         const id = (payload.old as unknown as { id?: string }).id;
         if (id) setMessages((list) => list.filter((x) => x.id !== id));
       })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_reactions" }, (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        const r = payload.new as unknown as { message_id: string; member_id: string; emoji: Reaction };
+        setReactions((list) =>
+          list.some((x) => x.messageId === r.message_id && x.memberId === r.member_id && x.emoji === r.emoji)
+            ? list
+            : [...list, { messageId: r.message_id, memberId: r.member_id, emoji: r.emoji }],
+        );
+      })
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "chat_reactions" }, (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        const r = payload.old as unknown as { message_id?: string; member_id?: string; emoji?: string };
+        setReactions((list) => list.filter((x) => !(x.messageId === r.message_id && x.memberId === r.member_id && x.emoji === r.emoji)));
+      })
       .subscribe((status: string) => setLive(status === "SUBSCRIBED"));
     return () => {
       supabase.removeChannel(channel);
     };
   }, [room]);
+
+  // Réagir : ajoute ou retire sa réaction (affichage immédiat, annulé si refusé).
+  const react = (messageId: string, emoji: Reaction) => {
+    setPicker(null);
+    const on = !reactions.some((r) => r.messageId === messageId && r.memberId === meId && r.emoji === emoji);
+    const row = { messageId, memberId: meId, emoji };
+    const apply = (add: boolean) =>
+      setReactions((list) => (add ? [...list, row] : list.filter((x) => !(x.messageId === messageId && x.memberId === meId && x.emoji === emoji))));
+    apply(on);
+    toggleReaction(messageId, emoji, on).then((r) => {
+      if (r.error) {
+        apply(!on);
+        setError(r.error);
+      }
+    });
+  };
+  // Appui long (ou clic droit) sur une bulle : barre des réactions.
+  const longPress = (id: string) => ({
+    onPointerDown: () => {
+      press.current = setTimeout(() => setPicker(id), 450);
+    },
+    onPointerUp: () => press.current && clearTimeout(press.current),
+    onPointerLeave: () => press.current && clearTimeout(press.current),
+    onPointerMove: () => press.current && clearTimeout(press.current),
+    onContextMenu: (e: React.MouseEvent) => {
+      e.preventDefault();
+      setPicker(id);
+    },
+  });
 
   // Défile vers le bas (sauf après « Messages précédents ») et marque comme lu (au plus toutes les 10 s).
   useEffect(() => {
@@ -187,11 +248,54 @@ export function ChatRoom({
           return (
             <li key={m.id} className="chat-item">
               {newDay && <p className="chat-day">{day(m.createdAt)}</p>}
-              <div className={`chat-msg${mine ? " is-mine" : ""}`}>
+              <div className={`chat-msg${mine ? " is-mine" : ""}`} {...longPress(m.id)}>
+                {picker === m.id && (
+                  <div className="chat-picker" role="group" aria-label="Réagir au message">
+                    {REACTIONS.map((e) => (
+                      <button key={e} type="button" onClick={() => react(m.id, e)} aria-label={`Réagir ${e}`}>
+                        {e}
+                      </button>
+                    ))}
+                    <button type="button" className="chat-picker-close" onClick={() => setPicker(null)} aria-label="Fermer">
+                      ✕
+                    </button>
+                  </div>
+                )}
                 {!mine && <span className="chat-author">{(m.authorId && names[m.authorId]) || "Ancien adhérent"}</span>}
                 <p className="chat-body">{m.body}</p>
+                {reactionSummary(reactions, m.id, meId).length > 0 && (
+                  <span className="chat-reactions">
+                    {reactionSummary(reactions, m.id, meId).map((r) => {
+                      const who = r.who.map((id) => (id === meId ? "toi" : names[id] ?? "?")).join(", ");
+                      return (
+                        <button
+                          key={r.emoji}
+                          type="button"
+                          className={`chat-reaction${r.mine ? " is-mine" : ""}`}
+                          title={who}
+                          aria-label={`${r.emoji} ${r.count} : ${who}${r.mine ? " (toucher pour retirer la tienne)" : " (toucher pour réagir aussi)"}`}
+                          onClick={() => react(m.id, r.emoji)}
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            press.current = setTimeout(() => toast({ message: `${r.emoji} ${who}` }), 450);
+                          }}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toast({ message: `${r.emoji} ${who}` });
+                          }}
+                        >
+                          {r.emoji} {r.count}
+                        </button>
+                      );
+                    })}
+                  </span>
+                )}
                 <span className="chat-meta">
                   {time(m.createdAt)}
+                  <button type="button" className="chat-action" onClick={() => setPicker(picker === m.id ? null : m.id)}>
+                    Réagir
+                  </button>
                   {(mine || isBoard) && (
                     <button
                       type="button"
