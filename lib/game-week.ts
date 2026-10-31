@@ -17,6 +17,27 @@ export async function getWeekMatches(client: SupabaseClient, week: string) {
   return (data ?? []).map((m) => ({ teamId: m.team_id as string, startsAt: m.starts_at as string }));
 }
 
+export type Fixture = { id: string; teamId: string; teamName: string; opponent: string; isHome: boolean; startsAt: string };
+
+/** Matchs de la semaine avec équipe et adversaire (feuille « Matchs de la journée »). */
+export async function getWeekFixtures(client: SupabaseClient, week: string): Promise<Fixture[]> {
+  const { from, to } = weekRange(week);
+  const { data } = await client
+    .from("matches")
+    .select("id, team_id, opponent, is_home, starts_at, team:teams(name)")
+    .gte("starts_at", from)
+    .lt("starts_at", to)
+    .order("starts_at");
+  return (data ?? []).map((m) => ({
+    id: m.id as string,
+    teamId: m.team_id as string,
+    teamName: (m.team as unknown as { name: string } | null)?.name ?? "",
+    opponent: m.opponent as string,
+    isHome: m.is_home as boolean,
+    startsAt: m.starts_at as string,
+  }));
+}
+
 /** Journées de la saison : semaines ayant au moins un match d'une équipe du club. */
 export async function getMatchdays(client: SupabaseClient, season: { startsOn: string; endsOn: string } | null): Promise<string[]> {
   let q = client.from("matches").select("starts_at");
