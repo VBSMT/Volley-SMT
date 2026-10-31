@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
-import { answerMatchPoll, cancelMatchPoll, launchMatchPoll } from "@/app/(app)/matchs/actions";
+import { answerMatchPoll, cancelMatchPoll, launchMatchPoll, remindMatchPoll } from "@/app/(app)/matchs/actions";
 import { useConfirm, useToast } from "@/components/Feedback";
 import type { MatchPollView } from "@/lib/match-polls";
 
@@ -37,6 +37,23 @@ export function MatchPoll({
       if (!r.error) toast({ message: "Sondage lancé : l'équipe est notifiée.", undo: () => cancelMatchPoll(poll.matchId) });
     });
   };
+  // Relance des sans-réponse : notification de l'appli seulement, après confirmation.
+  const remind = async () => {
+    const n = poll.pending?.length ?? 0;
+    if (
+      !(await confirm(`Relancer ${n} joueur${n > 1 ? "s" : ""} sans réponse ?`, {
+        text: "Notification de l'appli seulement, pour ceux qui l'ont activée (pas d'email). Une relance par jour au plus.",
+        confirmLabel: "Envoyer",
+      }))
+    )
+      return;
+    startTransition(async () => {
+      const r = await remindMatchPoll(poll.matchId);
+      if (r.error) return setError(r.error);
+      toast({ message: r.count ? `Relance envoyée à ${r.count} joueur${r.count > 1 ? "s" : ""}.` : "Personne à relancer (déjà relancés aujourd'hui ou notifications coupées)." });
+    });
+  };
+
   const cancel = async () => {
     const ok = await confirm("Supprimer le sondage de présence ?", {
       text: "Toutes les réponses seront effacées.",
@@ -124,7 +141,14 @@ export function MatchPoll({
           )}
           {poll.pending && poll.pending.length > 0 && (
             <div>
-              <h4>Sans réponse</h4>
+              <div className="poll-pending-head">
+                <h4>Sans réponse</h4>
+                {canManage && !past && (
+                  <button type="button" className="chip chip-small" disabled={pending} onClick={remind}>
+                    🔔 Relancer
+                  </button>
+                )}
+              </div>
               <ul className="names">{poll.pending.map((p) => <li key={p.id}>{p.name}</li>)}</ul>
             </div>
           )}
