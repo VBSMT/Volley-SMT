@@ -32,3 +32,10 @@ describe("réactions", () => {
     ]);
   });
 });
+
+describe("salon VUT", () => {
+  it("adresse /chat/vut", () => {
+    expect(roomToSlug("vut")).toBe("vut");
+    expect(slugToRoom("vut")).toBe("vut");
+  });
+});

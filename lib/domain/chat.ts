@@ -1,7 +1,7 @@
 /**
  * Messagerie éphémère : salons, adresses et mentions. Fonctions pures.
  */
-export type RoomKey = string; // 'club' | 'board' | 'captains' | 'volunteers' | 'team:<uuid>'
+export type RoomKey = string; // 'club' | 'vut' | 'board' | 'captains' | 'volunteers' | 'team:<uuid>'
 
 export const CHAT_RETENTION_DAYS = 30;
 /** Messages chargés à l'ouverture d'un salon, puis par « Messages précédents » (économie de trafic). */
@@ -9,6 +9,7 @@ export const CHAT_PAGE_SIZE = 70;
 
 /** Clé de salon ↔ segment d'adresse (/chat/club, /chat/bureau, /chat/capitaines, /chat/equipe-<uuid>). */
 export function roomToSlug(room: RoomKey): string {
+  if (room === "vut") return "vut";
   if (room === "board") return "bureau";
   if (room === "captains") return "capitaines";
   if (room === "volunteers") return "benevoles";
@@ -18,6 +19,7 @@ export function roomToSlug(room: RoomKey): string {
 
 export function slugToRoom(slug: string): RoomKey | null {
   if (slug === "club") return "club";
+  if (slug === "vut") return "vut";
   if (slug === "bureau") return "board";
   if (slug === "capitaines") return "captains";
   if (slug === "benevoles") return "volunteers";

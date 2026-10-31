@@ -10,11 +10,11 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 export type Room = { key: RoomKey; slug: string; label: string };
 
-/** Salons accessibles : Club, ses équipes (joueurs seulement, Bureau compris), Capitaines, Bénévoles, Bureau. */
+/** Salons accessibles : Club, VUT, ses équipes (joueurs seulement, Bureau compris), Capitaines, Bénévoles, Bureau. */
 export async function getRooms(client: Client, member: CurrentMember): Promise<Room[]> {
   const isBoard = hasRole(member, "board");
   const room = (key: RoomKey, label: string): Room => ({ key, slug: roomToSlug(key), label });
-  const rooms: Room[] = [room("club", "Tout le club")];
+  const rooms: Room[] = [room("club", "Tout le club"), room("vut", "VUT")];
   for (const t of member.teams) rooms.push(room(`team:${t.id}`, t.name));
   if (isBoard || hasRole(member, "captain")) rooms.push(room("captains", "Capitaines"));
   if (isBoard || hasRole(member, "volunteer")) rooms.push(room("volunteers", "Bénévoles"));
@@ -26,7 +26,7 @@ export async function getRooms(client: Client, member: CurrentMember): Promise<R
 export async function roomMembers(admin: Admin, room: RoomKey) {
   const select = "id, email, first_name, last_name, notify_mentions";
   let q;
-  if (room === "club") q = admin.from("members").select(select);
+  if (room === "club" || room === "vut") q = admin.from("members").select(select);
   else if (room === "board" || room === "captains" || room === "volunteers") {
     const roles = room === "board" ? ["board"] : room === "captains" ? ["captain", "board"] : ["volunteer", "board"];
     q = admin.from("members").select(`${select}, member_roles!inner(role)`).in("member_roles.role", roles);
