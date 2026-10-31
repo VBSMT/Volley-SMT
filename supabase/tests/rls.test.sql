@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(53);
+select plan(55);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -85,6 +85,11 @@ select lives_ok($$ insert into public.attendance (session_id, member_id, present
 select throws_ok($$ insert into public.attendance (session_id, member_id, present)
   values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000003', true) $$, '42501', null, 'adhérent : ne répond pas pour un autre');
 select is((select count(*) from public.attendance)::int, 1, 'adhérent : voit les réponses (nominatif)');
+delete from public.attendance where member_id = '00000000-0000-0000-0000-000000000001';
+select is((select count(*) from public.attendance)::int, 0, 'adhérent : retire sa réponse (sondage ouvert)');
+insert into public.attendance (session_id, member_id, present)
+  values ('00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-000000000001', true);
+select lives_ok($$ delete from public.attendance where member_id = '00000000-0000-0000-0000-000000000003' $$, 'adhérent : ne retire pas la réponse d''un autre (sans effet)');
 select throws_ok($$ insert into public.match_polls (match_id, created_by)
   values ('00000000-0000-0000-0000-0000000000e1', '00000000-0000-0000-0000-000000000001') $$, '42501', null, 'adhérent : ne lance pas de sondage de match');
 update public.members set last_name = 'Pirate' where id = '00000000-0000-0000-0000-000000000003';

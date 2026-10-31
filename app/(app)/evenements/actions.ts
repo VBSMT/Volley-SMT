@@ -35,6 +35,27 @@ export async function answerEvent(
   return {};
 }
 
+/** Retire sa réponse au sondage de présence d'un événement. */
+export async function clearEventAnswer(eventId: string): Promise<{ error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  const { error } = await (await createClient()).from("event_attendance").delete().eq("event_id", eventId).eq("member_id", member.id);
+  if (error) return { error: "Annulation impossible. Réessayez." };
+  revalidatePath(`/evenements/${eventId}`);
+  revalidatePath("/accueil");
+  return {};
+}
+
+/** Retire sa réponse au sondage bénévole d'un événement. */
+export async function clearVolunteerAnswer(eventId: string): Promise<{ error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  const { error } = await (await createClient()).from("event_volunteer_signups").delete().eq("event_id", eventId).eq("member_id", member.id);
+  if (error) return { error: "Annulation impossible. Réessayez." };
+  revalidatePath(`/evenements/${eventId}`);
+  return {};
+}
+
 /** Participation bénévole : disponibilité et poste choisi. */
 export async function answerVolunteer(eventId: string, available: boolean, needId: string | null): Promise<{ error?: string }> {
   const member = await getCurrentMember();

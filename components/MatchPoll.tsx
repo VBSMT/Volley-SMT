@@ -69,8 +69,10 @@ export function MatchPoll({
     );
   }
 
-  const answer = (available: boolean) =>
+  // Retoucher le choix déjà sélectionné l'annule.
+  const answer = (value: boolean) =>
     startTransition(async () => {
+      const available = optimistic === value ? null : value;
       setOptimistic(available);
       const r = await answerMatchPoll(poll.matchId, available);
       setError(r.error);

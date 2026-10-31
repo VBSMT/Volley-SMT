@@ -50,7 +50,7 @@ Les droits sont appliqués **en base via RLS**, pas seulement dans l'UI. Tester 
 - Terrains libres d'une séance = terrains ouverts − matchs à domicile − pré-réservations de report validées. Une demande de report en attente (`requested`) ne prend pas de terrain mais est signalée sur la séance (« report en attente de confirmation »).
 
 ## Sondage de présence
-- Ouvert en permanence pour toutes les séances à venir ; un adhérent peut répondre plusieurs séances d'avance.
+- Ouvert en permanence pour toutes les séances à venir ; un adhérent peut répondre plusieurs séances d'avance. **Retoucher sa réponse l'annule** (« je ne sais pas encore »), tant que le sondage est ouvert ; idem pour les sondages de match, d'événement et de bénévolat.
 - **Nominatif** : tout adhérent voit qui vient et le nombre d'inscrits.
 - **Une seule notif par personne, à J-1 à 20h** (lundi pour mardi, mercredi pour jeudi ; heure réglable dans Paramètres), seulement si la séance a au moins 1 terrain libre :
   - **non-répondants** : la demande (« Entraînement demain 20h–22h — tu viens ? Réponds avant 12h demain. »), ouvre le sondage ;

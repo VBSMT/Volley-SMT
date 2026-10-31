@@ -55,15 +55,19 @@ export async function launchMatchPoll(matchId: string): Promise<{ error?: string
   return {};
 }
 
-export async function answerMatchPoll(matchId: string, available: boolean): Promise<{ error?: string }> {
+/** Dispo / pas dispo pour un match ; `null` retire la réponse. */
+export async function answerMatchPoll(matchId: string, available: boolean | null): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("match_availability").upsert(
-    { match_id: matchId, member_id: member.id, available, answered_at: new Date().toISOString() },
-    { onConflict: "match_id,member_id" },
-  );
+  const { error } =
+    available === null
+      ? await supabase.from("match_availability").delete().eq("match_id", matchId).eq("member_id", member.id)
+      : await supabase.from("match_availability").upsert(
+          { match_id: matchId, member_id: member.id, available, answered_at: new Date().toISOString() },
+          { onConflict: "match_id,member_id" },
+        );
   if (error) return { error: "Réponse non enregistrée (match passé ?)." };
   revalidatePath("/", "layout");
   return {};

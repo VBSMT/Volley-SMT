@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { answerEvent, answerVolunteer } from "@/app/(app)/evenements/actions";
+import { answerEvent, answerVolunteer, clearEventAnswer, clearVolunteerAnswer } from "@/app/(app)/evenements/actions";
 import type { EventDetail } from "@/lib/events";
 
 export function AttendancePoll({ event, past }: { event: EventDetail; past: boolean }) {
@@ -19,16 +19,25 @@ export function AttendancePoll({ event, past }: { event: EventDetail; past: bool
       const r = await answerEvent(event.id, { coming: value, with_partner: partner, children, guests });
       setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: "Réponse enregistrée." });
     });
+  // Retoucher le choix déjà sélectionné l'annule.
+  const toggle = (value: boolean) =>
+    coming === value
+      ? startTransition(async () => {
+          setComing(null);
+          const r = await clearEventAnswer(event.id);
+          setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: "Réponse annulée." });
+        })
+      : save(value);
 
   if (past) return null;
   const extras = event.askPartner || event.askChildren || event.askGuests;
   return (
     <div className="stack">
       <div className="poll" role="group" aria-label="Ma présence">
-        <button type="button" className={coming === true ? "poll-btn yes selected" : "poll-btn"} aria-pressed={coming === true} disabled={pending} onClick={() => save(true)}>
+        <button type="button" className={coming === true ? "poll-btn yes selected" : "poll-btn"} aria-pressed={coming === true} disabled={pending} onClick={() => toggle(true)}>
           Je viens
         </button>
-        <button type="button" className={coming === false ? "poll-btn no selected" : "poll-btn"} aria-pressed={coming === false} disabled={pending} onClick={() => save(false)}>
+        <button type="button" className={coming === false ? "poll-btn no selected" : "poll-btn"} aria-pressed={coming === false} disabled={pending} onClick={() => toggle(false)}>
           Je ne viens pas
         </button>
       </div>
@@ -74,6 +83,14 @@ export function VolunteerPoll({ event, past }: { event: EventDetail; past: boole
       const r = await answerVolunteer(event.id, value, value ? needId || null : null);
       setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: "Merci, c'est noté !" });
     });
+  const toggle = (value: boolean) =>
+    available === value
+      ? startTransition(async () => {
+          setAvailable(null);
+          const r = await clearVolunteerAnswer(event.id);
+          setStatus(r.error ? { ok: false, text: r.error } : { ok: true, text: "Réponse annulée." });
+        })
+      : save(value);
 
   if (past) return null;
   return (
@@ -91,10 +108,10 @@ export function VolunteerPoll({ event, past }: { event: EventDetail; past: boole
         </>
       )}
       <div className="poll" role="group" aria-label="Ma disponibilité bénévole">
-        <button type="button" className={available === true ? "poll-btn yes selected" : "poll-btn"} aria-pressed={available === true} disabled={pending} onClick={() => save(true)}>
+        <button type="button" className={available === true ? "poll-btn yes selected" : "poll-btn"} aria-pressed={available === true} disabled={pending} onClick={() => toggle(true)}>
           Disponible
         </button>
-        <button type="button" className={available === false ? "poll-btn no selected" : "poll-btn"} aria-pressed={available === false} disabled={pending} onClick={() => save(false)}>
+        <button type="button" className={available === false ? "poll-btn no selected" : "poll-btn"} aria-pressed={available === false} disabled={pending} onClick={() => toggle(false)}>
           Pas disponible
         </button>
       </div>

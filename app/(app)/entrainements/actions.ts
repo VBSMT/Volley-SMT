@@ -6,7 +6,8 @@ import { getCurrentMember } from "@/lib/member";
 import { getSchedule } from "@/lib/settings";
 import { createClient } from "@/lib/supabase/server";
 
-export async function answerPoll(sessionId: string, present: boolean): Promise<{ error?: string }> {
+/** Répond au sondage d'une séance ; `null` retire la réponse (« je ne sais pas encore »). */
+export async function answerPoll(sessionId: string, present: boolean | null): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
 
@@ -21,10 +22,13 @@ export async function answerPoll(sessionId: string, present: boolean): Promise<{
     return { error: "Le sondage de cette séance est clos." };
   }
 
-  const { error } = await supabase.from("attendance").upsert(
-    { session_id: sessionId, member_id: member.id, present, answered_at: new Date().toISOString() },
-    { onConflict: "session_id,member_id" },
-  );
+  const { error } =
+    present === null
+      ? await supabase.from("attendance").delete().eq("session_id", sessionId).eq("member_id", member.id)
+      : await supabase.from("attendance").upsert(
+          { session_id: sessionId, member_id: member.id, present, answered_at: new Date().toISOString() },
+          { onConflict: "session_id,member_id" },
+        );
   if (error) return { error: "Réponse non enregistrée. Réessayez." };
 
   revalidatePath("/entrainements");
