@@ -1382,3 +1382,5 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chat-reaction { position: relative; min-height: 30px; padding: 0 8px; border-radius: 14px; border: 1px solid var(--trait); background: var(--surface); color: var(--texte); font-size: 0.85rem; }
 .chat-reaction.is-mine { border-color: var(--jaune); background: color-mix(in srgb, var(--jaune) 22%, var(--surface)); }
 .chat-reaction::after { content: ""; position: absolute; inset: -7px -2px; } /* zone tactile ≥ 44 px */
+.poll-pending-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.poll-pending-head h4 { margin: 0; }

@@ -110,6 +110,7 @@ Méthode : répartition initiale en serpent par niveau décroissant, puis échan
 ## Sondage de présence d'un match
 - Le capitaine lance un sondage pour **un match à venir de son équipe** ; les joueurs de l'équipe sont notifiés (préférence « matchs ») et répondent **dispo / pas dispo** (modifiable jusqu'au match).
 - Visible par les joueurs de l'équipe (noms des dispos et pas dispos), le capitaine (et le Bureau) voit aussi les non-répondants. Appliqué via RLS.
+- Bouton « 🔔 Relancer » à côté de « Sans réponse » (capitaine et Bureau) : après confirmation, notification de l'appli (push seulement, pas d'email) aux joueurs sans réponse qui ont la préférence « matchs » ; au plus une relance par jour et par joueur (journal `match_poll_reminder:AAAA-MM-JJ`).
 - S'il manque des joueurs, raccourci vers la demande de renfort.
 
 ## Renforts
