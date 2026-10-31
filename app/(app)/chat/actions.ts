@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { roomMembers } from "@/lib/chat";
-import { CHAT_PAGE_SIZE, CHAT_RETENTION_DAYS, mentionedIds, roomToSlug } from "@/lib/domain/chat";
+import { CHAT_PAGE_SIZE, CHAT_RETENTION_DAYS, REACTIONS, mentionedIds, roomToSlug } from "@/lib/domain/chat";
 import { shortName } from "@/lib/format";
 import { getCurrentMember } from "@/lib/member";
 import { notifyMembers } from "@/lib/notify";
@@ -141,4 +141,16 @@ export async function loadNewer(room: string, after: string): Promise<ChatMsg[]>
     .order("created_at")
     .limit(CHAT_PAGE_SIZE);
   return (data ?? []).map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at }));
+}
+
+/** Ajoute ou retire sa réaction sur un message (droits vérifiés en base : salon accessible). */
+export async function toggleReaction(messageId: string, emoji: string, on: boolean): Promise<{ error?: string }> {
+  const me = await getCurrentMember();
+  if (!me) return { error: "Session expirée. Reconnectez-vous." };
+  if (!(REACTIONS as readonly string[]).includes(emoji)) return { error: "Réaction inconnue." };
+  const supabase = await createClient();
+  const { error } = on
+    ? await supabase.from("chat_reactions").upsert({ message_id: messageId, member_id: me.id, emoji }, { onConflict: "message_id,member_id,emoji", ignoreDuplicates: true })
+    : await supabase.from("chat_reactions").delete().eq("message_id", messageId).eq("member_id", me.id).eq("emoji", emoji);
+  return error ? { error: "Réaction non enregistrée." } : {};
 }

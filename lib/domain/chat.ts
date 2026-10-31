@@ -30,3 +30,16 @@ export function mentionedIds(body: string, people: { id: string; name: string }[
   const text = body.toLocaleLowerCase("fr");
   return people.filter((p) => p.name && text.includes(`@${p.name.toLocaleLowerCase("fr")}`)).map((p) => p.id);
 }
+
+/** Réactions possibles sur un message (une de chaque par personne). */
+export const REACTIONS = ["👍", "👎", "❤️", "😂", "🏐"] as const;
+export type Reaction = (typeof REACTIONS)[number];
+export type ReactionRow = { messageId: string; memberId: string; emoji: Reaction };
+
+/** Pastilles d'un message : nombre par emoji (ordre fixe), et si on a soi-même réagi. */
+export function reactionSummary(rows: ReactionRow[], messageId: string, meId: string) {
+  return REACTIONS.flatMap((emoji) => {
+    const who = rows.filter((r) => r.messageId === messageId && r.emoji === emoji).map((r) => r.memberId);
+    return who.length ? [{ emoji, count: who.length, mine: who.includes(meId), who }] : [];
+  });
+}
