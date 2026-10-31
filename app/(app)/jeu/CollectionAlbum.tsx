@@ -22,6 +22,10 @@ const KINDS = [
   ["common", "Communes"],
 ] as const;
 
+/** Carte manquante : symbole et précision de rareté (une rare = 2ᵉ poste d'un joueur déjà possédé). */
+const MISSING_MARK = { common: "?", rare: "★", captain: "C", legend: "♛" } as const;
+const MISSING_KIND = { common: "", rare: " (rare, 2ᵉ poste)", captain: " (Capitaine)", legend: " (Légende)" } as const;
+
 /** Rubrique d'une carte selon le rangement choisi. */
 function sectionOf(c: GameCard, group: Group): string {
   if (group === "team") return c.kind === "legend" ? "Bureau" : c.teamName;
@@ -110,7 +114,6 @@ export function CollectionAlbum({
                         <span className="mini-card" aria-hidden="true">
                           <PlayerCard card={c} />
                         </span>
-                        {e.copies > 1 && <span className="album-copies">×{e.copies}</span>}
                       </button>
                     ) : exchange ? (
                       <button
@@ -125,8 +128,11 @@ export function CollectionAlbum({
                         <b className="album-price" aria-hidden="true">✦ {shardPrice(c)}</b>
                       </button>
                     ) : (
-                      <span className="album-missing" aria-label={`Carte manquante : ${shortName(c.firstName, c.lastName)}`}>
-                        <span aria-hidden="true">?</span>
+                      <span
+                        className={`album-missing${c.kind === "rare" ? " is-rare" : ""}`}
+                        aria-label={`Carte manquante : ${shortName(c.firstName, c.lastName)}${MISSING_KIND[c.kind ?? "common"]}`}
+                      >
+                        <span aria-hidden="true">{MISSING_MARK[c.kind ?? "common"]}</span>
                         <small aria-hidden="true">{shortName(c.firstName, c.lastName)}</small>
                       </span>
                     )}
