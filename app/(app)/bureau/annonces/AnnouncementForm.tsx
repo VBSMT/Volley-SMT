@@ -71,7 +71,7 @@ export function AnnouncementForm({
       <label htmlFor="body">Message</label>
       <textarea id="body" name="body" rows={5} maxLength={4000} required />
       <label className="checkbox">
-        <input type="checkbox" name="notify" defaultChecked />
+        <input type="checkbox" name="notify" />
         Envoyer une notification aux destinataires
       </label>
       {state.status === "error" && <p className="error" role="alert">{state.message}</p>}
