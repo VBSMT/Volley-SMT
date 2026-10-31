@@ -76,3 +76,13 @@ export async function deleteAnnouncement(id: string): Promise<{ error?: string }
   revalidatePath("/", "layout");
   return {};
 }
+
+/** Désactive (ou réactive) une annonce : elle quitte l'accueil mais reste dans l'historique. */
+export async function setAnnouncementActive(id: string, active: boolean): Promise<{ error?: string }> {
+  if (!hasRole(await getCurrentMember(), "board")) return { error: "Réservé au Bureau." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("announcements").update({ active }).eq("id", id);
+  if (error) return { error: "Modification impossible." };
+  revalidatePath("/", "layout");
+  return {};
+}

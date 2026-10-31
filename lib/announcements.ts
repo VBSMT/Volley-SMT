@@ -11,16 +11,19 @@ export type AnnouncementView = {
   author: string | null;
   target: AnnouncementTarget;
   audience: string; // ex. « Tout le club », « Les St Loup »
+  /** false : désactivée par le Bureau (plus sur l'accueil, gardée dans l'historique). */
+  active: boolean;
 };
 
 /** Annonces visibles par l'utilisateur (RLS : destinataires, Bureau voit tout). */
-export async function getAnnouncements(client: SupabaseClient, opts: { limit?: number; since?: Date } = {}): Promise<AnnouncementView[]> {
+export async function getAnnouncements(client: SupabaseClient, opts: { limit?: number; since?: Date; activeOnly?: boolean } = {}): Promise<AnnouncementView[]> {
   let q = client
     .from("announcements")
-    .select("id, title, body, created_at, author_id, target, team:teams(name), session:training_sessions(starts_at)")
+    .select("id, title, body, created_at, author_id, target, active, team:teams(name), session:training_sessions(starts_at)")
     .order("created_at", { ascending: false })
     .limit(opts.limit ?? 50);
   if (opts.since) q = q.gte("created_at", opts.since.toISOString());
+  if (opts.activeOnly) q = q.eq("active", true);
   const { data, error } = await q;
   if (error || !data?.length) return [];
 
@@ -48,6 +51,7 @@ export async function getAnnouncements(client: SupabaseClient, opts: { limit?: n
       author: a.author_id ? (names.get(a.author_id) ?? null) : null,
       target: a.target,
       audience,
+      active: a.active !== false,
     };
   });
 }
