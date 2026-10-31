@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRooms } from "@/lib/chat";
+import { getRooms, roomMembers } from "@/lib/chat";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { CHAT_PAGE_SIZE, CHAT_RETENTION_DAYS, slugToRoom } from "@/lib/domain/chat";
 import { shortName } from "@/lib/format";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -30,6 +31,8 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ room:
     supabase.from("chat_room_prefs").select("notify").eq("room", room.key).maybeSingle(),
   ]);
   const names = Object.fromEntries((directory ?? []).map((m) => [m.id as string, shortName(m.first_name, m.last_name)]));
+  // Mentions : seulement les membres qui ont accès à ce salon (accès déjà vérifié ci-dessus).
+  const mentionable = (await roomMembers(createAdminClient(), room.key)).map((p) => p.id);
 
   return (
     <main className="page stack chat-page">
@@ -40,6 +43,7 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ room:
         meId={member.id}
         isBoard={hasRole(member, "board")}
         names={names}
+        mentionable={mentionable}
         initial={(messages ?? []).reverse().map((m) => ({ id: m.id, authorId: m.author_id, body: m.body, createdAt: m.created_at }))}
         notify={!!pref?.notify}
         hasMore={(messages ?? []).length === CHAT_PAGE_SIZE}
