@@ -60,10 +60,13 @@ export function CollectionAlbum({
   exchange?: { shards: number; onBuy: (card: GameCard) => void };
 }) {
   const [group, setGroup] = useState<Group>("team");
-  const [missingOnly, setMissingOnly] = useState(false);
+  // Par défaut, seulement les cartes possédées ; « Manquantes » ajoute les cartes manquantes.
+  const [showMissing, setShowMissing] = useState(false);
   const owned = new Map(entries.map((e) => [cardKey(e.card), e]));
-  const onlyMissing = missingOnly || !!exchange;
-  const visible = all.filter((c) => (!onlyMissing || !owned.has(cardKey(c))) && (!exchange || shardPrice(c) !== null));
+  // Mode échange : seulement les cartes manquantes échangeables.
+  const visible = all.filter((c) =>
+    exchange ? !owned.has(cardKey(c)) && shardPrice(c) !== null : showMissing || owned.has(cardKey(c)),
+  );
   const sections = new Map<string, GameCard[]>();
   for (const c of visible) {
     const k = sectionOf(c, group);
@@ -83,7 +86,7 @@ export function CollectionAlbum({
         </div>
         {!exchange && (
           <label className="album-toggle">
-            <input type="checkbox" checked={missingOnly} onChange={(e) => setMissingOnly(e.target.checked)} /> Manquantes
+            <input type="checkbox" checked={showMissing} onChange={(e) => setShowMissing(e.target.checked)} /> Manquantes
           </label>
         )}
       </div>
