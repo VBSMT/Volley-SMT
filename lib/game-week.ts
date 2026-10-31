@@ -27,10 +27,15 @@ export async function getMatchdays(client: SupabaseClient, season: { startsOn: s
 
 /** Équipe d'un joueur pour une semaine. */
 export async function getLineup(client: SupabaseClient, ownerId: string, week: string): Promise<Lineup> {
-  const { data } = await client.from("game_lineups").select("slot, member_id, team_id, kind").eq("owner_id", ownerId).eq("week_start", week);
+  const { data } = await client.from("game_lineups").select("slot, member_id, team_id, kind, position").eq("owner_id", ownerId).eq("week_start", week);
   const lineup: Lineup = {};
   for (const r of data ?? [])
-    lineup[r.slot as Slot] = { memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind: (r.kind as CardKind) ?? "common" };
+    lineup[r.slot as Slot] = {
+      memberId: r.member_id as string,
+      teamId: (r.team_id as string | null) ?? "",
+      kind: (r.kind as CardKind) ?? "common",
+      position: gamePosition(r.position as string | null) ?? undefined,
+    };
   return lineup;
 }
 
@@ -77,7 +82,7 @@ export async function computeWeek(admin: SupabaseClient, week: string, now = new
   const final = weekIsFinal(week, pending.length, parisClock(now).date);
   if (!entries?.length) return { players: 0, final };
 
-  const { data: lineups } = await admin.from("game_lineups").select("owner_id, slot, member_id, team_id, kind").eq("week_start", week);
+  const { data: lineups } = await admin.from("game_lineups").select("owner_id, slot, member_id, team_id, kind, position").eq("week_start", week);
   const { data: members } = await admin.from("members").select("id, sex, position_1, position_2");
   const { data: legends } = await admin.from("game_legends").select("member_id, bonus");
   const byId = new Map((members ?? []).map((m) => [m.id as string, m]));
@@ -91,8 +96,9 @@ export async function computeWeek(admin: SupabaseClient, week: string, now = new
       const pick = { memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind };
       lineup[r.slot as Slot] = pick;
       const m = byId.get(pick.memberId);
-      // Poste de la carte : 2ᵉ poste pour une rare, sinon le 1er (sans effet pour Capitaine/Légende).
-      const position = gamePosition((kind === "rare" ? m?.position_2 : m?.position_1) as string | null) ?? "setter";
+      // Poste figé à la validation ; sinon (anciennes compos) poste actuel : 2ᵉ pour une rare, 1er sinon.
+      const position =
+        gamePosition(r.position as string | null) ?? gamePosition((kind === "rare" ? m?.position_2 : m?.position_1) as string | null) ?? "setter";
       if (m) positions.set(cardKey(pick), { position, sex: m.sex as "F" | "M", kind, legendBonus: legendOf.get(pick.memberId) ?? null });
     }
     const score = lineupScore(lineup, positions, weeks);

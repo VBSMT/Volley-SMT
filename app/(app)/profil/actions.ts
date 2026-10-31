@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMember } from "@/lib/member";
 import { NOTIFICATION_PREFS, type NotificationPref, type Position } from "@/lib/member-types";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyPositionChange } from "@/lib/game-positions";
+import { after } from "next/server";
 import { removePhotoFile } from "@/lib/photos-server";
 
 export type ProfileState = { status: "idle" | "saved" | "error"; message?: string };
@@ -43,6 +46,8 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
     .eq("id", member.id);
 
   if (error) return { status: "error", message: "Enregistrement impossible. Réessayez." };
+  // Poste changé : les joueurs VUT qui l'ont dans leur compo sont prévenus (après la réponse).
+  if (position_1 !== member.position_1 || position_2 !== member.position_2) after(() => notifyPositionChange(createAdminClient(), member.id));
   // Droit à l'image retiré : la photo du jeu est effacée (la base remet déjà sa version à zéro).
   if (formData.get("image_consent") !== "on" && member.photo_updated_at) await removePhotoFile(member.id);
   revalidatePath("/", "layout");

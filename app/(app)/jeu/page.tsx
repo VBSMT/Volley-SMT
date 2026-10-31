@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { STARTER_SIZE } from "@/lib/domain/game";
-import { defaultMatchday, editableWeek, isLocked, matchdayTitle } from "@/lib/domain/game-week";
+import { GAME_POSITION_LABELS, STARTER_SIZE, cardKey } from "@/lib/domain/game";
+import { defaultMatchday, editableWeek, isLocked, matchdayTitle, positionChanges, withFrozen } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getDailyState } from "@/lib/game-rewards";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
@@ -17,7 +17,6 @@ import { Ranking } from "./Ranking";
 import { TestTools } from "./TestTools";
 import { GiftPanel, type GiftHistoryRow } from "./GiftPanel";
 import { isGameMaster, testToolsEnabled } from "@/lib/game-master";
-import { cardKey } from "@/lib/domain/game";
 import { shortName } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DailyCard } from "./DailyCard";
@@ -102,6 +101,9 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   const waiting = pending?.length ?? 0;
 
   const collection = await getCollection(supabase, cards);
+  // Album complet : cartes du club + rares gardées dont le joueur a retiré son poste 2.
+  const known = new Set(cards.map(cardKey));
+  const allCards = [...cards, ...collection.map((e) => e.card).filter((c) => !known.has(cardKey(c)))];
   const week = currentWeek();
 
   let content: React.ReactNode;
@@ -143,6 +145,14 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
           <p className="pill">{entry.final ? "✓ Journée terminée" : "⏳ Points provisoires"} · {Number(entry.total)} pts</p>
         )}
         {readOnly && !entry && <p className="small muted">Pas d&apos;équipe validée pour cette journée.</p>}
+        {!readOnly &&
+          positionChanges(lineup, cards)
+            .filter((c) => !isLocked(c.card.teamId, matches, now))
+            .map((c) => (
+              <p key={c.slot} className="pill">
+                ⚠️ {shortName(c.card.firstName, c.card.lastName)} a changé de poste : il compte comme {GAME_POSITION_LABELS[c.from]} dans cette compo. Tu peux le garder ou le remplacer.
+              </p>
+            ))}
         {!readOnly && !!(entry?.pending as string[] | undefined)?.length && (
           <p className="pill">⏳ En attente du résultat : {(entry!.pending as string[]).join(", ")} (points provisoires)</p>
         )}
@@ -152,7 +162,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
           readOnly={readOnly}
           previous={previous}
           points={entry && !readOnly ? Number(entry.total) : null}
-          owned={collection.map((e) => e.card)}
+          owned={withFrozen(collection.map((e) => e.card), lineup)}
           initial={lineup}
           lockedTeams={teamIds.filter((t) => isLocked(t, matches, now))}
           playingTeams={[...new Set(matches.map((m) => m.teamId))]}
@@ -180,7 +190,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
     const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
-    content = <CollectionView entries={collection} all={cards} shards={(wallet?.shards as number) ?? 0} />;
+    content = <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} />;
   }
 
   return (

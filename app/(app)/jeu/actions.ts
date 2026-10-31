@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { type GameCard, cardKey, drawEarned, drawStarter } from "@/lib/domain/game";
-import { type Lineup, SLOTS, addDays, bonusLocked, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
+import { type Lineup, SLOTS, addDays, bonusLocked, frozenPositions, samePick, withFrozen, editableWeek, isLocked, lineupErrors, weekStart } from "@/lib/domain/game-week";
 import { rewardReason, shardPrice, shardsFromOpening } from "@/lib/domain/game-rewards";
 import { getCollection, getGameCards } from "@/lib/game";
 import { awardBooster, getDailyState } from "@/lib/game-rewards";
@@ -42,7 +42,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 /** Ajoute des cartes à une collection, en une seule opération en base (un doublon augmente le nombre d'exemplaires). */
 async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[], gifted = false): Promise<string | null> {
-  const payload = cards.map((c) => ({ memberId: c.memberId, teamId: c.teamId || "", kind: c.kind ?? "common" }));
+  const payload = cards.map((c) => ({ memberId: c.memberId, teamId: c.teamId || "", kind: c.kind ?? "common", position: c.position }));
   const { error } = await admin.rpc("game_add_cards", { p_owner: ownerId, p_cards: payload, p_gifted: gifted });
   return error?.message ?? null;
 }
@@ -99,17 +99,19 @@ export async function saveLineup(lineup: Lineup, week: string): Promise<{ error?
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
   if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
 
-  const supabase = await createClient();
-  const cards = await getGameCards(supabase);
-  const owned = (await getCollection(supabase, cards)).map((e) => e.card);
-  const errors = lineupErrors(lineup, owned);
-  if (errors.length) return { error: errors.join(" ") };
-
   // Journée en cours ou à venir (jusqu'à 4 semaines) ; les journées passées sont en lecture seule.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || weekStart(week) !== week || !editableWeek(week, currentWeek())) {
     return { error: "Cette journée n'est plus modifiable." };
   }
+  const supabase = await createClient();
+  const cards = await getGameCards(supabase);
+  const owned = (await getCollection(supabase, cards)).map((e) => e.card);
   const [previous, matches] = await Promise.all([getLineup(supabase, member.id, week), getWeekMatches(supabase, week)]);
+  // Une carte laissée à sa place garde le poste figé à la validation précédente.
+  const kept: Lineup = Object.fromEntries(SLOTS.filter((s) => samePick(lineup[s], previous[s])).map((s) => [s, previous[s]]));
+  const errors = lineupErrors(lineup, withFrozen(owned, kept));
+  if (errors.length) return { error: errors.join(" ") };
+  const positions = frozenPositions(lineup, previous, owned);
   const now = new Date();
   for (const slot of SLOTS) {
     const before = previous[slot];
@@ -128,7 +130,7 @@ export async function saveLineup(lineup: Lineup, week: string): Promise<{ error?
   if (error) return { error: "Enregistrement impossible. Réessayez." };
   const rows = SLOTS.flatMap((slot) => {
     const pick = lineup[slot];
-    return pick ? [{ owner_id: member.id, week_start: week, slot, member_id: pick.memberId, team_id: pick.teamId || null, kind: pick.kind ?? "common" }] : [];
+    return pick ? [{ owner_id: member.id, week_start: week, slot, member_id: pick.memberId, team_id: pick.teamId || null, kind: pick.kind ?? "common", position: positions[slot] ?? null }] : [];
   });
   const { error: e2 } = await admin.from("game_lineups").insert(rows);
   if (e2) return { error: "Enregistrement impossible. Réessayez." };

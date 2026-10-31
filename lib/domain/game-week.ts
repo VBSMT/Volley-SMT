@@ -45,7 +45,8 @@ export function matchdayTitle(number: number, week: string): string {
 
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 
-export type CardPick = { memberId: string; teamId: string; kind?: CardKind };
+/** `position` : poste figé à la validation (absent pour une carte pas encore validée). */
+export type CardPick = { memberId: string; teamId: string; kind?: CardKind; position?: GamePosition };
 export type Lineup = Partial<Record<Slot, CardPick>>;
 
 /**
@@ -323,4 +324,41 @@ export type RankEntry = { ownerId: string; total: number; bonus: number; validat
 export function rank<T extends RankEntry>(entries: T[]): (T & { rank: number })[] {
   const sorted = [...entries].sort((a, b) => b.total - a.total || b.bonus - a.bonus || a.validatedAt.localeCompare(b.validatedAt));
   return sorted.map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
+// --- Poste figé à la validation -----------------------------------------------------------
+
+export const samePick = (a?: CardPick, b?: CardPick) => !!a && !!b && a.memberId === b.memberId && a.teamId === b.teamId && (a.kind ?? "common") === (b.kind ?? "common");
+
+/**
+ * Postes à enregistrer pour une compo : une carte laissée à la même place garde le poste figé à la
+ * validation précédente ; une carte posée ou déplacée prend le poste actuel du joueur.
+ */
+export function frozenPositions(lineup: Lineup, previous: Lineup, owned: GameCard[]): Partial<Record<Slot, GamePosition>> {
+  const byKey = new Map(owned.map((c) => [cardKey(c), c]));
+  const out: Partial<Record<Slot, GamePosition>> = {};
+  for (const slot of SLOTS) {
+    const pick = lineup[slot];
+    if (!pick) continue;
+    const before = previous[slot];
+    const position = samePick(pick, before) && before?.position ? before.position : byKey.get(cardKey(pick))?.position;
+    if (position) out[slot] = position;
+  }
+  return out;
+}
+
+/** Cartes possédées vues avec le poste figé dans la compo (pour valider une compo laissée en place). */
+export function withFrozen(owned: GameCard[], lineup: Lineup): GameCard[] {
+  const frozen = new Map(SLOTS.flatMap((s) => (lineup[s]?.position ? [[cardKey(lineup[s]!), lineup[s]!.position!] as const] : [])));
+  return owned.map((c) => (frozen.has(cardKey(c)) && !isSpecial(c) ? { ...c, position: frozen.get(cardKey(c))! } : c));
+}
+
+/** Joueurs de la compo dont le poste a changé depuis la validation (hors Capitaine et Légende). */
+export function positionChanges(lineup: Lineup, current: GameCard[]): { slot: Slot; card: GameCard; from: GamePosition }[] {
+  const byKey = new Map(current.map((c) => [cardKey(c), c]));
+  return SLOTS.flatMap((slot) => {
+    const pick = lineup[slot];
+    const card = pick && byKey.get(cardKey(pick));
+    return pick?.position && card && !isSpecial(card) && card.position !== pick.position ? [{ slot, card, from: pick.position }] : [];
+  });
 }

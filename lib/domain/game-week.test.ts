@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, attributeResults, bonusLocked, defaultMatchday, editableWeek, matchdays, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, attributeResults, frozenPositions, positionChanges, withFrozen, bonusLocked, defaultMatchday, editableWeek, matchdays, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -218,5 +218,24 @@ describe("capitaine en case Bonus", () => {
   it("même règle pour une Légende", () => {
     const leg = { ...card("3", "setter", "M", ""), teamId: "", kind: "legend" as const };
     expect(lineupErrors({ ...base, bonus: at(leg) }, [s, l, r, b, leg])).toContain("Une Légende ne peut pas être à la fois en case Bonus et sur le terrain.");
+  });
+});
+
+describe("poste figé à la validation", () => {
+  const s = card("1", "setter", "F"), l = card("2", "front_left"), r = card("3", "front_right"), b = card("4", "back");
+  const at = (c: GameCard, position?: GameCard["position"]) => ({ memberId: c.memberId, teamId: c.teamId, kind: c.kind, position });
+  const moved = { ...s, position: "back" as const }; // la passeuse est devenue fond
+  const previous = { setter: at(s, "setter"), front_left: at(l, "front_left"), front_right: at(r, "front_right"), back: at(b, "back") };
+  it("une carte laissée en place garde son poste figé", () => {
+    expect(frozenPositions({ ...previous }, previous, [moved, l, r, b]).setter).toBe("setter");
+  });
+  it("une carte posée prend le poste actuel", () => {
+    expect(frozenPositions({ ...previous, sub: at(moved) }, previous, [moved, l, r, b]).sub).toBe("back");
+  });
+  it("la compo laissée en place reste valide", () => {
+    expect(lineupErrors(previous, withFrozen([moved, l, r, b], previous))).toEqual([]);
+  });
+  it("changement de poste signalé", () => {
+    expect(positionChanges(previous, [moved, l, r, b])).toEqual([{ slot: "setter", card: moved, from: "setter" }]);
   });
 });

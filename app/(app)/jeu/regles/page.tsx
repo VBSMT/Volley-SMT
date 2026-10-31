@@ -109,6 +109,7 @@ export default async function ReglesPage() {
           <li><strong>1 remplaçant</strong> de n&apos;importe quel poste (facultatif).</li>
           <li><strong>1 case Bonus</strong> : un Capitaine ou une Légende (facultatif).</li>
           <li>Au moins <strong>une fille</strong> parmi les titulaires, et au plus <strong>2 joueurs</strong> d&apos;une même équipe (le Capitaine ou la Légende en case Bonus ne compte pas, mais ne peut pas aussi jouer sur le terrain).</li>
+          <li>Le <strong>poste</strong> d&apos;une carte est figé quand tu valides : si le joueur change de poste ensuite, il compte avec son ancien poste dans cette compo (tu es prévenu et tu peux le remplacer avant son match). Une rare déjà obtenue reste dans ta collection même si le joueur retire son 2ᵉ poste.</li>
         </ul>
         <div className="rules-box">
           <strong>🔒 Verrouillage</strong>
