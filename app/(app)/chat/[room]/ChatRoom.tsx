@@ -19,6 +19,7 @@ export function ChatRoom({
   meId,
   isBoard,
   names,
+  mentionable,
   initial,
   notify: initialNotify,
   hasMore: initialHasMore,
@@ -28,6 +29,8 @@ export function ChatRoom({
   meId: string;
   isBoard: boolean;
   names: Record<string, string>;
+  /** Membres ayant accès au salon : seuls eux peuvent être cités. */
+  mentionable: string[];
   initial: Msg[];
   notify: boolean;
   hasMore: boolean;
@@ -108,10 +111,11 @@ export function ChatRoom({
   const suggestions = useMemo(() => {
     if (mention === undefined) return [];
     const q = mention.toLocaleLowerCase("fr");
+    const allowed = new Set(mentionable);
     return Object.entries(names)
-      .filter(([id, n]) => id !== meId && n.toLocaleLowerCase("fr").startsWith(q))
+      .filter(([id, n]) => id !== meId && allowed.has(id) && n.toLocaleLowerCase("fr").startsWith(q))
       .slice(0, 5);
-  }, [mention, names, meId]);
+  }, [mention, names, meId, mentionable]);
 
   const send = () => {
     const body = text.trim();
