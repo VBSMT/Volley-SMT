@@ -43,6 +43,22 @@ export function matchdayTitle(number: number, week: string): string {
   return `Compo Journée ${number} — du ${fr(week)} au ${fr(addDays(week, 6))}`;
 }
 
+/** Dates d'une journée sur une ligne à part : « du 16/11 au 22/11 ». */
+export function matchdayDates(week: string): string {
+  const fr = (d: string) => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+  return `du ${fr(week)} au ${fr(addDays(week, 6))}`;
+}
+
+/** Nom d'équipe comparable (casse, accents, ponctuation et espaces ignorés). */
+const teamKey = (name: string) =>
+  name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
+/** Rang d'un adversaire dans le classement de la poule (null si son nom n'y est pas reconnu). */
+export function opponentRank(rows: { rank: number; name: string }[], opponent: string): number | null {
+  const key = teamKey(opponent);
+  return rows.find((r) => teamKey(r.name) === key)?.rank ?? null;
+}
+
 export const addDays = (date: string, n: number) => new Date(Date.parse(`${date}T12:00:00Z`) + n * DAY).toISOString().slice(0, 10);
 
 /** `position` : poste figé à la validation (absent pour une carte pas encore validée). */

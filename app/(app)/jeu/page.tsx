@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GAME_POSITION_LABELS, STARTER_SIZE, cardKey } from "@/lib/domain/game";
-import { defaultMatchday, editableWeek, isLocked, matchdayTitle, positionChanges, withFrozen } from "@/lib/domain/game-week";
+import { defaultMatchday, editableWeek, isLocked, matchdayDates, opponentRank, positionChanges, withFrozen } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getDailyState } from "@/lib/game-rewards";
 import { getCollection, getGameCards, starterOpened } from "@/lib/game";
-import { currentWeek, getLineup, getMatchdays, getWeekMatches } from "@/lib/game-week";
+import { currentWeek, getLineup, getMatchdays, getWeekFixtures, getWeekMatches } from "@/lib/game-week";
+import { getLatestSnapshots } from "@/lib/stats";
+import { WeekFixtures, type FixtureRow } from "./WeekFixtures";
 import { getCurrentMember, hasRole } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { openEarned, openStarter } from "./actions";
@@ -46,8 +48,9 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   ]);
 
   const header = (
-    <h1>
-      VUT <span className="small muted">Volley Ultimate Team</span>
+    <h1 className="vut-title">
+      Volley Ultimate Team
+      <small aria-hidden="true">✦ VUT ✦</small>
     </h1>
   );
   // Cadeaux et outils de test : maître du jeu seulement (VUT_MASTER_EMAIL).
@@ -88,7 +91,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
 
   if (!opened) {
     return (
-      <main className="page stack">
+      <main className="page stack vut-page">
         {header}
         <p>Bienvenue ! Ouvre ton premier booster : {STARTER_SIZE} joueurs du club, dont au moins un par poste.</p>
         <BoosterOpening label={`${STARTER_SIZE} joueurs`} open={openStarter} starter />
@@ -116,12 +119,28 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     const prevDay = index > 0 ? days[index - 1] : null;
     const nextDay = index >= 0 && index < days.length - 1 ? days[index + 1] : null;
     const readOnly = !editableWeek(selected, week);
-    const [lineup, matches, { data: entry }, previous] = await Promise.all([
+    const [lineup, matches, { data: entry }, previous, fixtures, standings] = await Promise.all([
       getLineup(supabase, member.id, selected),
       getWeekMatches(supabase, selected),
       supabase.from("game_weeks").select("total, bonus, final, pending").eq("owner_id", member.id).eq("week_start", selected).maybeSingle(),
       prevDay ? getLineup(supabase, member.id, prevDay) : Promise.resolve(undefined),
+      getWeekFixtures(supabase, selected),
+      getLatestSnapshots(supabase),
     ]);
+    const paris = (iso: string, o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", ...o }).format(new Date(iso));
+    const fixtureRows: FixtureRow[] = fixtures.map((f) => {
+      const snap = standings.get(f.teamId);
+      return {
+        id: f.id,
+        day: paris(f.startsAt, { weekday: "short", day: "2-digit" }),
+        time: paris(f.startsAt, { hour: "2-digit", minute: "2-digit" }).replace(":", "h"),
+        teamName: f.teamName,
+        teamRank: snap?.rank ?? null,
+        opponent: f.opponent,
+        opponentRank: snap ? opponentRank(snap.rows, f.opponent) : null,
+        isHome: f.isHome,
+      };
+    });
     const now = new Date();
     const teamIds = [...new Set(cards.map((c) => c.teamId))];
     const nav = (day: string | null, label: string, text: string) =>
@@ -138,7 +157,17 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
       <>
         <div className="matchday-nav">
           {nav(prevDay, "Journée précédente", "‹")}
-          <h2 className="lineup-title">{index >= 0 ? matchdayTitle(index + 1, selected) : "Pas encore de match au calendrier"}</h2>
+          <h2 className="lineup-title">
+            {index >= 0 ? (
+              <>
+                Compo J{index + 1}
+                <span className="lineup-dates">{matchdayDates(selected)}</span>
+              </>
+            ) : (
+              "Pas encore de match au calendrier"
+            )}
+          </h2>
+          {index >= 0 ? <WeekFixtures title={`J${index + 1}`} fixtures={fixtureRows} /> : <span />}
           {nav(nextDay, "Journée suivante", "›")}
         </div>
         {readOnly && entry && (
@@ -194,7 +223,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   }
 
   return (
-    <main className="page stack">
+    <main className="page stack vut-page">
       {header}
       <nav className="game-tabs" aria-label="VUT">
         {TABS.map(([k, label]) => (

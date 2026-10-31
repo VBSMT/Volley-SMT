@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { type GameCard, cardKey } from "./game";
-import { type TeamWeek, attributeResults, frozenPositions, positionChanges, withFrozen, bonusLocked, defaultMatchday, editableWeek, matchdays, matchdayTitle, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
+import { type TeamWeek, attributeResults, frozenPositions, positionChanges, withFrozen, bonusLocked, defaultMatchday, editableWeek, matchdays, matchdayTitle, matchdayDates, opponentRank, weekFromResults, weekIsFinal, simulatedWeek, cardScore, isLocked, lineupErrors, lineupScore, rank, teamWeek, weekStart } from "./game-week";
 
 const card = (id: string, position: GameCard["position"], sex: "F" | "M" = "M", teamId = `t${id}`): GameCard => ({
   memberId: id,
@@ -237,5 +237,15 @@ describe("poste figé à la validation", () => {
   });
   it("changement de poste signalé", () => {
     expect(positionChanges(previous, [moved, l, r, b])).toEqual([{ slot: "setter", card: moved, from: "setter" }]);
+  });
+});
+
+describe("feuille des matchs de la journée", () => {
+  it("dates sur leur ligne", () => expect(matchdayDates("2026-11-16")).toBe("du 16/11 au 22/11"));
+  it("rang de l'adversaire, nom comparé sans casse ni accents", () => {
+    const rows = [{ rank: 1, name: "Les Requins" }, { rank: 4, name: "Castelnau-le-Lez 2" }];
+    expect(opponentRank(rows, "LES REQUINS")).toBe(1);
+    expect(opponentRank(rows, "Castelnau le Lez 2")).toBe(4);
+    expect(opponentRank(rows, "Inconnus")).toBeNull();
   });
 });
