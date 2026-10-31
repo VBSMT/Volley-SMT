@@ -236,8 +236,8 @@ export function LineupEditor({
           </button>
         )}
         {!readOnly && previous && Object.keys(previous).length > 0 && (
-          <button type="button" className="chip" onClick={copyPrevious} disabled={pending}>
-            ↺ Reprendre la compo précédente
+          <button type="button" className="chip chip-small" onClick={copyPrevious} disabled={pending} aria-label="Reprendre la compo précédente">
+            ↺ Préc.
           </button>
         )}
 
