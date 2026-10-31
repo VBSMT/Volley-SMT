@@ -1006,6 +1006,9 @@ a { color: var(--lien); text-underline-offset: 3px; }
   background: var(--jaune); color: var(--noir); border: 2px solid var(--noir); font: 700 1.05rem "Barlow Condensed", sans-serif; letter-spacing: 0.04em;
 }
 .lineup-status { align-items: center; }
+/* Une ligne : ↺, points, Valider ; les alertes passent dessous. */
+.lineup-status .pill:not(.pill-score) { order: 100; flex-basis: 100%; }
+.chip-small { min-height: 44px; padding: 0 0.7rem; font-size: 0.85rem; flex: none; }
 /* Carte posée : arrive avec un rebond (éclat doré pour l'or) ; titulaires allumés un à un à la validation. */
 .mini-card.is-landing { animation: card-land 0.45s cubic-bezier(0.2, 1.4, 0.4, 1); }
 .mini-card.is-gold { animation: card-land 0.45s cubic-bezier(0.2, 1.4, 0.4, 1), card-gold 0.9s 0.2s; }
