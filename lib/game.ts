@@ -33,10 +33,18 @@ export type CollectionEntry = { card: GameCard; copies: number; gifted?: boolean
 
 /** Collection de l'adhérent connecté (cartes à jour : note, poste, photo). */
 export async function getCollection(client: SupabaseClient, cards: GameCard[]): Promise<CollectionEntry[]> {
-  const { data } = await client.from("game_collection").select("member_id, team_id, kind, copies, gifted");
+  const { data } = await client.from("game_collection").select("member_id, team_id, kind, copies, gifted, position");
   const byKey = new Map(cards.map((c) => [cardKey(c), c]));
   return (data ?? []).flatMap((r) => {
-    const card = byKey.get(cardKey({ memberId: r.member_id as string, teamId: (r.team_id as string | null) ?? "", kind: r.kind as CardKind }));
+    const kind = r.kind as CardKind;
+    const teamId = (r.team_id as string | null) ?? "";
+    let card = byKey.get(cardKey({ memberId: r.member_id as string, teamId, kind }));
+    // Rare dont le joueur a retiré son poste 2 : gardée, avec le poste qu'elle avait à l'obtention.
+    const kept = gamePosition(r.position as string | null);
+    if (!card && kind === "rare" && kept) {
+      const base = cards.find((c) => c.memberId === r.member_id && c.teamId === teamId && c.kind === "common");
+      if (base) card = { ...base, kind: "rare", position: kept };
+    }
     return card ? [{ card, copies: r.copies as number, gifted: !!r.gifted }] : [];
   });
 }
