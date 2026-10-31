@@ -108,11 +108,11 @@ export function CollectionCarousel({
               }}
               onPointerDown={wheel.onPointerDown(i)}
               {...wheel.handlers}
-              aria-label={`${shortName(e.card.firstName, e.card.lastName)}, ${GAME_POSITION_LABELS[e.card.position]}, ${e.card.teamName}, ${e.card.rating}${e.copies > 1 ? `, ${e.copies} exemplaires` : ""}${isCenter ? ", toucher pour retourner" : ""}`}
+              aria-label={`${shortName(e.card.firstName, e.card.lastName)}, ${GAME_POSITION_LABELS[e.card.position]}, ${e.card.teamName}, ${e.card.rating}${isCenter ? ", toucher pour retourner" : ""}`}
             >
               <span className={`flip-card${flipped === key ? " is-flipped" : ""}`} aria-hidden="true">
                 <span className="flip-face">
-                  <PlayerCard card={e.card} copies={e.copies} />
+                  <PlayerCard card={e.card} />
                 </span>
                 <span className="flip-face flip-front">
                   <span className="card-back-info">
@@ -124,9 +124,6 @@ export function CollectionCarousel({
                     <span>{e.card.teamName}</span>
                     <span>Note : {e.card.rating}</span>
                     <span>Record : {e.card.bestRating}</span>
-                    <span>
-                      {e.copies} exemplaire{e.copies > 1 ? "s" : ""}
-                    </span>
                     {e.gifted && <span className="gift-mention">🎁 Cadeau</span>}
                   </span>
                 </span>
