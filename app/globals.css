@@ -1405,3 +1405,7 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .market-pick-card.is-on { outline: 3px solid var(--jaune); outline-offset: 2px; }
 .market-stepper { display: flex; align-items: center; gap: 0.6rem; }
 .carousel-sell { justify-self: center; width: auto; padding: 0 1rem; }
+/* Sous-onglets du marché : 4 colonnes égales, tiennent sur 390 px */
+.market-subs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem; overflow: visible; }
+.market-subs .chip { min-height: 44px; padding: 0 0.3rem; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; }
+.market-subs .chat-badge { margin-left: 0.2rem; }
