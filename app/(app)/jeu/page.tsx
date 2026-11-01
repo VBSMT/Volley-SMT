@@ -255,6 +255,8 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
             status: o.status,
             card: l ? find(l.member_id, l.team_id, l.kind) : null,
             mine: o.buyer_id === member.id,
+            fromSeller: !!o.from_seller,
+            round: (o.round as number) ?? 1,
           };
         }),
       };

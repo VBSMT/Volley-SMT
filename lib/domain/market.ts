@@ -12,6 +12,8 @@ export const TRADES_PER_WEEK = 5;
 /** Durée de vie d'une annonce et d'une offre (jours). */
 export const LISTING_DAYS = 7;
 export const OFFER_DAYS = 3;
+/** Allers-retours au plus entre acheteur et vendeur (offre, contre-offre, contre-offre). */
+export const MAX_ROUNDS = 3;
 
 const RANK: Record<CardKind, number> = { common: 1, rare: 2, captain: 3, legend: 4 };
 export type MarketCard = { memberId: string; teamId: string; kind: CardKind };

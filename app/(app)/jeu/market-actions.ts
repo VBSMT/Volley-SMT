@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cardKey, type GameCard } from "@/lib/domain/game";
 import { addDays } from "@/lib/domain/game-week";
-import { LISTING_DAYS, OFFER_DAYS, TRADES_PER_WEEK, listingErrors, offerErrors } from "@/lib/domain/market";
+import { LISTING_DAYS, MAX_ROUNDS, OFFER_DAYS, TRADES_PER_WEEK, listingErrors, offerErrors } from "@/lib/domain/market";
 import { getCollection, getGameCards } from "@/lib/game";
 import { currentWeek } from "@/lib/game-week";
 import { shortName } from "@/lib/format";
@@ -167,9 +167,13 @@ export async function makeOffer(listingId: string, shards: number, keys: string[
   if (errors.length) return { error: errors.join(" ") };
   const { data: wallet } = await admin.from("game_wallet").select("shards").eq("owner_id", me.id).maybeSingle();
   if (((wallet?.shards as number) ?? 0) < shards) return { error: ERRORS["VUT:shards"] };
-  // Une offre en attente par acheteur et par annonce : la nouvelle remplace l'ancienne.
-  await admin.from("game_offers").update({ status: "cancelled", decided_at: new Date().toISOString() }).eq("listing_id", listingId).eq("buyer_id", me.id).eq("status", "pending");
-  const { error } = await admin.from("game_offers").insert({ listing_id: listingId, buyer_id: me.id, shards: Math.round(shards), cards });
+  // Une offre en attente par acheteur et par annonce : la nouvelle remplace l'ancienne. En réponse
+  // à une contre-offre du vendeur, c'est un aller-retour de plus (3 au plus).
+  const { data: last } = await admin.from("game_offers").select("id, round, from_seller").eq("listing_id", listingId).eq("buyer_id", me.id).eq("status", "pending").maybeSingle();
+  const round = last?.from_seller ? (last.round as number) + 1 : 1;
+  if (round > MAX_ROUNDS) return { error: "Plus de contre-proposition possible : accepte ou refuse." };
+  if (last) await admin.from("game_offers").update({ status: last.from_seller ? "countered" : "cancelled", decided_at: new Date().toISOString() }).eq("id", last.id);
+  const { error } = await admin.from("game_offers").insert({ listing_id: listingId, buyer_id: me.id, shards: Math.round(shards), cards, round });
   if (error) return { error: "Offre non envoyée." };
   const what = [shards ? `✦ ${shards}` : "", ...r.cards!.map(label)].filter(Boolean).join(" + ");
   await push(admin, l.seller_id as string, "🔁 Nouvelle offre VUT", `${shortName(me.first_name, me.last_name)} propose ${what}.`);
@@ -192,7 +196,7 @@ export async function decideOffer(id: string, accept: boolean): Promise<Result> 
   if (!me) return { error: "Réservé aux joueurs VUT." };
   const admin = createAdminClient();
   const since = new Date(Date.now() - OFFER_DAYS * 86_400_000).toISOString();
-  const { data: o } = await admin.from("game_offers").select("*, listing:game_listings(seller_id)").eq("id", id).eq("status", "pending").gte("created_at", since).maybeSingle();
+  const { data: o } = await admin.from("game_offers").select("*, listing:game_listings(seller_id)").eq("id", id).eq("status", "pending").eq("from_seller", false).gte("created_at", since).maybeSingle();
   if (!o || (o.listing as { seller_id: string } | null)?.seller_id !== me.id) return { error: "Offre introuvable ou expirée." };
   if (!accept) {
     await admin.from("game_offers").update({ status: "refused", decided_at: new Date().toISOString() }).eq("id", id);
@@ -207,6 +211,62 @@ export async function decideOffer(id: string, accept: boolean): Promise<Result> 
   if (error) return { error: tradeError(error.message) };
   await admin.from("game_offers").update({ status: "accepted", decided_at: new Date().toISOString() }).eq("id", id);
   await push(admin, o.buyer_id as string, "🔁 Offre acceptée !", "L'échange est fait : la carte est dans ta collection.");
+  revalidatePath("/jeu");
+  return {};
+}
+
+/**
+ * Contre-offre du vendeur à une offre reçue : ses conditions (éclats et/ou cartes que l'acheteur
+ * donnerait, mêmes règles qu'une offre). L'acheteur accepte, refuse ou contre-propose.
+ */
+export async function counterOffer(id: string, shards: number, keys: string[]): Promise<Result> {
+  const me = await player();
+  if (!me) return { error: "Réservé aux joueurs VUT." };
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - OFFER_DAYS * 86_400_000).toISOString();
+  const { data: o } = await admin.from("game_offers").select("*, listing:game_listings(seller_id, kind, status)").eq("id", id).eq("status", "pending").eq("from_seller", false).gte("created_at", since).maybeSingle();
+  const l = o?.listing as { seller_id: string; kind: string; status: string } | null;
+  if (!o || l?.seller_id !== me.id || l.status !== "open") return { error: "Offre introuvable ou expirée." };
+  if ((o.round as number) >= MAX_ROUNDS) return { error: "Plus de contre-offre possible : accepte ou refuse." };
+  const all = await getGameCards(await createClient());
+  const cards = keys.flatMap((k) => all.find((c) => cardKey(c) === k) ?? []).map((c) => ({ memberId: c.memberId, teamId: c.teamId, kind: c.kind ?? "common" }));
+  if (cards.length !== new Set(keys).size) return { error: "Carte introuvable." };
+  const errors = offerErrors(l.kind as GameCard["kind"] & string, Math.round(shards), cards);
+  if (errors.length) return { error: errors.join(" ") };
+  await admin.from("game_offers").update({ status: "countered", decided_at: new Date().toISOString() }).eq("id", id);
+  const { error } = await admin.from("game_offers").insert({ listing_id: o.listing_id, buyer_id: o.buyer_id, shards: Math.round(shards), cards, from_seller: true, round: (o.round as number) + 1 });
+  if (error) return { error: "Contre-offre non envoyée." };
+  const what = [shards ? `✦ ${Math.round(shards)}` : "", ...keys.flatMap((k) => all.find((c) => cardKey(c) === k) ?? []).map(label)].filter(Boolean).join(" + ");
+  await push(admin, o.buyer_id as string, "🔁 Contre-offre VUT", `${shortName(me.first_name, me.last_name)} demande ${what}.`);
+  revalidatePath("/jeu");
+  return {};
+}
+
+/** L'acheteur accepte (échange immédiat, ses cartes et éclats) ou refuse une contre-offre du vendeur. */
+export async function answerCounter(id: string, accept: boolean): Promise<Result> {
+  const me = await player();
+  if (!me) return { error: "Réservé aux joueurs VUT." };
+  const admin = createAdminClient();
+  const since = new Date(Date.now() - OFFER_DAYS * 86_400_000).toISOString();
+  const { data: o } = await admin.from("game_offers").select("*, listing:game_listings(seller_id)").eq("id", id).eq("buyer_id", me.id).eq("status", "pending").eq("from_seller", true).gte("created_at", since).maybeSingle();
+  if (!o) return { error: "Contre-offre introuvable ou expirée." };
+  const seller = (o.listing as { seller_id: string } | null)?.seller_id ?? "";
+  if (!accept) {
+    await admin.from("game_offers").update({ status: "refused", decided_at: new Date().toISOString() }).eq("id", id);
+    await push(admin, seller, "🔁 Contre-offre refusée", `${shortName(me.first_name, me.last_name)} a refusé ta contre-offre.`);
+    revalidatePath("/jeu");
+    return {};
+  }
+  const keys = ((o.cards as { memberId: string; teamId: string; kind: string }[]) ?? []).map((c) => cardKey({ memberId: c.memberId, teamId: c.teamId, kind: c.kind as GameCard["kind"] }));
+  const r = await checkOwned(admin, me.id, keys);
+  if (r.error) return r;
+  if ((await tradesThisWeek(admin, me.id)) >= TRADES_PER_WEEK || (await tradesThisWeek(admin, seller)) >= TRADES_PER_WEEK) {
+    return { error: `Limite de ${TRADES_PER_WEEK} échanges par semaine atteinte.` };
+  }
+  const { error } = await admin.rpc("game_trade", { p_listing: o.listing_id, p_buyer: me.id, p_shards: o.shards, p_cards: o.cards });
+  if (error) return { error: tradeError(error.message) };
+  await admin.from("game_offers").update({ status: "accepted", decided_at: new Date().toISOString() }).eq("id", id);
+  await push(admin, seller, "🔁 Contre-offre acceptée !", `${shortName(me.first_name, me.last_name)} a accepté : l'échange est fait.`);
   revalidatePath("/jeu");
   return {};
 }
