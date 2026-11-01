@@ -19,8 +19,9 @@ export async function awardBooster(admin: SupabaseClient, ownerId: string, reaso
   // Insertion simple : l'index unique partiel refuse une récompense déjà donnée (code 23505).
   const { data, error } = await admin.from("game_boosters").insert({ owner_id: ownerId, kind: "earned", reason }).select("id");
   if (error || !data?.length) return false;
-  const { data: m } = await admin.from("members").select("id, email, first_name").eq("id", ownerId).maybeSingle();
-  if (m) {
+  const { data: m } = await admin.from("members").select("id, email, first_name, notify_game").eq("id", ownerId).maybeSingle();
+  // Préférence « Jeu VUT » coupée : le booster est donné, sans notification.
+  if (m && m.notify_game !== false) {
     await notifyMembers([
       {
         recipient: { id: m.id as string, email: m.email as string, first_name: m.first_name as string },

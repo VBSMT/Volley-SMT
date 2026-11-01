@@ -34,7 +34,7 @@ export async function notifyPositionChange(admin: SupabaseClient, memberId: stri
     owners.set(r.owner_id as string, r.position as string);
   }
   if (!owners.size) return 0;
-  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", [...owners.keys()]);
+  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", [...owners.keys()]).neq("notify_game", false);
   const name = shortName(m.first_name as string, m.last_name as string);
   await notifyMembers(
     (people ?? []).map((p) => {

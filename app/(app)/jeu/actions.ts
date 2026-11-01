@@ -85,7 +85,7 @@ export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[
   const shards = shardsFromOpening(new Set((owned ?? []).map((r) => cardKey({ memberId: r.member_id, teamId: r.team_id ?? "", kind: r.kind }))), cards);
   const error = await addToCollection(admin, member.id, cards, !!gift?.length);
   if (error) return { error: "Ouverture impossible. Réessayez." };
-  if (shards) await addShards(admin, member.id, shards);
+  // Doublons gardés (plus d'éclat automatique) : à recycler ou à vendre au marché.
   // Pas de revalidatePath : la page changerait pendant l'animation (« Voir ma collection » rafraîchit).
   return { cards, shards, message: (booster.message as string | null) ?? undefined };
 }
@@ -157,6 +157,24 @@ async function addShards(admin: Admin, ownerId: string, n: number): Promise<numb
 }
 
 /** Échange des éclats contre une carte au choix : commune 5, rare 20. */
+/** Recycle un doublon : un exemplaire en trop devient 1 éclat. */
+export async function recycleCard(key: string): Promise<{ error?: string; shards?: number }> {
+  const member = await getCurrentMember();
+  if (!member) return { error: "Session expirée. Reconnectez-vous." };
+  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
+  const card = (await getCollection(await createClient(), await getGameCards(await createClient()))).find((e) => cardKey(e.card) === key);
+  if (!card || card.copies < 2) return { error: "Pas de doublon à recycler." };
+  const { data, error } = await createAdminClient().rpc("game_recycle", {
+    p_owner: member.id,
+    p_member: card.card.memberId,
+    p_team: card.card.teamId || null,
+    p_kind: card.card.kind ?? "common",
+  });
+  if (error || data === null) return { error: "Recyclage impossible." };
+  revalidatePath("/jeu");
+  return { shards: data as number };
+}
+
 export async function exchangeShards(key: string): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };

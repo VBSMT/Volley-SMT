@@ -38,7 +38,9 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
   const member = (await getCurrentMember())!;
   if (!hasRole(member, "board")) notFound();
   const { vue, journee } = await searchParams;
-  const tab: Tab = TABS.some(([k]) => k === vue) ? (vue as Tab) : "equipe";
+  // « Marché » s'ouvre depuis l'album (onglet Collection en surbrillance).
+  const market = vue === "marche";
+  const tab: Tab = market ? "collection" : TABS.some(([k]) => k === vue) ? (vue as Tab) : "equipe";
 
   const supabase = await createClient();
   const [cards, opened, { data: teams }] = await Promise.all([
@@ -219,7 +221,18 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
     const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
-    content = <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} />;
+    content = market ? (
+      <div className="stack">
+        <div className="market-head">
+          <Link href="/jeu?vue=collection" className="back">← Album</Link>
+          <h2>🔁 Marché</h2>
+        </div>
+        <p className="small muted">Banque : obtiens une carte manquante contre des éclats. Les annonces entre joueurs arrivent bientôt.</p>
+        <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} bank />
+      </div>
+    ) : (
+      <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} />
+    );
   }
 
   return (

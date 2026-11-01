@@ -97,6 +97,7 @@ export default async function ProfilPage() {
               notify_match: member.notify_match ?? true,
               notify_reinforcement: member.notify_reinforcement ?? true,
               notify_mentions: member.notify_mentions ?? false,
+              notify_game: member.notify_game ?? true,
             }}
           />
         )}
