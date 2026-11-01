@@ -18,10 +18,11 @@ const STATUS: Record<string, string> = { pending: "⏳ En attente", accepted: "�
 type Sub = "annonces" | "ventes" | "offres" | "banque";
 
 /** Marché VUT : annonces des autres, mes ventes (offres reçues), mes offres, et la banque. */
-export function MarketView({ listings, offers, owned, all, shards, bank }: { listings: ListingRow[]; offers: OfferRow[]; owned: Owned[]; all: GameCard[]; shards: number; bank: React.ReactNode }) {
-  const [sub, setSub] = useState<Sub>("annonces");
+export function MarketView({ listings, offers, owned, all, shards, bank, sellKey }: { listings: ListingRow[]; offers: OfferRow[]; owned: Owned[]; all: GameCard[]; shards: number; bank: React.ReactNode; sellKey?: string }) {
+  // Ouvert depuis l'album avec une carte choisie : directement sa mise en vente.
+  const [sub, setSub] = useState<Sub>(sellKey ? "ventes" : "annonces");
   const [offerFor, setOfferFor] = useState<ListingRow | null>(null);
-  const [selling, setSelling] = useState(false);
+  const [selling, setSelling] = useState(!!sellKey);
   const [error, setError] = useState<string>();
   const [pending, start] = useTransition();
   const { confirm, dialog } = useConfirm();
@@ -161,7 +162,7 @@ export function MarketView({ listings, offers, owned, all, shards, bank }: { lis
       {sub === "banque" && bank}
 
       {offerFor && <OfferDialog listing={offerFor} owned={owned} shards={shards} pending={pending} onClose={() => setOfferFor(null)} onSend={(s, keys) => run(() => makeOffer(offerFor.id, s, keys), "Offre envoyée.")} />}
-      {selling && <SellDialog owned={owned} all={all} pending={pending} onClose={() => setSelling(false)} onSend={(key, s, askKey) => run(() => createListing(key, s, askKey), "Carte mise en vente.")} />}
+      {selling && <SellDialog initialKey={sellKey} owned={owned} all={all} pending={pending} onClose={() => setSelling(false)} onSend={(key, s, askKey) => run(() => createListing(key, s, askKey), "Carte mise en vente.")} />}
     </div>
   );
 }
@@ -205,13 +206,13 @@ function OfferDialog({ listing, owned, shards, pending, onClose, onSend }: { lis
   );
 }
 
-function SellDialog({ owned, all, pending, onClose, onSend }: { owned: Owned[]; all: GameCard[]; pending: boolean; onClose: () => void; onSend: (key: string, shards: number | null, askKey: string | null) => void }) {
+function SellDialog({ initialKey, owned, all, pending, onClose, onSend }: { initialKey?: string; owned: Owned[]; all: GameCard[]; pending: boolean; onClose: () => void; onSend: (key: string, shards: number | null, askKey: string | null) => void }) {
   const choices = owned.filter((o) => tradable(o.card.kind ?? "common"));
-  const [key, setKey] = useState(choices[0] ? cardKey(choices[0].card) : "");
+  const [key, setKey] = useState(choices.find((o) => cardKey(o.card) === initialKey) ? initialKey! : choices[0] ? cardKey(choices[0].card) : "");
   const card = choices.find((o) => cardKey(o.card) === key)?.card;
   const kind = (card?.kind ?? "common") as keyof typeof MIN_SALE;
   const [useShards, setUseShards] = useState(true);
-  const [price, setPrice] = useState(MIN_SALE[kind]);
+  const [price, setPrice] = useState(MIN_SALE[(choices.find((o) => cardKey(o.card) === key)?.card.kind ?? "common") as keyof typeof MIN_SALE]);
   const [askKey, setAskKey] = useState("");
   const sameRarity = all.filter((c) => (c.kind ?? "common") === kind && c.memberId !== card?.memberId);
   const ok = !!card && (useShards ? price >= MIN_SALE[kind] : true) && (useShards || !!askKey);

@@ -36,10 +36,10 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 /** VUT (Volley Ultimate Team), réservé au Bureau pour l'instant. */
-export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string }> }) {
+export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string; vendre?: string }> }) {
   const member = (await getCurrentMember())!;
   if (!hasRole(member, "board")) notFound();
-  const { vue, journee } = await searchParams;
+  const { vue, journee, vendre } = await searchParams;
   // « Marché » s'ouvre depuis l'album (onglet Collection en surbrillance).
   const market = vue === "marche";
   const tab: Tab = market ? "collection" : TABS.some(([k]) => k === vue) ? (vue as Tab) : "equipe";
@@ -271,6 +271,7 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
           owned={collection}
           all={allCards}
           shards={shardCount}
+          sellKey={vendre}
           bank={<CollectionView entries={collection} all={allCards} shards={shardCount} bank />}
         />
       </div>

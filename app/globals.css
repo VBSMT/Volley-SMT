@@ -1404,3 +1404,4 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .market-pick-card { all: unset; flex: none; width: 81px; height: 118px; border-radius: 10px; cursor: pointer; }
 .market-pick-card.is-on { outline: 3px solid var(--jaune); outline-offset: 2px; }
 .market-stepper { display: flex; align-items: center; gap: 0.6rem; }
+.carousel-sell { justify-self: center; width: auto; padding: 0 1rem; }
