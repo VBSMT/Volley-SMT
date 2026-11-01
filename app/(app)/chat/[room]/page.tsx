@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRooms, roomMembers } from "@/lib/chat";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -36,7 +35,6 @@ export default async function ChatRoomPage({ params }: { params: Promise<{ room:
 
   return (
     <main className="page stack chat-page">
-      <Link href="/chat" className="back">← Messages</Link>
       <ChatRoom
         room={room.key}
         label={room.label}
