@@ -45,16 +45,15 @@ const LEGENDS: [string, keyof typeof LEGEND_BONUS_LABELS][] = [
 /** Règles de VUT : principe, raretés (avec exemples), équipe, points, bonus, boosters, classement. */
 export default async function ReglesPage() {
   // Règles visibles par tous les adhérents ; le jeu lui-même est encore réservé au Bureau.
-  const canPlay = hasRole(await getCurrentMember(), "board");
+  // Jeu ouvert à tous les adhérents ; les prénoms des Légendes restent une surprise hors Bureau.
+  const showLegends = hasRole(await getCurrentMember(), "board");
   return (
     <main className="page stack rules">
       <div className="stats-head">
         <h1>Règles de VUT</h1>
-        {canPlay && (
-          <Link href="/jeu" className="small">
-            ← Retour au jeu
-          </Link>
-        )}
+        <Link href="/jeu" className="small">
+          ← Retour au jeu
+        </Link>
       </div>
 
       <section className="card stack">
@@ -151,12 +150,12 @@ export default async function ReglesPage() {
         <h2>⭐ La case Bonus</h2>
         <p><strong>Capitaine</strong> : +5 % sur ton total, <strong>+10 %</strong> si son équipe gagne son match.</p>
         <table className="ranking">
-          <caption className="small">{canPlay ? "Les Légendes du Bureau et leur pouvoir" : "Les 7 Légendes du Bureau et leur pouvoir (à découvrir en jeu)"}</caption>
+          <caption className="small">{showLegends ? "Les Légendes du Bureau et leur pouvoir" : "Les 7 Légendes du Bureau et leur pouvoir (à découvrir en jeu)"}</caption>
           <tbody>
             {LEGENDS.map(([name, bonus]) => (
               <tr key={name}>
                 {/* Prénoms gardés secrets hors Bureau : on découvre les Légendes en jouant. */}
-                <th scope="row">♛ {canPlay ? name : "???"}</th>
+                <th scope="row">♛ {showLegends ? name : "???"}</th>
                 <td>{LEGEND_BONUS_LABELS[bonus]}</td>
               </tr>
             ))}
@@ -193,15 +192,9 @@ export default async function ReglesPage() {
         </ul>
       </section>
 
-      {canPlay ? (
-        <Link href="/jeu" className="btn-primary rules-play">
-          Jouer
-        </Link>
-      ) : (
-        <p className="card rules-soon">
-          🚧 <strong>Bientôt disponible</strong> : le jeu est en test avec le Bureau. En attendant, découvre les règles et ajoute ta photo dans ton profil pour tes futures cartes !
-        </p>
-      )}
+      <Link href="/jeu" className="btn-primary rules-play">
+        Jouer
+      </Link>
     </main>
   );
 }

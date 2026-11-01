@@ -7,7 +7,7 @@ import { LISTING_DAYS, MAX_ROUNDS, OFFER_DAYS, TRADES_PER_WEEK, listingErrors, o
 import { getCollection, getGameCards } from "@/lib/game";
 import { currentWeek } from "@/lib/game-week";
 import { shortName } from "@/lib/format";
-import { getCurrentMember, hasRole } from "@/lib/member";
+import { getCurrentMember } from "@/lib/member";
 import { notifyMembers } from "@/lib/notify";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -27,7 +27,7 @@ const tradeError = (message: string) => ERRORS[Object.keys(ERRORS).find((k) => m
 
 async function player() {
   const member = await getCurrentMember();
-  return member && hasRole(member, "board") ? member : null;
+  return member ?? null;
 }
 
 /** Mes cartes (collection à jour). */

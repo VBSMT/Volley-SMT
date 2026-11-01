@@ -59,8 +59,8 @@ export default async function AccueilPage() {
 
   // Bureau : demandes en attente (bénévolat).
   const isBoard = hasRole(member, "board");
-  // Booster VUT du jour : Bureau seulement tant que le jeu n'est pas ouvert à tous.
-  const daily = isBoard ? await getDailyState(supabase, member.id) : null;
+  // Booster VUT du jour (mini-paquet à côté du prénom tant qu'il n'est pas récupéré).
+  const daily = await getDailyState(supabase, member.id);
   const [{ count: pendingVolunteers }, { count: pendingReschedules }] = isBoard
     ? await Promise.all([
         supabase.from("volunteer_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
@@ -90,8 +90,8 @@ export default async function AccueilPage() {
         {daily && !daily.claimedToday && <DailyBoosterLink bonus={daily.bonusToday} />}
       </div>
       {celebrations.length > 0 && <CelebrationCards items={celebrations} />}
-      {/* VUT réservé au Bureau pour l'instant : podium de fin de saison pour ses joueurs. */}
-      {isBoard && <SeasonPodium client={supabase} />}
+      {/* Podium VUT de fin de saison. */}
+      <SeasonPodium client={supabase} />
       <InstallPrompt />
       <NotificationToggle compact />
       {!!pendingReschedules && (

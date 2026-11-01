@@ -139,12 +139,12 @@ select is((select count(*) from public.attendance)::int, 1, 'Bureau : ajout et r
 
 -- Jeu de cartes
 select pg_temp.login(2);
-select is((select count(*) from public.game_cards)::int, 0, 'jeu : réservé au Bureau pour l''instant');
+select ok((select count(*) from public.game_cards) > 0, 'jeu : ouvert à tous les adhérents');
 select is((select count(*) from public.game_boosters)::int, 0, 'jeu : boosters des autres invisibles');
 select is((select count(*) from public.game_collection)::int, 0, 'jeu : collections des autres invisibles');
 select is((select count(*) from public.game_lineups)::int, 0, 'jeu : équipes des autres invisibles');
 select is((select count(*) from public.game_wallet)::int, 0, 'jeu : éclats des autres invisibles');
-select is((select count(*) from public.game_weeks)::int, 0, 'jeu : classement réservé au Bureau');
+select is((select count(*) from public.game_weeks)::int, 1, 'jeu : classement visible de tous');
 select throws_ok($$ insert into public.game_boosters (owner_id, kind) values ('00000000-0000-0000-0000-000000000002', 'earned') $$, '42501', null, 'jeu : pas de booster créé par un adhérent');
 select pg_temp.login(4);
 select is((select count(*) from public.game_cards where kind = 'common')::int, 1, 'jeu (Bureau) : seuls les joueurs avec un poste ont une carte');
@@ -166,7 +166,7 @@ select pg_temp.logout();
 
 -- Marché VUT : lecture réservée aux joueurs, échanges par le serveur seulement
 select pg_temp.login(2);
-select is((select count(*) from public.game_listings)::int, 0, 'marché : réservé aux joueurs VUT');
+select is((select count(*) from public.game_listings)::int, 0, 'marché : aucune annonce au départ');
 select throws_ok($$ select public.game_trade('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 0, '[]') $$, '42501', null, 'marché : un adhérent ne lance pas d''échange lui-même');
 select pg_temp.logout();
 select throws_ok($$ insert into public.game_listings (seller_id, member_id, team_id, kind, ask_shards) values ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-0000000000a1', 'common', 5) $$, 'P0001', 'VUT:missing_card', 'marché : pas d''annonce pour une carte non possédée');

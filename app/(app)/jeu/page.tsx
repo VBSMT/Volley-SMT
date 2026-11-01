@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { type CardKind, GAME_POSITION_LABELS, STARTER_SIZE, cardKey } from "@/lib/domain/game";
 import { defaultMatchday, editableWeek, isLocked, matchdayDates, opponentRank, positionChanges, withFrozen } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
@@ -9,7 +8,7 @@ import { getCollection, getGameCards, starterOpened } from "@/lib/game";
 import { currentWeek, getLineup, getMatchdays, getWeekFixtures, getWeekMatches } from "@/lib/game-week";
 import { getLatestSnapshots } from "@/lib/stats";
 import { WeekFixtures, type FixtureRow } from "./WeekFixtures";
-import { getCurrentMember, hasRole } from "@/lib/member";
+import { getCurrentMember } from "@/lib/member";
 import { createClient } from "@/lib/supabase/server";
 import { openEarned, openStarter } from "./actions";
 import { BoosterOpening } from "./BoosterOpening";
@@ -18,9 +17,8 @@ import { MarketView, type ListingRow, type OfferRow } from "./MarketView";
 import { LISTING_DAYS, OFFER_DAYS } from "@/lib/domain/market";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
-import { TestTools } from "./TestTools";
 import { GiftPanel, type GiftHistoryRow } from "./GiftPanel";
-import { isGameMaster, testToolsEnabled } from "@/lib/game-master";
+import { isGameMaster } from "@/lib/game-master";
 import { shortName } from "@/lib/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DailyCard } from "./DailyCard";
@@ -35,10 +33,9 @@ const TABS = [
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
-/** VUT (Volley Ultimate Team), réservé au Bureau pour l'instant. */
+/** VUT (Volley Ultimate Team), ouvert à tous les adhérents. */
 export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string; vendre?: string }> }) {
   const member = (await getCurrentMember())!;
-  if (!hasRole(member, "board")) notFound();
   const { vue, journee, vendre } = await searchParams;
   // « Marché » s'ouvre depuis l'album (onglet Collection en surbrillance).
   const market = vue === "marche";
@@ -88,7 +85,6 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
             .sort((a, b) => a.label.localeCompare(b.label))}
           history={history}
         />
-        {testToolsEnabled() && <TestTools teams={teams ?? []} />}
       </>
     );
   }

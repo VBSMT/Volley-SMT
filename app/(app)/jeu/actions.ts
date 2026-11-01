@@ -8,7 +8,7 @@ import { getCollection, getGameCards } from "@/lib/game";
 import { awardBooster, getDailyState } from "@/lib/game-rewards";
 import { parisClock } from "@/lib/domain/notifications";
 import { currentWeek, getLineup, getWeekMatches } from "@/lib/game-week";
-import { getCurrentMember, hasRole } from "@/lib/member";
+import { getCurrentMember } from "@/lib/member";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,7 +16,6 @@ import { createClient } from "@/lib/supabase/server";
 export async function openStarter(): Promise<{ cards?: GameCard[]; error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const cards = drawStarter(await getGameCards(await createClient()));
   if (!cards.length) return { error: "Aucune carte disponible : les joueurs doivent d'abord renseigner leur poste." };
 
@@ -54,7 +53,6 @@ async function addToCollection(admin: Admin, ownerId: string, cards: GameCard[],
 export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[]; shards?: number; message?: string; error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const admin = createAdminClient();
   const { data: booster } = await admin
     .from("game_boosters")
@@ -97,7 +95,6 @@ export async function openEarned(boosterId: string): Promise<{ cards?: GameCard[
 export async function saveLineup(lineup: Lineup, week: string): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
 
   // Journée en cours ou à venir (jusqu'à 4 semaines) ; les journées passées sont en lecture seule.
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week) || weekStart(week) !== week || !editableWeek(week, currentWeek())) {
@@ -161,7 +158,6 @@ async function addShards(admin: Admin, ownerId: string, n: number): Promise<numb
 export async function recycleCard(key: string): Promise<{ error?: string; shards?: number }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const card = (await getCollection(await createClient(), await getGameCards(await createClient()))).find((e) => cardKey(e.card) === key);
   if (!card || card.copies < 2) return { error: "Pas de doublon à recycler." };
   const { data, error } = await createAdminClient().rpc("game_recycle", {
@@ -178,7 +174,6 @@ export async function recycleCard(key: string): Promise<{ error?: string; shards
 export async function exchangeShards(key: string): Promise<{ error?: string }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const card = (await getGameCards(await createClient())).find((c) => cardKey(c) === key);
   const price = card ? shardPrice(card) : null;
   if (!card || price === null) return { error: "Carte non disponible contre des éclats." };
@@ -198,7 +193,6 @@ export async function exchangeShards(key: string): Promise<{ error?: string }> {
 export async function claimDaily(): Promise<{ error?: string; bonus?: boolean }> {
   const member = await getCurrentMember();
   if (!member) return { error: "Session expirée. Reconnectez-vous." };
-  if (!hasRole(member, "board")) return { error: "Réservé au Bureau pour l'instant." };
   const admin = createAdminClient();
   const state = await getDailyState(admin, member.id);
   if (state.claimedToday) return { error: "Booster du jour déjà récupéré. Reviens demain !" };

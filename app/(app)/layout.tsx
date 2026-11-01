@@ -12,10 +12,10 @@ import { createClient } from "@/lib/supabase/server";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
   // Messages non lus (tous salons) pour la pastille de l'en-tête.
-  // Boosters VUT à ouvrir (pastille sur « VUT », Bureau seulement pour l'instant).
+  // Boosters VUT à ouvrir (pastille sur « VUT »).
   // Le booster du jour pas encore récupéré compte aussi.
   const boosters =
-    member && hasRole(member, "board")
+    member
       ? ((await (await createClient()).from("game_boosters").select("id", { count: "exact", head: true }).is("opened_at", null)).count ?? 0) +
         ((await getDailyState(await createClient(), member.id)).claimedToday ? 0 : 1)
       : 0;
@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <span className="brand">Volley SMT</span>
         {/* VUT : tout le monde voit l'icône ; le jeu est réservé au Bureau, les autres arrivent sur les règles. */}
         {member && (
-          <VutHeaderLink count={boosters} rulesOnly={!hasRole(member, "board")} />
+          <VutHeaderLink count={boosters} rulesOnly={false} />
         )}
         {member && (
           <Link href="/chat" className="header-chat" aria-label={unread ? `Messages, ${unread} non lu${unread > 1 ? "s" : ""}` : "Messages"}>
