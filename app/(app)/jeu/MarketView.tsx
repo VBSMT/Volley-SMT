@@ -217,7 +217,7 @@ export function MarketView({ listings, offers, owned, all, shards, bank, sellKey
 
       {sub === "banque" && bank}
 
-      {offerFor && <OfferDialog listing={offerFor} choices={owned.filter((o) => o.copies > 1).map((o) => o.card)} maxShards={shards} pending={pending} onClose={() => setOfferFor(null)} onSend={(s, keys) => run(() => makeOffer(offerFor.id, s, keys), "Offre envoyée.")} />}
+      {offerFor && <OfferDialog listing={offerFor} choices={owned.map((o) => o.card)} maxShards={shards} pending={pending} onClose={() => setOfferFor(null)} onSend={(s, keys) => run(() => makeOffer(offerFor.id, s, keys), "Offre envoyée.")} />}
       {counterFor?.card && (
         <OfferDialog
           title={`Contre-offre à ${counterFor.buyer}`}
