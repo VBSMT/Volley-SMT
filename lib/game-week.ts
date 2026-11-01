@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type CardKind, type LegendBonus, cardKey, gamePosition } from "@/lib/domain/game";
-import { type CardInfo, type Lineup, type MatchResult, matchdays, type Slot, type TeamWeek, addDays, lineupScore, simulatedWeek, weekFromResults, weekIsFinal, weekStart } from "@/lib/domain/game-week";
+import { type CardInfo, type Lineup, type MatchResult, matchdays, type Slot, type TeamWeek, addDays, lineupScore, weekFromResults, weekIsFinal, weekStart } from "@/lib/domain/game-week";
 import { parisClock } from "@/lib/domain/notifications";
 import { awardTop3 } from "@/lib/game-rewards";
 
@@ -72,8 +72,6 @@ export async function computeWeek(admin: SupabaseClient, week: string, now = new
   const { from, to } = weekRange(week);
 
   const { data: teams } = await admin.from("teams").select("id, name");
-  // Outils de test : un résultat simulé remplace le vrai pour l'équipe et la semaine.
-  const { data: tests } = await admin.from("game_test_results").select("team_id, score").eq("week_start", week);
   const { data: results } = await admin.from("game_team_results").select("*").gte("played_at", from).lt("played_at", to);
   const { data: played } = await admin.from("matches").select("id, team_id, starts_at").gte("starts_at", from).lt("starts_at", to).lt("starts_at", now.toISOString());
   const withResult = new Set((results ?? []).map((r) => r.match_id as string | null).filter(Boolean));
@@ -81,11 +79,6 @@ export async function computeWeek(admin: SupabaseClient, week: string, now = new
   const weeks = new Map<string, TeamWeek | null>();
   const pending: string[] = [];
   for (const t of teams ?? []) {
-    const simulated = (tests ?? []).filter((r) => r.team_id === t.id).map((r) => r.score as TeamWeek["scores"][number]);
-    if (simulated.length) {
-      weeks.set(t.id as string, simulatedWeek(simulated));
-      continue;
-    }
     const mine: MatchResult[] = (results ?? [])
       .filter((r) => r.team_id === t.id)
       .map((r) => ({

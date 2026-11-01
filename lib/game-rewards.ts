@@ -5,10 +5,10 @@ import { TOP_REWARDED, dailyState, rewardReason, trainingRewardsDue } from "@/li
 import { parisClock } from "@/lib/domain/notifications";
 import { notifyMembers } from "@/lib/notify";
 
-/** Joueurs de VUT : le Bureau pour l'instant (phase de test). */
+/** Joueurs de VUT : tous les adhérents ayant un compte. */
 export async function gamePlayers(admin: SupabaseClient): Promise<string[]> {
-  const { data } = await admin.from("member_roles").select("member_id").eq("role", "board");
-  return [...new Set((data ?? []).map((r) => r.member_id as string))];
+  const { data } = await admin.from("members").select("id").not("user_id", "is", null);
+  return (data ?? []).map((r) => r.id as string);
 }
 
 /**
