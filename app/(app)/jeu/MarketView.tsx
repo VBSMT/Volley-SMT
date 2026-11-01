@@ -49,8 +49,8 @@ export function MarketView({ listings, offers, owned, all, shards, bank, sellKey
   const sent = offers.filter((o) => o.mine);
   const SUBS: [Sub, string, number][] = [
     ["annonces", "Annonces", others.length],
-    ["ventes", "Mes ventes", received.filter((o) => o.status === "pending" && !o.fromSeller).length],
-    ["offres", "Mes offres", sent.filter((o) => o.status === "pending" && o.fromSeller).length],
+    ["ventes", "Ventes", received.filter((o) => o.status === "pending" && !o.fromSeller).length],
+    ["offres", "Offres", sent.filter((o) => o.status === "pending" && o.fromSeller).length],
     ["banque", "Banque", 0],
   ];
 
