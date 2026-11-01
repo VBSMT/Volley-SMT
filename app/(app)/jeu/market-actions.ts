@@ -91,7 +91,7 @@ export async function createListing(key: string, askShards: number | null, askKe
     ask_team_id: ask?.teamId || null,
     ask_kind: ask?.kind ?? null,
   });
-  if (error) return { error: error.code === "23505" ? "Cette carte est déjà en vente." : "Annonce non publiée." };
+  if (error) return { error: error.code === "23505" ? "Cette carte est déjà en vente." : error.message.includes("VUT:") ? tradeError(error.message) : "Annonce non publiée." };
   revalidatePath("/jeu");
   return {};
 }
