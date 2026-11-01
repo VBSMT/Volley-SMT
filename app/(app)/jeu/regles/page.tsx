@@ -180,6 +180,9 @@ export default async function ReglesPage() {
         <p>
           <strong>✦ Éclats</strong> : tes doublons sont gardés (×2 dans l&apos;album). Touche ♻ pour recycler un exemplaire en trop : +1 éclat. Dans l&apos;album, « 🔁 Marché » ouvre la banque : une carte manquante contre {SHARDS_PER_CARD} éclats (commune), {SHARDS_PER_RARE} (rare) ou {SHARDS_PER_CAPTAIN} (Capitaine). Les Légendes ne s&apos;échangent jamais.
         </p>
+        <p>
+          <strong>🔁 Marché entre joueurs</strong> : mets une carte en vente contre des éclats (minimum ✦ 3 commune, ✦ 12 rare, ✦ 75 Capitaine) et/ou une carte précise de même rareté. Les autres achètent à tes conditions ou font une offre : des éclats, une carte de même rareté, ou plusieurs cartes moins rares. Tu acceptes, refuses ou fais une contre-offre (3 allers-retours au plus). 5 échanges par semaine au plus ; une carte de ta compo en cours ne peut pas partir (sauf doublon).
+        </p>
       </section>
 
       <section className="card stack">

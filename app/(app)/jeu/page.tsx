@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GAME_POSITION_LABELS, STARTER_SIZE, cardKey } from "@/lib/domain/game";
+import { type CardKind, GAME_POSITION_LABELS, STARTER_SIZE, cardKey } from "@/lib/domain/game";
 import { defaultMatchday, editableWeek, isLocked, matchdayDates, opponentRank, positionChanges, withFrozen } from "@/lib/domain/game-week";
 import { getCurrentSeason } from "@/lib/season";
 import { getDailyState } from "@/lib/game-rewards";
@@ -14,6 +14,8 @@ import { createClient } from "@/lib/supabase/server";
 import { openEarned, openStarter } from "./actions";
 import { BoosterOpening } from "./BoosterOpening";
 import { CollectionView } from "./CollectionView";
+import { MarketView, type ListingRow, type OfferRow } from "./MarketView";
+import { LISTING_DAYS, OFFER_DAYS } from "@/lib/domain/market";
 import { LineupEditor } from "./LineupEditor";
 import { Ranking } from "./Ranking";
 import { TestTools } from "./TestTools";
@@ -34,10 +36,10 @@ const TABS = [
 type Tab = (typeof TABS)[number][0];
 
 /** VUT (Volley Ultimate Team), réservé au Bureau pour l'instant. */
-export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string }> }) {
+export default async function JeuPage({ searchParams }: { searchParams: Promise<{ vue?: string; journee?: string; vendre?: string }> }) {
   const member = (await getCurrentMember())!;
   if (!hasRole(member, "board")) notFound();
-  const { vue, journee } = await searchParams;
+  const { vue, journee, vendre } = await searchParams;
   // « Marché » s'ouvre depuis l'album (onglet Collection en surbrillance).
   const market = vue === "marche";
   const tab: Tab = market ? "collection" : TABS.some(([k]) => k === vue) ? (vue as Tab) : "equipe";
@@ -221,14 +223,59 @@ export default async function JeuPage({ searchParams }: { searchParams: Promise<
     content = <Ranking client={supabase} week={week} memberId={member.id} season={await getCurrentSeason(supabase)} />;
   } else {
     const { data: wallet } = await supabase.from("game_wallet").select("shards").eq("owner_id", member.id).maybeSingle();
+    const shardCount = (wallet?.shards as number) ?? 0;
+    let marketRows: { listings: ListingRow[]; offers: OfferRow[] } = { listings: [], offers: [] };
+    if (market) {
+      const since = new Date(Date.now() - LISTING_DAYS * 86_400_000).toISOString();
+      const offerSince = new Date(Date.now() - OFFER_DAYS * 86_400_000).toISOString();
+      const [{ data: ls }, { data: os }, { data: dir }] = await Promise.all([
+        supabase.from("game_listings").select("*").eq("status", "open").gte("created_at", since).order("created_at", { ascending: false }),
+        supabase.from("game_offers").select("*, listing:game_listings(member_id, team_id, kind, seller_id)").gte("created_at", offerSince).order("created_at", { ascending: false }),
+        supabase.from("member_directory").select("id, first_name, last_name"),
+      ]);
+      const who = new Map((dir ?? []).map((m) => [m.id as string, shortName(m.first_name as string, m.last_name as string)]));
+      const byKey = new Map(allCards.map((c) => [cardKey(c), c]));
+      const find = (memberId: string | null, teamId: string | null, kind: string | null) =>
+        memberId ? (byKey.get(cardKey({ memberId, teamId: teamId ?? "", kind: (kind ?? "common") as CardKind })) ?? null) : null;
+      marketRows = {
+        listings: (ls ?? []).flatMap((l) => {
+          const card = find(l.member_id, l.team_id, l.kind);
+          return card
+            ? [{ id: l.id, seller: who.get(l.seller_id) ?? "?", mine: l.seller_id === member.id, card, askShards: l.ask_shards, askCard: find(l.ask_member_id, l.ask_team_id, l.ask_kind), createdAt: l.created_at }]
+            : [];
+        }),
+        offers: (os ?? []).map((o) => {
+          const l = o.listing as { member_id: string; team_id: string; kind: string; seller_id: string } | null;
+          return {
+            id: o.id,
+            listingId: o.listing_id,
+            buyer: who.get(o.buyer_id) ?? "?",
+            shards: o.shards,
+            cards: ((o.cards as { memberId: string; teamId: string; kind: string }[]) ?? []).flatMap((c) => find(c.memberId, c.teamId, c.kind) ?? []),
+            status: o.status,
+            card: l ? find(l.member_id, l.team_id, l.kind) : null,
+            mine: o.buyer_id === member.id,
+            fromSeller: !!o.from_seller,
+            round: (o.round as number) ?? 1,
+          };
+        }),
+      };
+    }
     content = market ? (
       <div className="stack">
         <div className="market-head">
           <Link href="/jeu?vue=collection" className="back">← Album</Link>
           <h2>🔁 Marché</h2>
         </div>
-        <p className="small muted">Banque : obtiens une carte manquante contre des éclats. Les annonces entre joueurs arrivent bientôt.</p>
-        <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} bank />
+        <MarketView
+          listings={marketRows.listings}
+          offers={marketRows.offers}
+          owned={collection}
+          all={allCards}
+          shards={shardCount}
+          sellKey={vendre}
+          bank={<CollectionView entries={collection} all={allCards} shards={shardCount} bank />}
+        />
       </div>
     ) : (
       <CollectionView entries={collection} all={allCards} shards={(wallet?.shards as number) ?? 0} />

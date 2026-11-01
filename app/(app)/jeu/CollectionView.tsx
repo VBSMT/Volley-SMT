@@ -128,6 +128,7 @@ export function CollectionView({ entries, all, shards, bank = false }: { entries
               total={all.length}
               initialKey={open.key}
               entries={open.keys.map((k) => byKey.get(k)).filter((e): e is Entry => !!e)}
+              onSell={(c) => router.push(`/jeu?vue=marche&vendre=${encodeURIComponent(cardKey(c))}`)}
             />
           </>
         )}

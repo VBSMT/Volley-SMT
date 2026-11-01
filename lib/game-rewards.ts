@@ -111,6 +111,8 @@ export async function purgeOldBoosters(admin: SupabaseClient, now: Date) {
     .lt("opened_at", before)
     .or("reason.like.daily:%,reason.like.streak:%,reason.eq.test");
   await admin.from("game_boosters").update({ cards: null }).lt("opened_at", before).not("cards", "is", null);
+  // Marché : annonces de plus de 30 jours (et leurs offres) effacées.
+  await admin.from("game_listings").delete().lt("created_at", before);
   return deleted ?? 0;
 }
 
@@ -120,8 +122,8 @@ export async function resetGameIfSeasonStarts(admin: SupabaseClient, now: Date) 
   const { data: season } = await admin.from("seasons").select("id").eq("starts_on", clock.date).maybeSingle();
   if (!season) return null;
   const none = "00000000-0000-0000-0000-000000000000";
-  for (const table of ["game_lineups", "game_collection", "game_boosters", "game_wallet"]) {
-    await admin.from(table).delete().neq("owner_id", none);
+  for (const table of ["game_listings", "game_lineups", "game_collection", "game_boosters", "game_wallet"]) {
+    await admin.from(table).delete().neq(table === "game_listings" ? "seller_id" : "owner_id", none);
   }
   return { reset: true };
 }

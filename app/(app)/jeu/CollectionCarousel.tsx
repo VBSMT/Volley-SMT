@@ -20,6 +20,7 @@ export function CollectionCarousel({
   total,
   bare = false,
   initialKey,
+  onSell,
 }: {
   entries: Entry[];
   total: number;
@@ -27,6 +28,8 @@ export function CollectionCarousel({
   bare?: boolean;
   /** Carte à afficher au centre à l'ouverture. */
   initialKey?: string;
+  /** Mettre la carte du centre en vente au marché (pas pour une Légende). */
+  onSell?: (card: GameCard) => void;
 }) {
   const [filter, setFilter] = useState<GamePosition | "all" | "rare" | "captain" | "legend">("all");
   const [sort, setSort] = useState<"rating" | "team">("rating");
@@ -136,6 +139,11 @@ export function CollectionCarousel({
         <p className="small muted collection-hint">
           {Math.round(wheel.center) + 1} / {list.length} — glisse pour tourner, touche la carte pour la retourner
         </p>
+      )}
+      {current && onSell && current.card.kind !== "legend" && (
+        <button type="button" className="btn-secondary carousel-sell" onClick={() => onSell(current.card)}>
+          🔁 Mettre en vente au marché
+        </button>
       )}
     </div>
   );
