@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PlayerCard } from "@/components/game/PlayerCard";
 import { type GameCard, CAPTAIN_RATE, LEGEND_BONUS_LABELS, LEGEND_RATE, RARE_RATE, STARTER_SIZE } from "@/lib/domain/game";
-import { SHARDS_PER_CARD, SHARDS_PER_RARE, TRAININGS_PER_BOOSTER } from "@/lib/domain/game-rewards";
+import { SHARDS_PER_CARD, SHARDS_PER_RARE, SHARDS_PER_CAPTAIN, TRAININGS_PER_BOOSTER } from "@/lib/domain/game-rewards";
 import { getCurrentMember, hasRole } from "@/lib/member";
 
 export const metadata: Metadata = { title: "VUT · Règles du jeu" };
@@ -178,7 +178,7 @@ export default async function ReglesPage() {
           </tbody>
         </table>
         <p>
-          <strong>✦ Éclats</strong> : chaque carte en double te donne 1 éclat. Dans l&apos;onglet Collection, touche « ✦ éclats » puis une carte manquante : {SHARDS_PER_CARD} éclats pour une commune, {SHARDS_PER_RARE} pour une rare (pas de Capitaine ni de Légende).
+          <strong>✦ Éclats</strong> : tes doublons sont gardés (×2 dans l&apos;album). Touche ♻ pour recycler un exemplaire en trop : +1 éclat. Dans l&apos;album, « 🔁 Marché » ouvre la banque : une carte manquante contre {SHARDS_PER_CARD} éclats (commune), {SHARDS_PER_RARE} (rare) ou {SHARDS_PER_CAPTAIN} (Capitaine). Les Légendes ne s&apos;échangent jamais.
         </p>
       </section>
 

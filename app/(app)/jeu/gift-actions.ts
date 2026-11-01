@@ -56,7 +56,7 @@ export async function sendGift(target: GiftTarget, gift: Gift, message: string):
   const { data, error } = await admin.from("game_boosters").insert(rows).select("id");
   if (error) return { error: "Envoi impossible. Réessayez." };
 
-  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", owners.filter((id) => players.has(id)));
+  const { data: people } = await admin.from("members").select("id, email, first_name").in("id", owners.filter((id) => players.has(id))).neq("notify_game", false);
   const what = giftCards ? "une carte t'attend" : `${count} booster${count > 1 ? "s" : ""} t'attend${count > 1 ? "ent" : ""}`;
   await notifyMembers(
     (people ?? []).map((m) => ({

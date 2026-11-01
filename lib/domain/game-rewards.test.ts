@@ -24,10 +24,10 @@ describe("récompenses", () => {
     expect(trainingRewardsDue(9, 1)).toEqual([2, 3]);
     expect(trainingRewardsDue(9, 3)).toEqual([]);
   });
-  it("prix en éclats : commune 5, rare 20, spéciales non échangeables", () => {
+  it("prix à la banque : commune 5, rare 20, Capitaine 100, Légende jamais", () => {
     expect(shardPrice(card("a"))).toBe(5);
     expect(shardPrice(card("a", "rare"))).toBe(20);
-    expect(shardPrice(card("a", "captain"))).toBeNull();
+    expect(shardPrice(card("a", "captain"))).toBe(100);
     expect(shardPrice(card("a", "legend"))).toBeNull();
   });
   it("raisons uniques", () => {

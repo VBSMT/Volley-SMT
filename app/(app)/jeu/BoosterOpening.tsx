@@ -55,7 +55,7 @@ export function BoosterOpening({ label, open, starter = false, remaining = 1 }: 
     phase === "done"
       ? starter
         ? `Ta collection compte ${cards.length} cartes !`
-        : `${cards.length} nouvelles cartes !${shards ? ` Doublon${shards > 1 ? "s" : ""} : +${shards} éclat${shards > 1 ? "s" : ""} ✦` : ""}`
+        : `${cards.length} nouvelles cartes !${shards ? ` ${shards} doublon${shards > 1 ? "s" : ""} gardé${shards > 1 ? "s" : ""} : recycle-les ou vends-les au marché.` : ""}`
       : phase === "open"
         ? flipped
           ? `${index + 1} / ${cards.length} — touche la carte pour la suivante`

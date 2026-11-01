@@ -52,12 +52,15 @@ export function CollectionAlbum({
   all,
   onOpen,
   exchange,
+  onRecycle,
 }: {
   entries: Entry[];
   all: GameCard[];
   onOpen: (key: string, keys: string[]) => void;
   /** Mode échange : cartes manquantes seulement, avec leur prix en éclats ; toucher = acheter. */
   exchange?: { shards: number; onBuy: (card: GameCard) => void };
+  /** Recycler un doublon (exemplaire en trop → 1 éclat). */
+  onRecycle?: (card: GameCard) => void;
 }) {
   const [group, setGroup] = useState<Group>("team");
   // Par défaut, seulement les cartes possédées ; « Manquantes » ajoute les cartes manquantes.
@@ -113,11 +116,19 @@ export function CollectionAlbum({
                 return (
                   <li key={cardKey(c)}>
                     {e ? (
+                      <>
+                      {onRecycle && e.copies > 1 && (
+                        <button type="button" className="album-recycle" onClick={() => onRecycle(c)} aria-label={`Recycler un doublon de ${shortName(c.firstName, c.lastName)} (+1 éclat)`}>
+                          ♻
+                        </button>
+                      )}
                       <button type="button" className="album-card" onClick={() => onOpen(cardKey(c), keys)} aria-label={`Voir ${shortName(c.firstName, c.lastName)}`}>
                         <span className="mini-card" aria-hidden="true">
                           <PlayerCard card={c} />
                         </span>
+                        {e.copies > 1 && <span className="album-copies" aria-label={`${e.copies} exemplaires`}>×{e.copies}</span>}
                       </button>
+                      </>
                     ) : exchange ? (
                       <button
                         type="button"

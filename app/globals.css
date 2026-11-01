@@ -1386,3 +1386,9 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .poll-pending-head h4 { margin: 0; }
 .announcement-off { margin-left: 0.5rem; vertical-align: middle; font-family: "Barlow", sans-serif; }
 .announcement-actions { justify-content: flex-end; }
+/* Doublons : recycler (♻ → +1 éclat) ; lien vers le marché */
+.album-grid li { position: relative; }
+.album-recycle { position: absolute; z-index: 2; top: -6px; right: -6px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--noir); background: var(--jaune); color: #111; font-size: 0.9rem; display: grid; place-items: center; padding: 0; }
+.album-recycle::after { content: ""; position: absolute; inset: -7px; } /* zone tactile 44 px */
+.market-link { display: inline-flex; align-items: center; text-decoration: none; }
+.market-head { display: flex; align-items: center; justify-content: space-between; } .market-head h2 { margin: 0; }
