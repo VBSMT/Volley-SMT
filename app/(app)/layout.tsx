@@ -3,7 +3,6 @@ import Link from "next/link";
 import { GuidedTour } from "@/components/GuidedTour";
 import { FeedbackProvider } from "@/components/Feedback";
 import { TabBar } from "@/components/TabBar";
-import { VutHeaderLink } from "@/components/game/VutHeaderLink";
 import { getUnread } from "@/lib/chat";
 import { getDailyState } from "@/lib/game-rewards";
 import { getCurrentMember, hasRole } from "@/lib/member";
@@ -26,10 +25,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="app-header">
         <Image src="/logo.png" alt="" width={40} height={40} priority />
         <span className="brand">Volley SMT</span>
-        {/* VUT : tout le monde voit l'icône ; le jeu est réservé au Bureau, les autres arrivent sur les règles. */}
-        {member && (
-          <VutHeaderLink count={boosters} rulesOnly={false} />
-        )}
         {member && (
           <Link href="/chat" className="header-chat" aria-label={unread ? `Messages, ${unread} non lu${unread > 1 ? "s" : ""}` : "Messages"}>
             <span aria-hidden="true">💬</span>
@@ -62,7 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </main>
         )}
       </div>
-      {member && <TabBar isBoard={hasRole(member, "board")} />}
+      {member && <TabBar isBoard={hasRole(member, "board")} boosters={boosters} />}
     </>
   );
 }
