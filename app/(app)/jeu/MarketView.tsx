@@ -14,6 +14,18 @@ export type OfferRow = { id: string; listingId: string; buyer: string; shards: n
 type Owned = { card: GameCard; copies: number };
 
 const name = (c: GameCard) => `${shortName(c.firstName, c.lastName)}${c.kind === "rare" ? " ★" : c.kind === "captain" ? " (C)" : ""}`;
+/** Cartes groupées par équipe (ordre alphabétique), prénoms par ordre alphabétique dans chaque équipe. */
+function byTeam(cards: GameCard[]): [string, GameCard[]][] {
+  const groups = new Map<string, GameCard[]>();
+  for (const c of cards) {
+    const team = c.kind === "legend" ? "Bureau" : c.teamName;
+    groups.set(team, [...(groups.get(team) ?? []), c]);
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b, "fr"))
+    .map(([t, list]) => [t, list.sort((a, b) => a.firstName.localeCompare(b.firstName, "fr") || a.lastName.localeCompare(b.lastName, "fr"))]);
+}
+
 const STATUS: Record<string, string> = { pending: "⏳ En attente", accepted: "✓ Acceptée", refused: "✕ Refusée", cancelled: "Annulée", countered: "↔ Contre-offre" };
 const terms = (o: { shards: number; cards: GameCard[] }) => [o.shards ? `✦ ${o.shards}` : "", ...o.cards.map(name)].filter(Boolean).join(" + ");
 type Sub = "annonces" | "ventes" | "offres" | "banque";
@@ -248,7 +260,9 @@ function OfferDialog({
   const [give, setGive] = useState(0);
   const [picked, setPicked] = useState<string[]>([]);
   const RANK = { common: 1, rare: 2, captain: 3, legend: 4 } as const;
-  const choices = pool.filter((c) => tradable(c.kind ?? "common") && RANK[c.kind ?? "common"] <= RANK[kind]).map((card) => ({ card }));
+  const choices = byTeam(pool.filter((c) => tradable(c.kind ?? "common") && RANK[c.kind ?? "common"] <= RANK[kind]))
+    .flatMap(([, cards]) => cards)
+    .map((card) => ({ card }));
   const cards = choices.filter((o) => picked.includes(cardKey(o.card))).map((o) => ({ memberId: o.card.memberId, teamId: o.card.teamId, kind: o.card.kind ?? "common" }));
   const errors = offerErrors(kind, give, cards);
   return (
@@ -307,10 +321,17 @@ function SellDialog({ initialKey, owned, all, pending, onClose, onSend }: { init
       <label>
         Carte (doublons)
         <select value={key} onChange={(e) => { setKey(e.target.value); setAskKey(""); const k = (choices.find((o) => cardKey(o.card) === e.target.value)?.card.kind ?? "common") as keyof typeof MIN_SALE; setPrice(MIN_SALE[k]); }}>
-          {choices.map((o) => (
-            <option key={cardKey(o.card)} value={cardKey(o.card)}>
-              {name(o.card)} · {o.card.teamName}{o.copies > 1 ? ` (×${o.copies})` : ""}
-            </option>
+          {byTeam(choices.map((o) => o.card)).map(([team, cards]) => (
+            <optgroup key={team} label={team}>
+              {cards.map((c) => {
+                const o = choices.find((x) => cardKey(x.card) === cardKey(c))!;
+                return (
+                  <option key={cardKey(c)} value={cardKey(c)}>
+                    {name(c)}{o.copies > 1 ? ` (×${o.copies})` : ""}
+                  </option>
+                );
+              })}
+            </optgroup>
           ))}
         </select>
       </label>
@@ -328,10 +349,14 @@ function SellDialog({ initialKey, owned, all, pending, onClose, onSend }: { init
         {useShards ? "Ou une carte voulue (facultatif)" : "Carte voulue (même rareté)"}
         <select value={askKey} onChange={(e) => setAskKey(e.target.value)}>
           <option value="">—</option>
-          {sameRarity.map((c) => (
-            <option key={cardKey(c)} value={cardKey(c)}>
-              {name(c)} · {c.teamName}
-            </option>
+          {byTeam(sameRarity).map(([team, cards]) => (
+            <optgroup key={team} label={team}>
+              {cards.map((c) => (
+                <option key={cardKey(c)} value={cardKey(c)}>
+                  {name(c)}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </label>
