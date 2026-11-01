@@ -169,7 +169,8 @@ button:disabled { opacity: 0.6; cursor: wait; }
 .zelsync a { color: var(--texte); }
 
 /* --- Structure de l'appli : en-tête, contenu, barre d'onglets --- */
-.app-header { position: sticky; top: 0; z-index: 10; }
+.app-header { position: sticky; top: 0; z-index: 10; height: var(--app-header-h); box-sizing: border-box; }
+:root { --app-header-h: 60px; }
 .header-profile {
   margin-left: auto;
   width: 44px;
@@ -805,7 +806,12 @@ a { color: var(--lien); text-underline-offset: 3px; }
 .chat-room-link { display: grid; gap: 0.2rem; }
 .chat-room-name { font-weight: 700; display: flex; align-items: center; }
 .chat-room-last { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.chat-head {
+  display: flex; align-items: center; gap: 0.5rem; position: sticky; top: var(--app-header-h); z-index: 5;
+  margin: -0.5rem -1rem 0; padding: 0.4rem 1rem; background: var(--fond); border-bottom: 1px solid var(--trait);
+}
+.chat-head h1 { flex: 1; margin: 0; font-size: 1.6rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-back { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; font-size: 1.4rem; text-decoration: none; color: var(--texte); flex: none; }
 .chat-bell { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--trait); background: var(--surface); font-size: 1.2rem; cursor: pointer; }
 .chat-bell.is-on { border-color: var(--jaune); }
 .chat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }

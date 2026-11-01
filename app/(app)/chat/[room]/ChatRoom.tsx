@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useConfirm, useToast } from "@/components/Feedback";
@@ -194,7 +195,11 @@ export function ChatRoom({
   return (
     <div className="chat stack">
       {dialog}
+      {/* Bandeau collé en haut au défilement : retour, nom du salon, cloche. */}
       <div className="chat-head">
+        <Link href="/chat" className="chat-back" aria-label="Retour aux messages">
+          ←
+        </Link>
         <h1>{label}</h1>
         <button
           type="button"
