@@ -80,6 +80,14 @@ export function MarketView({ listings, offers, owned, all, shards, bank, sellKey
                   <strong>{name(l.card)}</strong>
                   <span className="small muted">{l.card.teamName} · par {l.seller}</span>
                   <span className="small">Veut : <b>{ask(l)}</b></span>
+                  {(() => {
+                    const mine = sent.find((o) => o.listingId === l.id && o.status === "pending");
+                    return mine ? (
+                      <span className="small market-mine">
+                        {mine.fromSeller ? <>↔ Contre-offre reçue : <b>{terms(mine)}</b> (voir Offres)</> : <>⏳ Ta proposition : <b>{terms(mine)}</b></>}
+                      </span>
+                    ) : null;
+                  })()}
                   <div className="action-row">
                     {l.askShards !== null && (
                       <button type="button" className="btn-primary market-btn" disabled={pending || shards < l.askShards}
@@ -94,7 +102,7 @@ export function MarketView({ listings, offers, owned, all, shards, bank, sellKey
                       </button>
                     )}
                     <button type="button" className="btn-secondary market-btn" disabled={pending} onClick={() => setOfferFor(l)}>
-                      Faire une offre
+                      {sent.some((o) => o.listingId === l.id && o.status === "pending" && !o.fromSeller) ? "Modifier mon offre" : "Faire une offre"}
                     </button>
                   </div>
                 </div>
@@ -197,7 +205,7 @@ export function MarketView({ listings, offers, owned, all, shards, bank, sellKey
 
       {sub === "banque" && bank}
 
-      {offerFor && <OfferDialog listing={offerFor} choices={owned.map((o) => o.card)} maxShards={shards} pending={pending} onClose={() => setOfferFor(null)} onSend={(s, keys) => run(() => makeOffer(offerFor.id, s, keys), "Offre envoyée.")} />}
+      {offerFor && <OfferDialog listing={offerFor} choices={owned.filter((o) => o.copies > 1).map((o) => o.card)} maxShards={shards} pending={pending} onClose={() => setOfferFor(null)} onSend={(s, keys) => run(() => makeOffer(offerFor.id, s, keys), "Offre envoyée.")} />}
       {counterFor?.card && (
         <OfferDialog
           title={`Contre-offre à ${counterFor.buyer}`}
@@ -277,14 +285,17 @@ function OfferDialog({
 }
 
 function SellDialog({ initialKey, owned, all, pending, onClose, onSend }: { initialKey?: string; owned: Owned[]; all: GameCard[]; pending: boolean; onClose: () => void; onSend: (key: string, shards: number | null, askKey: string | null) => void }) {
-  const choices = owned.filter((o) => tradable(o.card.kind ?? "common"));
+  // Doublons seulement (plus la carte choisie depuis l'album, même unique).
+  const choices = owned.filter((o) => tradable(o.card.kind ?? "common") && (o.copies > 1 || cardKey(o.card) === initialKey));
+  const ownedKeys = new Set(owned.map((o) => cardKey(o.card)));
   const [key, setKey] = useState(choices.find((o) => cardKey(o.card) === initialKey) ? initialKey! : choices[0] ? cardKey(choices[0].card) : "");
   const card = choices.find((o) => cardKey(o.card) === key)?.card;
   const kind = (card?.kind ?? "common") as keyof typeof MIN_SALE;
   const [useShards, setUseShards] = useState(true);
   const [price, setPrice] = useState(MIN_SALE[(choices.find((o) => cardKey(o.card) === key)?.card.kind ?? "common") as keyof typeof MIN_SALE]);
   const [askKey, setAskKey] = useState("");
-  const sameRarity = all.filter((c) => (c.kind ?? "common") === kind && c.memberId !== card?.memberId);
+  // Carte voulue : seulement des cartes qu'on n'a pas encore.
+  const sameRarity = all.filter((c) => (c.kind ?? "common") === kind && !ownedKeys.has(cardKey(c)));
   const ok = !!card && (useShards ? price >= MIN_SALE[kind] : true) && (useShards || !!askKey);
   return (
     <dialog open className="fixtures-sheet market-sheet" aria-labelledby="sell-title">
@@ -292,8 +303,9 @@ function SellDialog({ initialKey, owned, all, pending, onClose, onSend }: { init
         <h2 id="sell-title">Mettre une carte en vente</h2>
         <button type="button" className="fixtures-close" onClick={onClose} aria-label="Fermer">✕</button>
       </div>
+      {choices.length === 0 && <p className="small muted">Aucun doublon à vendre pour l&apos;instant (pour une carte unique, ouvre-la depuis l&apos;album).</p>}
       <label>
-        Carte
+        Carte (doublons)
         <select value={key} onChange={(e) => { setKey(e.target.value); setAskKey(""); const k = (choices.find((o) => cardKey(o.card) === e.target.value)?.card.kind ?? "common") as keyof typeof MIN_SALE; setPrice(MIN_SALE[k]); }}>
           {choices.map((o) => (
             <option key={cardKey(o.card)} value={cardKey(o.card)}>
