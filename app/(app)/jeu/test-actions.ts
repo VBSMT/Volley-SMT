@@ -32,8 +32,8 @@ async function players(admin: ReturnType<typeof createAdminClient>): Promise<str
 export async function resetAll(): Promise<Result> {
   const admin = await guard();
   if (!admin) return { error: "Réservé au maître du jeu." };
-  for (const table of ["game_lineups", "game_weeks", "game_collection", "game_boosters", "game_wallet"]) {
-    const { error } = await admin.from(table).delete().neq("owner_id", NO_ID);
+  for (const table of ["game_listings", "game_lineups", "game_weeks", "game_collection", "game_boosters", "game_wallet"]) {
+    const { error } = await admin.from(table).delete().neq(table === "game_listings" ? "seller_id" : "owner_id", NO_ID);
     if (error) return { error: error.message };
   }
   await admin.from("game_test_results").delete().neq("id", NO_ID);
