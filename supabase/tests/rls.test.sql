@@ -1,7 +1,7 @@
 -- Tests des droits (RLS) par rôle : `supabase test db` (base locale, Docker).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(61);
+select plan(62);
 
 -- Jeu de données : une équipe, quatre personnes (adhérent, capitaine, bénévole, Bureau).
 insert into public.teams (id, name) values
@@ -169,6 +169,7 @@ select pg_temp.login(2);
 select is((select count(*) from public.game_listings)::int, 0, 'marché : réservé aux joueurs VUT');
 select throws_ok($$ select public.game_trade('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 0, '[]') $$, '42501', null, 'marché : un adhérent ne lance pas d''échange lui-même');
 select pg_temp.logout();
+select throws_ok($$ insert into public.game_listings (seller_id, member_id, team_id, kind, ask_shards) values ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-0000000000a1', 'common', 5) $$, 'P0001', 'VUT:missing_card', 'marché : pas d''annonce pour une carte non possédée');
 
 -- Non connecté
 set local role anon;
